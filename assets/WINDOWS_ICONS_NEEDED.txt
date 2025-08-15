@@ -1,0 +1,11 @@
+﻿Windows Icon Requirements:
+
+1. icon.png - 256x256 pixels (PNG format)
+2. icon.ico - Windows icon file
+
+You can:
+- Create icons using online tools like favicon.io
+- Use GIMP or Photoshop to create and export
+- Download from icon sites like flaticon.com
+
+Place the files in this assets/ folder.

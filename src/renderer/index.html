@@ -1,0 +1,518 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostWoman - API Testing Tool</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src *; img-src 'self' data: https:;">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="assets/icon.png">
+</head>
+<body>
+    <div class="app">
+        <!-- Compact Header -->
+        <header class="header">
+            <h1>🌊 PostWoman</h1>
+            <div class="header-actions">
+                <select id="currentEnvironment" class="env-dropdown">
+                    <option value="development">🛠️ Development</option>
+                    <option value="staging">🔧 Staging</option>
+                    <option value="production">🚀 Production</option>
+                </select>
+                <button class="env-button" onclick="EnvironmentManager.openModal()">⚙️ Environments</button>
+                <button class="user-button" onclick="UserManager.showProfile()">👤 Profile</button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Left Sidebar Navigation -->
+            <aside class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-item active" onclick="showSection('workspace')" data-section="workspace">
+                        <span class="nav-icon">🚀</span>
+                        <span class="nav-label">Workspace</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('collections')" data-section="collections">
+                        <span class="nav-icon">📁</span>
+                        <span class="nav-label">Collections</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('history')" data-section="history">
+                        <span class="nav-icon">🕒</span>
+                        <span class="nav-label">History</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('environments')" data-section="environments">
+                        <span class="nav-icon">🌍</span>
+                        <span class="nav-label">Environments</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('teams')" data-section="teams">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-label">Teams</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Workspace Section -->
+                <div id="workspaceSection" class="section-content active">
+                    <!-- API Testing Tabs -->
+                    <div class="workspace-tabs">
+                        <button class="workspace-tab active" onclick="switchWorkspaceTab('http')">HTTP Requests</button>
+                        <button class="workspace-tab" onclick="switchWorkspaceTab('sqs')">SQS Messages</button>
+                        <button class="workspace-tab" onclick="switchWorkspaceTab('kafka')">Kafka Messages</button>
+                    </div>
+
+                    <!-- HTTP Requests -->
+                    <div id="httpWorkspace" class="workspace-content active">
+                        <div class="request-builder">
+                            <div class="request-line">
+                                <select id="method" class="method-select" onchange="updateCurlCommand()">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                    <option value="PUT">PUT</option>
+                                    <option value="DELETE">DELETE</option>
+                                    <option value="PATCH">PATCH</option>
+                                    <option value="HEAD">HEAD</option>
+                                    <option value="OPTIONS">OPTIONS</option>
+                                </select>
+                                
+                                <input type="text" id="url" class="url-input" 
+                                       placeholder="Enter request URL (use {{variableName}} for env variables)" 
+                                       value="{{baseUrl}}/posts"
+                                       oninput="updateCurlCommand()">
+                                
+                                <button id="sendBtn" class="send-button" onclick="sendRequest()">
+                                    Send Request
+                                </button>
+                                <button class="save-request-btn" onclick="CollectionManager.saveCurrentRequest()">
+                                    💾 Save
+                                </button>
+                            </div>
+
+                            <div class="request-tabs">
+                                <div class="tab active" onclick="switchTab('params')">Params</div>
+                                <div class="tab" onclick="switchTab('auth')">Authorization</div>
+                                <div class="tab" onclick="switchTab('headers')">Headers</div>
+                                <div class="tab" onclick="switchTab('cookies')">Cookies</div>
+                                <div class="tab" onclick="switchTab('body')">Body</div>
+                            </div>
+
+                            <div class="tab-content-area">
+                                <div id="params" class="tab-content active">
+                                    <div id="paramsContainer">
+                                        <div class="key-value-pair">
+                                            <input type="text" placeholder="Key" class="param-key" oninput="updateCurlCommand()">
+                                            <input type="text" placeholder="Value (use {{var}} for env variables)" class="param-value" oninput="updateCurlCommand()">
+                                            <button class="remove-btn" onclick="this.parentNode.remove(); updateCurlCommand()">×</button>
+                                        </div>
+                                    </div>
+                                    <button class="add-btn" onclick="addParam()">Add Parameter</button>
+                                </div>
+
+                                <div id="auth" class="tab-content">
+                                    <div class="form-group">
+                                        <label for="authType">Authentication Type:</label>
+                                        <select id="authType" onchange="toggleAuthFields()">
+                                            <option value="none">No Authentication</option>
+                                            <option value="bearer">Bearer Token</option>
+                                            <option value="basic">Basic Authentication</option>
+                                            <option value="apikey">API Key</option>
+                                        </select>
+                                    </div>
+
+                                    <div id="authFields">
+                                        <div id="bearerAuth" style="display: none;">
+                                            <div class="form-group">
+                                                <label for="bearerToken">Bearer Token:</label>
+                                                <input type="text" id="bearerToken" placeholder="{{apiToken}} or enter token directly" oninput="updateCurlCommand()">
+                                            </div>
+                                        </div>
+
+                                        <div id="basicAuth" style="display: none;">
+                                            <div class="form-group">
+                                                <label for="basicUsername">Username:</label>
+                                                <input type="text" id="basicUsername" placeholder="{{username}} or enter username" oninput="updateCurlCommand()">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="basicPassword">Password:</label>
+                                                <input type="password" id="basicPassword" placeholder="{{password}} or enter password" oninput="updateCurlCommand()">
+                                            </div>
+                                        </div>
+
+                                        <div id="apikeyAuth" style="display: none;">
+                                            <div class="form-group">
+                                                <label for="apikeyKey">Key:</label>
+                                                <input type="text" id="apikeyKey" placeholder="API Key name" oninput="updateCurlCommand()">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="apikeyValue">Value:</label>
+                                                <input type="text" id="apikeyValue" placeholder="{{apiKey}} or enter key directly" oninput="updateCurlCommand()">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="apikeyLocation">Add to:</label>
+                                                <select id="apikeyLocation" onchange="updateCurlCommand()">
+                                                    <option value="header">Header</option>
+                                                    <option value="query">Query Params</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="headers" class="tab-content">
+                                    <div id="headersContainer">
+                                        <!-- Standard headers will be populated here -->
+                                    </div>
+                                    <button class="add-btn" onclick="addHeader()">Add Header</button>
+                                </div>
+
+                                <div id="cookies" class="tab-content">
+                                    <div id="cookiesContainer">
+                                        <div class="key-value-pair">
+                                            <input type="text" placeholder="Cookie Name" class="cookie-key" oninput="updateCurlCommand()">
+                                            <input type="text" placeholder="Cookie Value (use {{var}})" class="cookie-value" oninput="updateCurlCommand()">
+                                            <button class="remove-btn" onclick="this.parentNode.remove(); updateCurlCommand()">×</button>
+                                        </div>
+                                    </div>
+                                    <button class="add-btn" onclick="addCookie()">Add Cookie</button>
+                                </div>
+
+                                <div id="body" class="tab-content">
+                                    <div class="form-group">
+                                        <label for="bodyType">Body Type:</label>
+                                        <select id="bodyType" onchange="toggleBodyFields()">
+                                            <option value="none">No Body</option>
+                                            <option value="json">JSON</option>
+                                            <option value="form">Form Data</option>
+                                            <option value="raw">Raw Text</option>
+                                        </select>
+                                    </div>
+
+                                    <div id="bodyContent">
+                                        <div id="jsonBody" style="display: none;">
+                                            <div class="form-group">
+                                                <label for="jsonInput">JSON (use {{variables}} for env vars):</label>
+                                                <textarea id="jsonInput" rows="8" placeholder='{"userId": "{{userId}}", "name": "Test User"}' oninput="updateCurlCommand()"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div id="formBody" style="display: none;">
+                                            <div id="formDataContainer">
+                                                <div class="key-value-pair">
+                                                    <input type="text" placeholder="Key" class="form-key" oninput="updateCurlCommand()">
+                                                    <input type="text" placeholder="Value (use {{var}})" class="form-value" oninput="updateCurlCommand()">
+                                                    <button class="remove-btn" onclick="this.parentNode.remove(); updateCurlCommand()">×</button>
+                                                </div>
+                                            </div>
+                                            <button class="add-btn" onclick="addFormData()">Add Form Field</button>
+                                        </div>
+
+                                        <div id="rawBody" style="display: none;">
+                                            <div class="form-group">
+                                                <label for="rawInput">Raw Text (use {{variables}}):</label>
+                                                <textarea id="rawInput" rows="8" placeholder="Enter raw text with {{variables}}" oninput="updateCurlCommand()"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="curl-controls">
+                                <button class="show-curl-btn" onclick="toggleCurlSection()">
+                                    🔧 Show cURL Command
+                                </button>
+                            </div>
+
+                            <div id="curlSection" class="curl-section">
+                                <h3>🔧 Generated cURL Command</h3>
+                                <div id="curlCode" class="curl-code">curl -X GET "{{baseUrl}}/posts"</div>
+                                <button class="copy-btn" onclick="copyCurl()">Copy cURL</button>
+                            </div>
+                        </div>
+
+                        <div class="response-section">
+                            <h3>📋 Response</h3>
+                            <div id="responseContainer">
+                                <p style="color: #64748b; text-align: center; padding: 2rem;">
+                                    Send a request to see the response here
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SQS Messages -->
+                    <div id="sqsWorkspace" class="workspace-content">
+                        <div class="messaging-form">
+                            <h3>📨 Send SQS Message</h3>
+                            
+                            <div class="form-group">
+                                <label for="sqsRegion">AWS Region:</label>
+                                <select id="sqsRegion">
+                                    <option value="us-east-1">US East (N. Virginia)</option>
+                                    <option value="us-west-2">US West (Oregon)</option>
+                                    <option value="eu-west-1">Europe (Ireland)</option>
+                                    <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sqsQueueUrl">Queue URL:</label>
+                                <input type="text" id="sqsQueueUrl" placeholder="{{sqsQueueUrl}} or https://sqs.region.amazonaws.com/account-id/queue-name">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sqsAccessKey">Access Key ID:</label>
+                                <input type="text" id="sqsAccessKey" placeholder="{{awsAccessKey}} or your AWS Access Key ID">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sqsSecretKey">Secret Access Key:</label>
+                                <input type="password" id="sqsSecretKey" placeholder="{{awsSecretKey}} or your AWS Secret Access Key">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sqsMessageBody">Message Body:</label>
+                                <textarea id="sqsMessageBody" rows="6" placeholder='{"message": "{{messageContent}}", "userId": "{{userId}}"}'></textarea>
+                            </div>
+
+                            <button class="send-button" onclick="sendSqsMessage()">Send SQS Message</button>
+                        </div>
+
+                        <div class="response-section">
+                            <h3>📋 SQS Response</h3>
+                            <div id="sqsResponseContainer">
+                                <p style="color: #64748b; text-align: center; padding: 2rem;">
+                                    Send an SQS message to see the response here
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kafka Messages -->
+                    <div id="kafkaWorkspace" class="workspace-content">
+                        <div class="messaging-form">
+                            <h3>🚀 Send Kafka Message</h3>
+                            
+                            <div class="form-group">
+                                <label for="kafkaBrokers">Kafka Brokers:</label>
+                                <input type="text" id="kafkaBrokers" placeholder="{{kafkaBrokers}} or localhost:9092" value="{{kafkaBrokers}}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="kafkaTopic">Topic:</label>
+                                <input type="text" id="kafkaTopic" placeholder="{{topicName}} or my-topic">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="kafkaMessage">Message Value:</label>
+                                <textarea id="kafkaMessage" rows="6" placeholder='{"event": "{{eventType}}", "user_id": "{{userId}}"}'></textarea>
+                            </div>
+
+                            <button class="send-button" onclick="sendKafkaMessage()">Send Kafka Message</button>
+                        </div>
+
+                        <div class="response-section">
+                            <h3>📋 Kafka Response</h3>
+                            <div id="kafkaResponseContainer">
+                                <p style="color: #64748b; text-align: center; padding: 2rem;">
+                                    Send a Kafka message to see the response here
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collections Section -->
+                <div id="collectionsSection" class="section-content">
+                    <div class="section-header">
+                        <h2>📁 Collections</h2>
+                        <div class="section-actions">
+                            <button class="action-btn" onclick="CollectionManager.createCollection()">➕ New Collection</button>
+                            <button class="action-btn" onclick="CollectionManager.importPostmanCollection()">📥 Import Postman</button>
+                            <button class="action-btn" onclick="CollectionManager.exportAllCollections()">📤 Export All</button>
+                        </div>
+                    </div>
+                    
+                    <div id="collectionsContainer" class="collections-grid">
+                        <!-- Collections will be populated here -->
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div id="historySection" class="section-content">
+                    <div class="section-header">
+                        <h2>🕒 Request History</h2>
+                        <div class="section-actions">
+                            <button class="action-btn" onclick="HistoryManager.clearHistory()">🗑️ Clear All</button>
+                            <button class="action-btn" onclick="HistoryManager.exportHistory()">📤 Export</button>
+                        </div>
+                    </div>
+                    
+                    <div id="historyContainer" class="history-list">
+                        <!-- History items will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Environments Section -->
+                <div id="environmentsSection" class="section-content">
+                    <div class="section-header">
+                        <h2>🌍 Environment Management</h2>
+                        <div class="section-actions">
+                            <button class="action-btn" onclick="EnvironmentManager.createEnvironment()">➕ New Environment</button>
+                            <button class="action-btn" onclick="EnvironmentManager.importEnvironments()">📥 Import</button>
+                        </div>
+                    </div>
+                    
+                    <div id="environmentsContainer" class="environments-grid">
+                        <!-- Environments will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Teams Section -->
+                <div id="teamsSection" class="section-content">
+                    <div class="section-header">
+                        <h2>👥 Teams & Collaboration</h2>
+                        <div class="section-actions">
+                            <button class="action-btn" onclick="TeamsManager.createTeam()">➕ Create Team</button>
+                            <button class="action-btn" onclick="TeamsManager.joinTeam()">🔗 Join Team</button>
+                        </div>
+                    </div>
+                    
+                    <div id="teamsContainer" class="teams-content">
+                        <!-- Teams content will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <div id="envModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🌍 Environment Variables</h3>
+                    <button class="close" onclick="EnvironmentManager.closeModal()">&times;</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="envSelect">Select Environment:</label>
+                    <select id="envSelect" onchange="EnvironmentManager.loadVariables()">
+                        <option value="development">Development</option>
+                        <option value="staging">Staging</option>
+                        <option value="production">Production</option>
+                    </select>
+                </div>
+
+                <h4>Environment Variables</h4>
+                <div id="envVariablesContainer">
+                    <!-- Environment variables will be populated here -->
+                </div>
+                <button class="add-btn" onclick="EnvironmentManager.addVariable()">Add Variable</button>
+                
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                    <button class="send-button" onclick="EnvironmentManager.saveEnvironment()">Save Environment</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection Modal -->
+        <div id="collectionModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="collectionModalTitle">Collection Details</h3>
+                    <button class="close" onclick="CollectionManager.closeModal()">&times;</button>
+                </div>
+                <div id="collectionModalBody">
+                    <!-- Collection details will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Request Modal -->
+        <div id="saveRequestModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>💾 Save Request</h3>
+                    <button class="close" onclick="CollectionManager.closeSaveModal()">&times;</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="requestName">Request Name:</label>
+                    <input type="text" id="requestName" placeholder="Enter request name">
+                </div>
+
+                <div class="form-group">
+                    <label for="requestDescription">Description (Optional):</label>
+                    <textarea id="requestDescription" rows="3" placeholder="Describe what this request does"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="targetCollection">Save to Collection:</label>
+                    <select id="targetCollection">
+                        <option value="">Select Collection</option>
+                    </select>
+                </div>
+                
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                    <button class="send-button" onclick="CollectionManager.saveToCollection()">Save Request</button>
+                    <button class="cancel-btn" onclick="CollectionManager.closeSaveModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Profile Modal -->
+        <div id="userModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>👤 User Profile</h3>
+                    <button class="close" onclick="UserManager.closeProfile()">&times;</button>
+                </div>
+                <div id="userModalBody">
+                    <!-- User profile content will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Import File Input -->
+        <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="ImportManager.handleFileImport(event)">
+
+        <!-- Environment Variable Tooltip -->
+        <div id="envTooltip" class="env-tooltip">
+            <div class="tooltip-content"></div>
+        </div>
+    </div>
+
+    <!-- Core Scripts - Order matters! -->
+    <script src="js/core.js"></script>
+    <script src="js/electron-integration.js"></script> 
+    <script src="js/database-adapter.js"></script>
+    <script src="js/ui-components.js"></script>
+    <script src="js/environment-manager.js"></script>
+    <script src="js/collection-manager.js"></script>
+    <script src="js/history-manager.js"></script>
+    <script src="js/teams-manager.js"></script>
+    <script src="js/user-manager.js"></script>
+    <script src="js/import-manager.js"></script>
+    <script src="js/request-manager.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Global function aliases for HTML onclick handlers -->
+    <script>
+        // Make functions available globally for HTML onclick handlers
+        window.showSection = (section) => UI?.showSection(section);
+        window.switchWorkspaceTab = (tab) => UI?.switchWorkspaceTab(tab);
+        window.switchTab = (tab) => UI?.switchTab(tab);
+        window.toggleAuthFields = () => UI?.toggleAuthFields();
+        window.toggleBodyFields = () => UI?.toggleBodyFields();
+        window.addParam = () => UI?.addParam();
+        window.addHeader = () => UI?.addHeader();
+        window.addCookie = () => UI?.addCookie();
+        window.addFormData = () => UI?.addFormData();
+        window.sendRequest = () => RequestManager?.sendRequest();
+        window.sendSqsMessage = () => RequestManager?.sendSqsMessage();
+        window.sendKafkaMessage = () => RequestManager?.sendKafkaMessage();
+        window.toggleCurlSection = () => RequestManager?.toggleCurlSection();
+        window.copyCurl = () => RequestManager?.copyCurl();
+        window.updateCurlCommand = () => RequestManager?.updateCurlCommand();
+    </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+﻿{
+  "name": "postwoman",
+  "version": "1.0.0",
+  "description": "A powerful API testing tool - Postman alternative",
+  "main": "src/main/main.js",
+  "author": "PostWoman Team",
+  "license": "MIT",
+  "homepage": "https://github.com/yourusername/postwoman",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "dist": "electron-builder --publish=never",
+    "clean": "rimraf dist",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "api",
+    "testing",
+    "postman",
+    "rest",
+    "http",
+    "client",
+    "development",
+    "tools"
+  ],
+  "devDependencies": {
+    "electron": "^25.9.0",
+    "electron-builder": "^24.13.3",
+    "rimraf": "^5.0.5"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.4"
+  },
+  "build": {
+    "appId": "com.postwoman.app",
+    "productName": "PostWoman",
+    "copyright": "Copyright © 2024 PostWoman Team",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "!src/**/*.map",
+      "!src/**/*.ts"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "darkModeSupport": true
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "publisherName": "PostWoman Team"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "PostWoman"
+    }
+  }
+}
