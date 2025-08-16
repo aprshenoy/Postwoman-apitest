@@ -129,17 +129,7 @@ class RequestManager {
         }
     }
 
-    getCurrentRequestData() {
-        return {
-            method: this.getMethod(),
-            url: this.getUrl(),
-            headers: this.getHeaders(),
-            params: this.getParams(),
-            cookies: this.getCookies(),
-            auth: this.getAuthData(),
-            body: this.getBodyData()
-        };
-    }
+
 
     getMethod() {
         const methodSelect = document.getElementById('method');
@@ -151,63 +141,10 @@ class RequestManager {
         return urlInput ? urlInput.value.trim() : '';
     }
 
-    getHeaders() {
-        const headers = [];
-        const container = document.getElementById('headersContainer');
-        if (!container) return headers;
-        
-        container.querySelectorAll('.key-value-pair').forEach(pair => {
-            const key = pair.querySelector('.header-key')?.value?.trim();
-            const value = pair.querySelector('.header-value')?.value?.trim();
-            if (key && value) {
-                headers.push({ key, value });
-            }
-        });
-        
-        // Add auth headers
-        const authHeaders = this.getAuthHeaders();
-        headers.push(...authHeaders);
-        
-        return headers;
-    }
 
-    getParams() {
-        const params = [];
-        const container = document.getElementById('paramsContainer');
-        if (!container) return params;
-        
-        container.querySelectorAll('.key-value-pair').forEach(pair => {
-            const key = pair.querySelector('.param-key')?.value?.trim();
-            const value = pair.querySelector('.param-value')?.value?.trim();
-            if (key && value) {
-                params.push({ key, value });
-            }
-        });
-        
-        // Add API key to params if configured
-        const auth = this.getAuthData();
-        if (auth.type === 'apikey' && auth.location === 'query' && auth.key && auth.value) {
-            params.push({ key: auth.key, value: auth.value });
-        }
-        
-        return params;
-    }
 
-    getCookies() {
-        const cookies = [];
-        const container = document.getElementById('cookiesContainer');
-        if (!container) return cookies;
-        
-        container.querySelectorAll('.key-value-pair').forEach(pair => {
-            const key = pair.querySelector('.cookie-key')?.value?.trim();
-            const value = pair.querySelector('.cookie-value')?.value?.trim();
-            if (key && value) {
-                cookies.push({ key, value });
-            }
-        });
-        
-        return cookies;
-    }
+
+
 
     getAuthData() {
         const authType = document.getElementById('authType')?.value;
@@ -307,36 +244,7 @@ class RequestManager {
         }
     }
 
-    loadRequest(requestData) {
-        // Load method
-        const methodSelect = document.getElementById('method');
-        if (methodSelect) {
-            methodSelect.value = requestData.method || 'GET';
-        }
-        
-        // Load URL
-        const urlInput = document.getElementById('url');
-        if (urlInput) {
-            urlInput.value = requestData.url || '';
-        }
-        
-        // Load headers
-        this.loadHeaders(requestData.headers || []);
-        
-        // Load params
-        this.loadParams(requestData.params || []);
-        
-        // Load cookies
-        this.loadCookies(requestData.cookies || []);
-        
-        // Load auth
-        this.loadAuth(requestData.auth || { type: 'none' });
-        
-        // Load body
-        this.loadBody(requestData.body || { type: 'none' });
-        
-        this.updateCurlCommand();
-    }
+
 
     loadHeaders(headers) {
         const container = document.getElementById('headersContainer');
@@ -392,130 +300,409 @@ class RequestManager {
         }
     }
 
-    loadAuth(auth) {
-        const authType = document.getElementById('authType');
-        if (!authType) return;
-        
-        authType.value = auth.type || 'none';
-        if (window.UI && window.UI.toggleAuthFields) {
-            window.UI.toggleAuthFields();
-        }
-        
-        switch (auth.type) {
-            case 'bearer':
-                const bearerToken = document.getElementById('bearerToken');
-                if (bearerToken) bearerToken.value = auth.token || '';
-                break;
-            
-            case 'basic':
-                const basicUsername = document.getElementById('basicUsername');
-                const basicPassword = document.getElementById('basicPassword');
-                if (basicUsername) basicUsername.value = auth.username || '';
-                if (basicPassword) basicPassword.value = auth.password || '';
-                break;
-            
-            case 'apikey':
-                const apikeyKey = document.getElementById('apikeyKey');
-                const apikeyValue = document.getElementById('apikeyValue');
-                const apikeyLocation = document.getElementById('apikeyLocation');
-                if (apikeyKey) apikeyKey.value = auth.key || '';
-                if (apikeyValue) apikeyValue.value = auth.value || '';
-                if (apikeyLocation) apikeyLocation.value = auth.location || 'header';
-                break;
-        }
-    }
 
-    loadBody(body) {
-        const bodyType = document.getElementById('bodyType');
-        if (!bodyType) return;
-        
-        bodyType.value = body.type || 'none';
-        if (window.UI && window.UI.toggleBodyFields) {
-            window.UI.toggleBodyFields();
+
+// Add these methods to your RequestManager class
+
+// Method to get current request data with name
+getCurrentRequestData() {
+    const requestNameInput = document.getElementById('requestName');
+    const urlInput = document.getElementById('url');
+    const methodSelect = document.getElementById('method');
+    
+    return {
+        name: requestNameInput ? requestNameInput.value.trim() : '',
+        method: methodSelect ? methodSelect.value : 'GET',
+        url: urlInput ? urlInput.value.trim() : '',
+        headers: this.getHeaders(),
+        params: this.getParams(),
+        cookies: this.getCookies(),
+        auth: this.getAuth(),
+        body: this.getBody()
+    };
+}
+
+// Method to load a request (including name)
+// Fixed loadRequest method in request-manager.js
+loadRequest(requestData) {
+    try {
+        // Load request name
+        const requestNameInput = document.getElementById('requestName');
+        if (requestNameInput) {
+            requestNameInput.value = requestData.name || '';
         }
         
-        switch (body.type) {
-            case 'json':
-                const jsonInput = document.getElementById('jsonInput');
-                if (jsonInput) {
-                    jsonInput.value = typeof body.data === 'object' 
-                        ? JSON.stringify(body.data, null, 2) 
-                        : body.data || '';
+        // Load method
+        const methodSelect = document.getElementById('method');
+        if (methodSelect && requestData.method) {
+            methodSelect.value = requestData.method;
+        }
+        
+        // Load URL - ensure it's editable
+        const urlInput = document.getElementById('url');
+        if (urlInput && requestData.url) {
+            urlInput.value = requestData.url;
+            urlInput.disabled = false;
+            urlInput.readOnly = false;
+            // Remove any event listeners that might interfere
+            urlInput.style.pointerEvents = 'auto';
+            urlInput.style.cursor = 'text';
+        }
+        
+        // Clear existing data
+        this.clearAllContainers();
+        
+        // Load headers
+        if (requestData.headers && Array.isArray(requestData.headers)) {
+            requestData.headers.forEach(header => {
+                if (header.key && header.value) {
+                    this.addHeaderRow(header.key, header.value);
                 }
-                break;
-            
-            case 'form':
-                const formContainer = document.getElementById('formDataContainer');
-                if (formContainer && body.data) {
-                    formContainer.innerHTML = '';
-                    Object.entries(body.data).forEach(([key, value]) => {
-                        this.addFormDataRow(key, value);
-                    });
-                }
-                break;
-            
-            case 'raw':
-                const rawInput = document.getElementById('rawInput');
-                if (rawInput) rawInput.value = body.data || '';
-                break;
+            });
         }
-    }
-
-    addHeaderRow(key = '', value = '') {
-        const container = document.getElementById('headersContainer');
-        if (!container) return;
+        // Add empty row if no headers
+        if (!requestData.headers || requestData.headers.length === 0) {
+            this.addHeaderRow();
+        }
         
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'key-value-pair';
-        headerDiv.innerHTML = `
-            <input type="text" placeholder="Header Name" class="header-key" value="${this.escapeHtml(key)}">
-            <input type="text" placeholder="Header Value (use {{variables}})" class="header-value" value="${this.escapeHtml(value)}">
-            <button class="remove-btn" onclick="this.parentNode.remove(); RequestManager.updateCurlCommand()">×</button>
-        `;
-        container.appendChild(headerDiv);
-    }
-
-    addParamRow(key = '', value = '') {
-        const container = document.getElementById('paramsContainer');
-        if (!container) return;
+        // Load params
+        if (requestData.params && Array.isArray(requestData.params)) {
+            requestData.params.forEach(param => {
+                if (param.key && param.value) {
+                    this.addParamRow(param.key, param.value);
+                }
+            });
+        }
+        // Add empty row if no params
+        if (!requestData.params || requestData.params.length === 0) {
+            this.addParamRow();
+        }
         
-        const paramDiv = document.createElement('div');
-        paramDiv.className = 'key-value-pair';
-        paramDiv.innerHTML = `
-            <input type="text" placeholder="Key" class="param-key" value="${this.escapeHtml(key)}">
-            <input type="text" placeholder="Value (use {{variables}})" class="param-value" value="${this.escapeHtml(value)}">
-            <button class="remove-btn" onclick="this.parentNode.remove(); RequestManager.updateCurlCommand()">×</button>
-        `;
-        container.appendChild(paramDiv);
-    }
-
-    addCookieRow(key = '', value = '') {
-        const container = document.getElementById('cookiesContainer');
-        if (!container) return;
+        // Load cookies
+        if (requestData.cookies && Array.isArray(requestData.cookies)) {
+            requestData.cookies.forEach(cookie => {
+                if (cookie.key && cookie.value) {
+                    this.addCookieRow(cookie.key, cookie.value);
+                }
+            });
+        }
+        // Add empty row if no cookies
+        if (!requestData.cookies || requestData.cookies.length === 0) {
+            this.addCookieRow();
+        }
         
-        const cookieDiv = document.createElement('div');
-        cookieDiv.className = 'key-value-pair';
-        cookieDiv.innerHTML = `
-            <input type="text" placeholder="Cookie Name" class="cookie-key" value="${this.escapeHtml(key)}">
-            <input type="text" placeholder="Cookie Value (use {{variables}})" class="cookie-value" value="${this.escapeHtml(value)}">
-            <button class="remove-btn" onclick="this.parentNode.remove(); RequestManager.updateCurlCommand()">×</button>
-        `;
-        container.appendChild(cookieDiv);
-    }
-
-    addFormDataRow(key = '', value = '') {
-        const container = document.getElementById('formDataContainer');
-        if (!container) return;
+        // Load auth
+        if (requestData.auth) {
+            this.loadAuth(requestData.auth);
+        }
         
-        const formDiv = document.createElement('div');
-        formDiv.className = 'key-value-pair';
-        formDiv.innerHTML = `
-            <input type="text" placeholder="Key" class="form-key" value="${this.escapeHtml(key)}">
-            <input type="text" placeholder="Value (use {{variables}})" class="form-value" value="${this.escapeHtml(value)}">
-            <button class="remove-btn" onclick="this.parentNode.remove(); RequestManager.updateCurlCommand()">×</button>
-        `;
-        container.appendChild(formDiv);
+        // Load body
+        if (requestData.body) {
+            this.loadBody(requestData.body);
+        }
+        
+        // Update cURL command after a small delay to ensure all fields are loaded
+        setTimeout(() => {
+            if (this.updateCurlCommand) {
+                this.updateCurlCommand();
+            }
+        }, 100);
+        
+        console.log('✅ Request loaded successfully');
+        
+    } catch (error) {
+        console.error('Error loading request:', error);
     }
+}
+
+// Helper method to clear all containers
+clearAllContainers() {
+    const containers = [
+        'paramsContainer',
+        'headersContainer',
+        'cookiesContainer',
+        'formDataContainer'
+    ];
+    
+    containers.forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = '';
+        }
+    });
+}
+
+// Helper method to load auth data
+loadAuth(authData) {
+    const authTypeSelect = document.getElementById('authType');
+    if (!authTypeSelect || !authData) return;
+    
+    authTypeSelect.value = authData.type || 'none';
+    
+    // Trigger the toggle to show appropriate fields
+    if (window.UI && window.UI.toggleAuthFields) {
+        window.UI.toggleAuthFields();
+    }
+    
+    // Set auth values based on type
+    switch (authData.type) {
+        case 'bearer':
+            const bearerToken = document.getElementById('bearerToken');
+            if (bearerToken) bearerToken.value = authData.token || '';
+            break;
+            
+        case 'basic':
+            const basicUsername = document.getElementById('basicUsername');
+            const basicPassword = document.getElementById('basicPassword');
+            if (basicUsername) basicUsername.value = authData.username || '';
+            if (basicPassword) basicPassword.value = authData.password || '';
+            break;
+            
+        case 'apikey':
+            const apikeyKey = document.getElementById('apikeyKey');
+            const apikeyValue = document.getElementById('apikeyValue');
+            const apikeyLocation = document.getElementById('apikeyLocation');
+            if (apikeyKey) apikeyKey.value = authData.key || '';
+            if (apikeyValue) apikeyValue.value = authData.value || '';
+            if (apikeyLocation) apikeyLocation.value = authData.location || 'header';
+            break;
+    }
+}
+
+// Helper method to load body data
+loadBody(bodyData) {
+    const bodyTypeSelect = document.getElementById('bodyType');
+    if (!bodyTypeSelect || !bodyData) return;
+    
+    bodyTypeSelect.value = bodyData.type || 'none';
+    
+    // Trigger the toggle to show appropriate fields
+    if (window.UI && window.UI.toggleBodyFields) {
+        window.UI.toggleBodyFields();
+    }
+    
+    // Set body content based on type
+    switch (bodyData.type) {
+        case 'json':
+            const jsonInput = document.getElementById('jsonInput');
+            if (jsonInput) {
+                const jsonData = typeof bodyData.data === 'object' 
+                    ? JSON.stringify(bodyData.data, null, 2)
+                    : bodyData.data || '';
+                jsonInput.value = jsonData;
+            }
+            break;
+            
+        case 'raw':
+            const rawInput = document.getElementById('rawInput');
+            if (rawInput) rawInput.value = bodyData.data || '';
+            break;
+            
+        case 'form':
+            if (bodyData.data && Array.isArray(bodyData.data)) {
+                bodyData.data.forEach(field => {
+                    if (field.key && field.value) {
+                        this.addFormDataRow(field.key, field.value);
+                    }
+                });
+            }
+            break;
+    }
+}
+
+// Helper methods to get current data
+getHeaders() {
+    const headers = [];
+    const container = document.getElementById('headersContainer');
+    if (container) {
+        container.querySelectorAll('.key-value-pair').forEach(pair => {
+            const key = pair.querySelector('.header-key')?.value?.trim();
+            const value = pair.querySelector('.header-value')?.value?.trim();
+            if (key && value) {
+                headers.push({ key, value });
+            }
+        });
+    }
+    return headers;
+}
+
+getParams() {
+    const params = [];
+    const container = document.getElementById('paramsContainer');
+    if (container) {
+        container.querySelectorAll('.key-value-pair').forEach(pair => {
+            const key = pair.querySelector('.param-key')?.value?.trim();
+            const value = pair.querySelector('.param-value')?.value?.trim();
+            if (key && value) {
+                params.push({ key, value });
+            }
+        });
+    }
+    return params;
+}
+
+getCookies() {
+    const cookies = [];
+    const container = document.getElementById('cookiesContainer');
+    if (container) {
+        container.querySelectorAll('.key-value-pair').forEach(pair => {
+            const key = pair.querySelector('.cookie-key')?.value?.trim();
+            const value = pair.querySelector('.cookie-value')?.value?.trim();
+            if (key && value) {
+                cookies.push({ key, value });
+            }
+        });
+    }
+    return cookies;
+}
+
+getAuth() {
+    const authTypeSelect = document.getElementById('authType');
+    if (!authTypeSelect) return { type: 'none' };
+    
+    const authType = authTypeSelect.value;
+    const auth = { type: authType };
+    
+    switch (authType) {
+        case 'bearer':
+            const bearerToken = document.getElementById('bearerToken');
+            if (bearerToken) auth.token = bearerToken.value.trim();
+            break;
+            
+        case 'basic':
+            const basicUsername = document.getElementById('basicUsername');
+            const basicPassword = document.getElementById('basicPassword');
+            if (basicUsername) auth.username = basicUsername.value.trim();
+            if (basicPassword) auth.password = basicPassword.value.trim();
+            break;
+            
+        case 'apikey':
+            const apikeyKey = document.getElementById('apikeyKey');
+            const apikeyValue = document.getElementById('apikeyValue');
+            const apikeyLocation = document.getElementById('apikeyLocation');
+            if (apikeyKey) auth.key = apikeyKey.value.trim();
+            if (apikeyValue) auth.value = apikeyValue.value.trim();
+            if (apikeyLocation) auth.location = apikeyLocation.value;
+            break;
+    }
+    
+    return auth;
+}
+
+getBody() {
+    const bodyTypeSelect = document.getElementById('bodyType');
+    if (!bodyTypeSelect) return { type: 'none' };
+    
+    const bodyType = bodyTypeSelect.value;
+    const body = { type: bodyType };
+    
+    switch (bodyType) {
+        case 'json':
+            const jsonInput = document.getElementById('jsonInput');
+            if (jsonInput) {
+                try {
+                    body.data = JSON.parse(jsonInput.value.trim() || '{}');
+                } catch (e) {
+                    body.data = jsonInput.value.trim();
+                }
+            }
+            break;
+            
+        case 'raw':
+            const rawInput = document.getElementById('rawInput');
+            if (rawInput) body.data = rawInput.value.trim();
+            break;
+            
+        case 'form':
+            const formData = [];
+            const container = document.getElementById('formDataContainer');
+            if (container) {
+                container.querySelectorAll('.key-value-pair').forEach(pair => {
+                    const key = pair.querySelector('.form-key')?.value?.trim();
+                    const value = pair.querySelector('.form-value')?.value?.trim();
+                    if (key && value) {
+                        formData.push({ key, value });
+                    }
+                });
+            }
+            body.data = formData;
+            break;
+    }
+    
+    return body;
+}
+
+// Enhanced addParamRow, addHeaderRow, etc. to support loading with values
+addParamRow(key = '', value = '') {
+    const container = document.getElementById('paramsContainer');
+    if (!container) return;
+    
+    const row = document.createElement('div');
+    row.className = 'key-value-pair';
+    row.innerHTML = `
+        <input type="text" class="param-key" placeholder="Parameter name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()">
+        <input type="text" class="param-value" placeholder="Parameter value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()">
+        <button class="remove-btn" onclick="this.parentElement.remove(); updateCurlCommand();">×</button>
+    `;
+    container.appendChild(row);
+}
+
+addHeaderRow(key = '', value = '') {
+    const container = document.getElementById('headersContainer');
+    if (!container) return;
+    
+    const row = document.createElement('div');
+    row.className = 'key-value-pair';
+    row.innerHTML = `
+        <input type="text" class="header-key" placeholder="Header name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()">
+        <input type="text" class="header-value" placeholder="Header value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()">
+        <button class="remove-btn" onclick="this.parentElement.remove(); updateCurlCommand();">×</button>
+    `;
+    container.appendChild(row);
+}
+
+addCookieRow(key = '', value = '') {
+    const container = document.getElementById('cookiesContainer');
+    if (!container) return;
+    
+    const row = document.createElement('div');
+    row.className = 'key-value-pair';
+    row.innerHTML = `
+        <input type="text" class="cookie-key" placeholder="Cookie name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()">
+        <input type="text" class="cookie-value" placeholder="Cookie value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()">
+        <button class="remove-btn" onclick="this.parentElement.remove(); updateCurlCommand();">×</button>
+    `;
+    container.appendChild(row);
+}
+
+addFormDataRow(key = '', value = '') {
+    const container = document.getElementById('formDataContainer');
+    if (!container) return;
+    
+    const row = document.createElement('div');
+    row.className = 'key-value-pair';
+    row.innerHTML = `
+        <input type="text" class="form-key" placeholder="Field name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()">
+        <input type="text" class="form-value" placeholder="Field value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()">
+        <button class="remove-btn" onclick="this.parentElement.remove(); updateCurlCommand();">×</button>
+    `;
+    container.appendChild(row);
+}
+
+// Utility method
+escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
+
+
+
+
+
 
     updateCurlCommand() {
         const curlCode = document.getElementById('curlCode');
@@ -573,52 +760,86 @@ class RequestManager {
         }
     }
 
-    processRequestData(requestData) {
-        // Replace environment variables in all fields
-        const processed = this.deepClone(requestData);
-        
-        if (window.EnvironmentManager && window.EnvironmentManager.replaceVariables) {
+    // Fixed processRequestData method in request-manager.js
+processRequestData(requestData) {
+    // Replace environment variables in all fields
+    const processed = this.deepClone(requestData);
+    
+    if (window.EnvironmentManager && window.EnvironmentManager.replaceVariables) {
+        // URL
+        if (processed.url && typeof processed.url === 'string') {
             processed.url = window.EnvironmentManager.replaceVariables(processed.url);
-            
+        }
+        
+        // Headers
+        if (Array.isArray(processed.headers)) {
             processed.headers = processed.headers.map(header => ({
-                key: header.key,
-                value: window.EnvironmentManager.replaceVariables(header.value)
+                key: header.key || '',
+                value: window.EnvironmentManager.replaceVariables(header.value || '')
             }));
-            
+        }
+        
+        // Params
+        if (Array.isArray(processed.params)) {
             processed.params = processed.params.map(param => ({
-                key: param.key,
-                value: window.EnvironmentManager.replaceVariables(param.value)
+                key: param.key || '',
+                value: window.EnvironmentManager.replaceVariables(param.value || '')
             }));
-            
+        }
+        
+        // Cookies
+        if (Array.isArray(processed.cookies)) {
             processed.cookies = processed.cookies.map(cookie => ({
-                key: cookie.key,
-                value: window.EnvironmentManager.replaceVariables(cookie.value)
+                key: cookie.key || '',
+                value: window.EnvironmentManager.replaceVariables(cookie.value || '')
             }));
-            
-            // Process auth
+        }
+        
+        // Process auth
+        if (processed.auth && typeof processed.auth === 'object') {
             if (processed.auth.type === 'bearer' && processed.auth.token) {
                 processed.auth.token = window.EnvironmentManager.replaceVariables(processed.auth.token);
             } else if (processed.auth.type === 'basic') {
-                processed.auth.username = window.EnvironmentManager.replaceVariables(processed.auth.username);
-                processed.auth.password = window.EnvironmentManager.replaceVariables(processed.auth.password);
+                if (processed.auth.username) {
+                    processed.auth.username = window.EnvironmentManager.replaceVariables(processed.auth.username);
+                }
+                if (processed.auth.password) {
+                    processed.auth.password = window.EnvironmentManager.replaceVariables(processed.auth.password);
+                }
             } else if (processed.auth.type === 'apikey') {
-                processed.auth.value = window.EnvironmentManager.replaceVariables(processed.auth.value);
-            }
-            
-            // Process body
-            if (processed.body.type === 'json' && processed.body.data) {
-                processed.body.data = window.EnvironmentManager.replaceVariables(processed.body.data);
-            } else if (processed.body.type === 'form' && processed.body.data) {
-                Object.keys(processed.body.data).forEach(key => {
-                    processed.body.data[key] = window.EnvironmentManager.replaceVariables(processed.body.data[key]);
-                });
-            } else if (processed.body.type === 'raw' && processed.body.data) {
-                processed.body.data = window.EnvironmentManager.replaceVariables(processed.body.data);
+                if (processed.auth.value) {
+                    processed.auth.value = window.EnvironmentManager.replaceVariables(processed.auth.value);
+                }
             }
         }
         
-        return processed;
+        // Process body
+        if (processed.body && typeof processed.body === 'object') {
+            if (processed.body.type === 'json' && processed.body.data) {
+                if (typeof processed.body.data === 'string') {
+                    processed.body.data = window.EnvironmentManager.replaceVariables(processed.body.data);
+                }
+            } else if (processed.body.type === 'form' && processed.body.data) {
+                if (Array.isArray(processed.body.data)) {
+                    processed.body.data = processed.body.data.map(field => ({
+                        key: field.key || '',
+                        value: window.EnvironmentManager.replaceVariables(field.value || '')
+                    }));
+                } else if (typeof processed.body.data === 'object') {
+                    Object.keys(processed.body.data).forEach(key => {
+                        if (typeof processed.body.data[key] === 'string') {
+                            processed.body.data[key] = window.EnvironmentManager.replaceVariables(processed.body.data[key]);
+                        }
+                    });
+                }
+            } else if (processed.body.type === 'raw' && processed.body.data && typeof processed.body.data === 'string') {
+                processed.body.data = window.EnvironmentManager.replaceVariables(processed.body.data);
+            }
+        }
     }
+    
+    return processed;
+}
 
     getBodyContent(body) {
         switch (body.type) {
@@ -979,13 +1200,6 @@ Check the browser console for more details.</pre>
         }
     }
 
-    // Utility methods
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
 
     formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';

@@ -251,10 +251,169 @@ class UI {
 
         this.currentActiveSection = sectionName;
 
+        // Update sidebar content based on section
+        this.updateSidebarForSection(sectionName);
+
+        // Always show workspace for history
+        if (sectionName === 'history') {
+            const workspaceSection = document.getElementById('workspace');
+            if (workspaceSection) {
+                workspaceSection.classList.add('active');
+            }
+        }
+
         // Trigger section-specific initialization
         this.onSectionChange(sectionName);
 
         console.log(`📄 Switched to section: ${sectionName}`);
+    }
+
+    // Add this new method to the UI class
+    updateSidebarForSection(sectionName) {
+        const sidebar = document.getElementById('requestsSidebar');
+        if (!sidebar) return;
+
+        const requestsHeader = sidebar.querySelector('.requests-header');
+        const requestsList = sidebar.querySelector('.requests-list');
+        
+        if (!requestsHeader || !requestsList) return;
+
+        if (sectionName === 'history') {
+            // Update sidebar for history
+            requestsHeader.innerHTML = `
+                <h3>History</h3>
+                <div class="collection-actions">
+                    <button class="collection-action-btn" onclick="clearHistory()" title="Clear History">
+                        🗑️ Clear All
+                    </button>
+                    <button class="collection-action-btn" onclick="exportHistory()" title="Export History">
+                        📤 Export
+                    </button>
+                </div>
+            `;
+            
+            // Load history items
+            this.loadHistoryToSidebar();
+            
+        } else if (sectionName === 'collections') {
+            // Update sidebar for collections
+            requestsHeader.innerHTML = `
+                <h3>Collections</h3>
+                <div class="collection-actions">
+                    <button class="collection-action-btn" onclick="createCollection()" title="New Collection">
+                        📁 New Collection
+                    </button>
+                </div>
+            `;
+            
+            requestsList.innerHTML = `
+                <div class="empty-requests">
+                    <h4>Collections</h4>
+                    <p>Manage your collections in the main area</p>
+                </div>
+            `;
+            
+        } else {
+            // Default to requests view
+            requestsHeader.innerHTML = `
+                <h3>Requests</h3>
+                <div class="collection-selector">
+                    <select id="requestsCollectionSelect" class="collection-dropdown" onchange="loadCollectionRequests()">
+                        <option value="">Select Collection</option>
+                    </select>
+                </div>
+                <div class="collection-actions">
+                    <button class="collection-action-btn" onclick="createCollection()" title="New Collection">
+                        📁 New Collection
+                    </button>
+                </div>
+            `;
+            
+            // Re-initialize collection dropdown
+            if (window.updateCollectionDropdown) {
+                window.updateCollectionDropdown();
+            }
+            
+            requestsList.innerHTML = `
+                <div class="empty-requests">
+                    <h4>No Collection Selected</h4>
+                    <p>Choose a collection to view its requests</p>
+                </div>
+            `;
+        }
+    }
+
+    // Add this new method to the UI class
+    loadHistoryToSidebar() {
+        const requestsList = document.getElementById('requestsList');
+        if (!requestsList || !window.HistoryManager) return;
+        
+        const history = window.HistoryManager.history || [];
+        
+        if (history.length === 0) {
+            requestsList.innerHTML = `
+                <div class="empty-requests">
+                    <h4>No History</h4>
+                    <p>Your request history will appear here</p>
+                </div>
+            `;
+            return;
+        }
+        
+        requestsList.innerHTML = history.slice(0, 50).map((item, index) => {
+            const statusClass = this.getStatusClass(item.response.status);
+            return `
+                <div class="request-item history-item" onclick="loadHistoryToWorkspace(${index})">
+                    <div class="request-method method-${item.request.method.toLowerCase()}">${item.request.method}</div>
+                    <div class="request-details">
+                        <div class="request-name">${this.escapeHtml(this.getUrlPath(item.request.url))}</div>
+                        <div class="request-url">${this.formatRelativeTime(item.timestamp)}</div>
+                        <div class="request-status">
+                            <span class="status-badge status-${statusClass}">${item.response.status}</span>
+                            <span class="duration">${item.response.duration}ms</span>
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <button class="request-action-btn" onclick="event.stopPropagation(); saveHistoryToCollection(${index})" title="Save">
+                            💾
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Add these helper methods to the UI class
+    formatRelativeTime(timestamp) {
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diffMs = now - time;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        
+        return this.formatDate(timestamp);
+    }
+
+    getStatusClass(status) {
+        if (status >= 200 && status < 300) return '200';
+        if (status >= 300 && status < 400) return '300';
+        if (status >= 400 && status < 500) return '400';
+        if (status >= 500) return '500';
+        return 'unknown';
+    }
+
+    getUrlPath(url) {
+        try {
+            return new URL(url).pathname;
+        } catch (e) {
+            return url;
+        }
     }
 
     onSectionChange(sectionName) {

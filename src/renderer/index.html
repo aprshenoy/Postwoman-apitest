@@ -1,10 +1,12 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PostWoman - API Testing Tool</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="environment-variables.css">
 </head>
 <body>
     <div class="app-container">
@@ -16,9 +18,11 @@
                 <span class="version">v1.0.0</span>
             </div>
             <div class="header-controls">
-                <select id="currentEnvironment" title="Current Environment">
-                    <option value="">Select Environment</option>
-                </select>
+                <div class="environment-selector">
+                    <select id="currentEnvironment" class="environment-dropdown" title="Current Environment">
+                        <option value="">Select Environment</option>
+                    </select>
+                </div>
                 <button class="header-btn" onclick="showNotifications()" title="Notifications">
                     🔔
                 </button>
@@ -30,31 +34,49 @@
 
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Sidebar -->
+            <!-- Icon Sidebar -->
             <aside class="sidebar">
                 <nav class="nav-menu">
-                    <button class="nav-item active" data-section="workspace" onclick="showSection('workspace')">
+                    <button class="nav-item active" data-section="workspace" data-tooltip="Workspace" onclick="showSection('workspace')">
                         <span class="nav-icon">🚀</span>
-                        <span class="nav-label">Workspace</span>
                     </button>
-                    <button class="nav-item" data-section="collections" onclick="showSection('collections')">
+                    <button class="nav-item" data-section="collections" data-tooltip="Collections" onclick="showSection('collections')">
                         <span class="nav-icon">📁</span>
-                        <span class="nav-label">Collections</span>
                     </button>
-                    <button class="nav-item" data-section="history" onclick="showSection('history')">
+                    <button class="nav-item" data-section="history" data-tooltip="History" onclick="showSection('history')">
                         <span class="nav-icon">📜</span>
-                        <span class="nav-label">History</span>
                     </button>
-                    <button class="nav-item" data-section="environments" onclick="showSection('environments')">
+                    <button class="nav-item" data-section="environments" data-tooltip="Environments" onclick="showSection('environments')">
                         <span class="nav-icon">🌍</span>
-                        <span class="nav-label">Environments</span>
                     </button>
-                    <button class="nav-item" data-section="teams" onclick="showSection('teams')">
+                    <button class="nav-item" data-section="teams" data-tooltip="Teams" onclick="showSection('teams')">
                         <span class="nav-icon">👥</span>
-                        <span class="nav-label">Teams</span>
                     </button>
                 </nav>
             </aside>
+
+            <!-- Requests Sidebar -->
+<aside class="requests-sidebar" id="requestsSidebar">
+    <div class="requests-header">
+        <h3>Requests</h3>
+        <div class="collection-selector">
+            <select id="requestsCollectionSelect" class="collection-dropdown" onchange="loadCollectionRequests()">
+                <option value="">Select Collection</option>
+            </select>
+        </div>
+        <div class="collection-actions">
+            <button class="collection-action-btn" onclick="createCollection()" title="New Collection">
+                📁 New Collection
+            </button>
+        </div>
+    </div>
+    <div class="requests-list" id="requestsList">
+        <div class="empty-requests">
+            <h4>No Collection Selected</h4>
+            <p>Choose a collection to view its requests</p>
+        </div>
+    </div>
+</aside>
 
             <!-- Content Area -->
             <main class="content-area">
@@ -62,14 +84,20 @@
                 <section id="workspace" class="content-section active">
                     <div class="workspace-header">
                         <h2>API Request Workspace</h2>
-                        <div class="workspace-actions">
-                            <button class="btn btn-secondary" onclick="saveCurrentRequest()">💾 Save Request</button>
-                            <button class="btn btn-secondary" onclick="toggleCurlSection()">🔧 Show cURL</button>
-                        </div>
+<div class="workspace-actions">
+    <button class="btn btn-secondary" onclick="createNewRequest()">🆕 New Request</button>
+    <button class="btn btn-secondary" onclick="saveCurrentRequest()">💾 Save Request</button>
+    <button class="btn btn-secondary" onclick="toggleCurlSection()">🔧 Show cURL</button>
+</div>
                     </div>
 
                     <!-- Request Builder -->
                     <div class="request-builder">
+                        <!-- Request Name Input -->
+                        <div class="request-name-section" style="margin-bottom: 16px;">
+                            <input type="text" id="requestName" class="request-name-input" placeholder="Untitled Request" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 16px; font-weight: 600;">
+                        </div>
+
                         <div class="request-line">
                             <select id="method" class="method-select" onchange="updateCurlCommand()">
                                 <option value="GET">GET</option>
@@ -374,6 +402,7 @@
     <script src="js/teams-manager.js"></script>
     <script src="js/import-manager.js"></script>
     <script src="js/user-manager.js"></script>
+    <script src="js/environment-ui.js"></script>
     <script src="js/app.js"></script>
 
     <!-- IMPORTANT: Global Manager Setup and Verification -->
@@ -447,27 +476,65 @@
                 if (window.Core) {
                     window.Core.emit('managers-ready');
                 }
+                
+                // Initialize requests sidebar
+                initializeRequestsSidebar();
             });
         })();
     </script>
 
-    <!-- Complete Global Function Aliases - Covers ALL manager methods called from HTML -->
+    <!-- Complete Global Function Aliases -->
     <script>
         // Complete Global Function Aliases - Covers ALL manager methods called from HTML
         console.log('🔧 Setting up complete global function aliases...');
 
+        // ================== HISTORY SIDEBAR FUNCTIONS ==================
+window.loadHistoryToWorkspace = (index) => {
+    try {
+        if (window.HistoryManager && window.HistoryManager.loadFromHistory) {
+            window.HistoryManager.loadFromHistory(index);
+            
+            // Update active state
+            document.querySelectorAll('.request-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const clickedItem = document.querySelector(`[onclick="loadHistoryToWorkspace(${index})"]`);
+            if (clickedItem) {
+                clickedItem.classList.add('active');
+            }
+        } else {
+            console.warn('HistoryManager.loadFromHistory not available yet');
+        }
+    } catch (error) {
+        console.error('Error in loadHistoryToWorkspace:', error);
+    }
+};
+
+window.saveHistoryToCollection = (index) => {
+    try {
+        if (window.HistoryManager && window.HistoryManager.saveToCollection) {
+            window.HistoryManager.saveToCollection(index);
+        } else {
+            console.warn('HistoryManager.saveToCollection not available yet');
+        }
+    } catch (error) {
+        console.error('Error in saveHistoryToCollection:', error);
+    }
+};
+
         // ================== UI METHODS ==================
         window.showSection = (section) => {
-            try {
-                if (window.UI && typeof window.UI.showSection === 'function') {
-                    window.UI.showSection(section);
-                } else {
-                    console.warn('UI.showSection not available yet');
-                }
-            } catch (error) {
-                console.error('Error in showSection:', error);
-            }
-        };
+    try {
+        if (window.UI && typeof window.UI.showSection === 'function') {
+            window.UI.showSection(section);
+        } else {
+            console.warn('UI.showSection not available yet');
+        }
+    } catch (error) {
+        console.error('Error in showSection:', error);
+    }
+};
 
         window.switchTab = (tab) => {
             try {
@@ -786,66 +853,6 @@
             };
         });
 
-        // ================== CRITICAL FIX: DIRECT MANAGER ACCESS ==================
-        // Ensure managers are accessible with their methods after initialization
-        setTimeout(() => {
-            // Make sure EnvironmentManager is globally accessible with all methods
-            if (window.EnvironmentManager) {
-                const envManager = window.EnvironmentManager;
-                
-                // Verify all methods are accessible
-                ['editEnvironment', 'setActiveEnvironment', 'duplicateEnvironment', 'deleteEnvironment', 
-                 'openModal', 'exportEnvironment', 'createEnvironment', 'importEnvironments', 
-                 'exportEnvironments', 'closeModal', 'loadVariables', 'addVariable', 'saveEnvironment'].forEach(method => {
-                    if (typeof envManager[method] === 'function') {
-                        console.log(`✅ EnvironmentManager.${method} is accessible`);
-                    } else {
-                        console.error(`❌ EnvironmentManager.${method} is NOT accessible`);
-                    }
-                });
-            }
-
-            // Same for CollectionManager
-            if (window.CollectionManager) {
-                const colManager = window.CollectionManager;
-                
-                ['openCollection', 'deleteCollection', 'duplicateCollection', 'renameCollection', 
-                 'showCollectionMenu', 'exportCollection', 'createCollection'].forEach(method => {
-                    if (typeof colManager[method] === 'function') {
-                        console.log(`✅ CollectionManager.${method} is accessible`);
-                    } else {
-                        console.error(`❌ CollectionManager.${method} is NOT accessible`);
-                    }
-                });
-            }
-
-            // Same for TeamsManager
-            if (window.TeamsManager) {
-                const teamManager = window.TeamsManager;
-                
-                ['createTeam', 'joinTeam', 'selectTeam', 'deleteTeam'].forEach(method => {
-                    if (typeof teamManager[method] === 'function') {
-                        console.log(`✅ TeamsManager.${method} is accessible`);
-                    } else {
-                        console.error(`❌ TeamsManager.${method} is NOT accessible`);
-                    }
-                });
-            }
-
-            // Same for HistoryManager
-            if (window.HistoryManager) {
-                const histManager = window.HistoryManager;
-                
-                ['loadFromHistory', 'showDetails', 'removeFromHistory'].forEach(method => {
-                    if (typeof histManager[method] === 'function') {
-                        console.log(`✅ HistoryManager.${method} is accessible`);
-                    } else {
-                        console.error(`❌ HistoryManager.${method} is NOT accessible`);
-                    }
-                });
-            }
-        }, 1000);
-
         // ================== HISTORY MANAGER METHODS ==================
         window.exportHistory = () => {
             try {
@@ -918,6 +925,57 @@
             };
         });
 
+        // ================== REQUESTS SIDEBAR FUNCTIONS ==================
+        window.loadCollectionRequests = () => {
+            try {
+                const select = document.getElementById('requestsCollectionSelect');
+                const collectionId = select ? select.value : '';
+                updateRequestsList(collectionId);
+            } catch (error) {
+                console.error('Error in loadCollectionRequests:', error);
+            }
+        };
+
+        window.loadRequestToWorkspace = (collectionId, requestIndex) => {
+            try {
+                if (window.CollectionManager && typeof window.CollectionManager.loadRequestFromCollection === 'function') {
+                    window.CollectionManager.loadRequestFromCollection(collectionId, requestIndex);
+                    
+                    // Update active state
+                    document.querySelectorAll('.request-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    
+                    const clickedItem = document.querySelector(`[onclick="loadRequestToWorkspace('${collectionId}', ${requestIndex})"]`);
+                    if (clickedItem) {
+                        clickedItem.classList.add('active');
+                    }
+                } else {
+                    console.warn('CollectionManager.loadRequestFromCollection not available yet');
+                }
+            } catch (error) {
+                console.error('Error in loadRequestToWorkspace:', error);
+            }
+        };
+
+        window.createNewRequest = () => {
+            try {
+                if (window.UI && typeof window.UI.clearForm === 'function') {
+                    window.UI.clearForm();
+                    
+                    // Set focus to request name
+                    const nameInput = document.getElementById('requestName');
+                    if (nameInput) {
+                        nameInput.focus();
+                    }
+                } else {
+                    console.warn('UI.clearForm not available yet');
+                }
+            } catch (error) {
+                console.error('Error in createNewRequest:', error);
+            }
+        };
+
         // ================== UTILITY FUNCTIONS ==================
         // Placeholder functions for header controls
         window.showNotifications = () => {
@@ -936,35 +994,7 @@
             }
         };
 
-        // ================== ELECTRON WORKAROUNDS ==================
-        // Replace prompt() calls with modern alternatives for Electron
-        window.prompt = window.prompt || function(message, defaultValue = '') {
-            // For Electron environments where prompt() is disabled
-            const result = window.showInputDialog ? 
-                window.showInputDialog(message, defaultValue) : 
-                defaultValue || 'New Item';
-            return result;
-        };
-
         console.log('✅ Complete global function aliases set up successfully');
-
-        // ================== DEBUGGING HELPERS ==================
-        // Global debug function to check what methods are available
-        window.debugManagers = function() {
-            const managers = ['UI', 'CollectionManager', 'HistoryManager', 'EnvironmentManager', 
-                             'TeamsManager', 'RequestManager', 'ImportManager', 'UserManager'];
-            
-            managers.forEach(managerName => {
-                const manager = window[managerName];
-                if (manager) {
-                    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(manager))
-                        .filter(method => typeof manager[method] === 'function' && method !== 'constructor');
-                    console.log(`${managerName} methods:`, methods);
-                } else {
-                    console.log(`${managerName}: NOT AVAILABLE`);
-                }
-            });
-        };
         
         // Final initialization check
         setTimeout(() => {
@@ -979,13 +1009,153 @@
             console.log('- UserManager:', window.UserManager ? '✅' : '❌');
             console.log('- ImportManager:', window.ImportManager ? '✅' : '❌');
             console.log('- App:', window.app ? '✅' : '❌');
-            
-            // Run debug check
-            if (window.debugManagers) {
-                console.log('🔍 Running manager debug check...');
-                window.debugManagers();
-            }
         }, 3000);
+    </script>
+
+    <!-- Requests Sidebar JavaScript -->
+    <script>
+        // Initialize Requests Sidebar
+// Add this improved function to the index.html script section
+
+// Fixed initialization for requests sidebar
+function initializeRequestsSidebar() {
+    console.log('🔧 Initializing requests sidebar...');
+    
+    // Wait for CollectionManager to be ready
+    const waitForCollectionManager = () => {
+        if (window.CollectionManager && window.CollectionManager.collections) {
+            updateCollectionDropdown();
+            
+            // Listen for collection updates
+            if (window.Core && typeof window.Core.on === 'function') {
+                window.Core.on('collectionsUpdated', updateCollectionDropdown);
+            }
+            
+            // Also listen for direct collection manager events
+            if (window.CollectionManager.saveCollections) {
+                const originalSave = window.CollectionManager.saveCollections;
+                window.CollectionManager.saveCollections = function() {
+                    originalSave.call(this);
+                    updateCollectionDropdown();
+                    
+                    // Update current requests list if a collection is selected
+                    const select = document.getElementById('requestsCollectionSelect');
+                    if (select && select.value) {
+                        updateRequestsList(select.value);
+                    }
+                };
+            }
+        } else {
+            // Retry after a short delay
+            setTimeout(waitForCollectionManager, 100);
+        }
+    };
+    
+    waitForCollectionManager();
+}
+
+function updateCollectionDropdown() {
+    const select = document.getElementById('requestsCollectionSelect');
+    if (!select || !window.CollectionManager) return;
+    
+    const collections = window.CollectionManager.collections || [];
+    
+    // Store current selection
+    const currentValue = select.value;
+    
+    select.innerHTML = '<option value="">Select Collection</option>';
+    
+    collections.forEach(collection => {
+        const option = document.createElement('option');
+        option.value = collection.id;
+        option.textContent = `${collection.name} (${collection.requests.length})`;
+        select.appendChild(option);
+    });
+    
+    // Restore selection if it still exists
+    if (currentValue && collections.find(c => c.id === currentValue)) {
+        select.value = currentValue;
+        updateRequestsList(currentValue);
+    }
+    
+    console.log(`📁 Updated collection dropdown with ${collections.length} collections`);
+}
+        function updateRequestsList(collectionId) {
+            const container = document.getElementById('requestsList');
+            if (!container || !window.CollectionManager) return;
+            
+            if (!collectionId) {
+                container.innerHTML = `
+                    <div class="empty-requests">
+                        <h4>No Collection Selected</h4>
+                        <p>Choose a collection to view its requests</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const collection = window.CollectionManager.getCollection(collectionId);
+            if (!collection) return;
+            
+            if (collection.requests.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-requests">
+                        <h4>No Requests</h4>
+                        <p>This collection is empty</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = collection.requests.map((request, index) => `
+                <div class="request-item" onclick="loadRequestToWorkspace('${collectionId}', ${index})">
+                    <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
+                    <div class="request-details">
+                        <div class="request-name">${escapeHtml(request.name || 'Untitled Request')}</div>
+                        <div class="request-url">${escapeHtml(getUrlPath(request.url))}</div>
+                    </div>
+                    <div class="request-actions">
+                        <button class="request-action-btn" onclick="event.stopPropagation(); editRequest('${collectionId}', ${index})" title="Edit">
+                            ✏️
+                        </button>
+                        <button class="request-action-btn" onclick="event.stopPropagation(); removeRequestFromCollection('${collectionId}', ${index})" title="Delete">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getUrlPath(url) {
+            try {
+                return new URL(url).pathname;
+            } catch (e) {
+                return url;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Update requests sidebar when collections change
+        setTimeout(() => {
+            if (window.CollectionManager && window.CollectionManager.saveCollections) {
+                const originalSave = window.CollectionManager.saveCollections;
+                window.CollectionManager.saveCollections = function() {
+                    originalSave.call(this);
+                    updateCollectionDropdown();
+                    
+                    // Update current requests list if a collection is selected
+                    const select = document.getElementById('requestsCollectionSelect');
+                    if (select && select.value) {
+                        updateRequestsList(select.value);
+                    }
+                };
+            }
+        }, 1000);
     </script>
 </body>
 </html>

@@ -110,20 +110,25 @@ class EnvironmentManager {
         return this.environments[env] || {};
     }
 
-    replaceVariables(text, envName = null) {
-        if (!text) return text;
-        
-        const envVars = this.getEnvironmentVariables(envName);
-        let result = text;
-        
-        // Replace {{variableName}} with actual values
-        Object.entries(envVars).forEach(([key, value]) => {
-            const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-            result = result.replace(regex, value);
-        });
-        
-        return result;
+replaceVariables(text, envName = null) {
+    // Handle non-string values
+    if (!text || typeof text !== 'string') {
+        return text;
     }
+    
+    const envVars = this.getEnvironmentVariables(envName);
+    let result = text;
+    
+    // Replace {{variableName}} with actual values
+    Object.entries(envVars).forEach(([key, value]) => {
+        // Ensure value is a string
+        const stringValue = String(value || '');
+        const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+        result = result.replace(regex, stringValue);
+    });
+    
+    return result;
+}
 
     openModal() {
         const modal = document.getElementById('envModal');

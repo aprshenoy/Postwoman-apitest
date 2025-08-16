@@ -458,46 +458,12 @@ showCollectionMenu(collectionId, event) {
     ];
 
     if (window.UI && window.UI.showContextMenu) {
-        window.UI.showContextMenu(event, menuItems);
+        window.UI.showContextMenu(event, menuItems)
+        ;
     }
 }
 
-// Fix renderRequestsList method
-renderRequestsList(requests, collectionId) {
-    if (requests.length === 0) {
-        return '<p style="color: #64748b; text-align: center; padding: 2rem;">No requests in this collection yet</p>';
-    }
 
-    return requests.map((request, index) => `
-        <div class="request-item" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-bottom: 0.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1;">
-                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                        <span class="method-badge method-${request.method.toLowerCase()}" style="margin-right: 0.75rem;">
-                            ${request.method}
-                        </span>
-                        <strong>${this.escapeHtml(request.name || 'Untitled Request')}</strong>
-                    </div>
-                    <div style="color: #64748b; font-size: 0.9rem; word-break: break-all;">
-                        ${this.escapeHtml(request.url)}
-                    </div>
-                    ${request.description ? `<div style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem;">${this.escapeHtml(request.description)}</div>` : ''}
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn-sm btn-edit" onclick="loadRequestFromCollection('${collectionId}', ${index})">
-                        Load
-                    </button>
-                    <button class="btn-sm btn-edit" onclick="editRequest('${collectionId}', ${index})">
-                        Edit
-                    </button>
-                    <button class="btn-sm btn-delete" onclick="removeRequestFromCollection('${collectionId}', ${index})">
-                        ×
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
 
     getMethodCounts(requests) {
         const methods = requests.reduce((acc, req) => {
@@ -702,49 +668,7 @@ handleAddCurrentRequestToCollection(event, collectionId) {
 }
    
 
-    openCollection(collectionId) {
-        const collection = this.getCollection(collectionId);
-        if (!collection) return;
-        
-        this.currentCollection = collection;
-        
-        const modalBody = document.getElementById('collectionModalBody');
-        const modalTitle = document.getElementById('collectionModalTitle');
-        
-        if (modalTitle) modalTitle.textContent = collection.name;
-        
-        if (modalBody) {
-            modalBody.innerHTML = `
-                <div class="collection-details">
-                    <div class="collection-meta">
-                        <p><strong>Description:</strong> ${collection.description || 'No description'}</p>
-                        <p><strong>Created:</strong> ${this.formatDate(collection.createdAt)}</p>
-                        <p><strong>Last Updated:</strong> ${this.formatDate(collection.updatedAt)}</p>
-                        <p><strong>Requests:</strong> ${collection.requests.length}</p>
-                    </div>
-                    
-                    <div class="collection-actions" style="margin: 1rem 0; padding: 1rem 0; border-top: 1px solid #e2e8f0;">
-                        <button class="action-btn" onclick="CollectionManager.addCurrentRequestToCollection('${collection.id}')">
-                            ➕ Add Current Request
-                        </button>
-                        <button class="action-btn" onclick="CollectionManager.exportCollection('${collection.id}')">
-                            📤 Export Collection
-                        </button>
-                        <button class="action-btn" onclick="CollectionManager.runCollection('${collection.id}')">
-                            ▶️ Run Collection
-                        </button>
-                    </div>
-                    
-                    <div class="requests-list">
-                        <h4 style="margin-bottom: 1rem; color: #0ea5e9;">Requests in Collection</h4>
-                        ${this.renderRequestsList(collection.requests, collection.id)}
-                    </div>
-                </div>
-            `;
-        }
-        
-        this.showModal('collectionModal');
-    }
+
 
     closeModal() {
         this.hideModal('collectionModal');
@@ -779,56 +703,321 @@ handleAddCurrentRequestToCollection(event, collectionId) {
         this.showNotification('Request Removed', 'Request removed from collection');
     }
 
-    loadRequestFromCollection(collectionId, requestIndex) {
-        const collection = this.getCollection(collectionId);
-        if (!collection || !collection.requests[requestIndex]) return;
-        
-        const request = collection.requests[requestIndex];
-        
-        if (window.RequestManager && window.RequestManager.loadRequest) {
-            window.RequestManager.loadRequest(request);
-        }
-        
-        // Switch to workspace and close modal
-        if (window.UI && window.UI.showSection) {
-            window.UI.showSection('workspace');
-        }
-        this.closeModal();
-        
-        this.showNotification('Request Loaded', `"${request.name}" loaded into workspace`);
+// Add these enhancements to your CollectionManager class
+
+// Enhanced saveCurrentRequest method
+saveCurrentRequest() {
+    if (!window.RequestManager || !window.RequestManager.getCurrentRequestData) {
+        this.showNotification('Error', 'Request Manager not available', { type: 'error' });
+        return;
     }
-
-
-
-    saveCurrentRequest() {
-        if (!window.RequestManager || !window.RequestManager.getCurrentRequestData) {
-            this.showNotification('Error', 'Request Manager not available', { type: 'error' });
-            return;
-        }
-        
-        const requestData = window.RequestManager.getCurrentRequestData();
-        if (!requestData.url) {
-            alert('Please enter a URL for the request');
-            return;
-        }
-        
-        // Pre-fill request name
+    
+    const requestData = window.RequestManager.getCurrentRequestData();
+    if (!requestData.url) {
+        alert('Please enter a URL for the request');
+        return;
+    }
+    
+    // Use request name if provided, otherwise generate from method and URL
+    let defaultName = requestData.name;
+    if (!defaultName) {
         try {
             const urlObj = new URL(requestData.url);
-            const nameInput = document.getElementById('requestName');
-            if (nameInput) {
-                nameInput.value = `${requestData.method} ${urlObj.pathname}`;
-            }
+            defaultName = `${requestData.method} ${urlObj.pathname}`;
         } catch (e) {
-            const nameInput = document.getElementById('requestName');
-            if (nameInput) {
-                nameInput.value = `${requestData.method} Request`;
-            }
+            defaultName = `${requestData.method} Request`;
+        }
+    }
+    
+    // Pre-fill request name
+    const nameInput = document.getElementById('requestName');
+    if (nameInput) {
+        nameInput.value = defaultName;
+    }
+    
+    this.updateTargetCollectionSelect();
+    this.showModal('saveRequestModal');
+}
+
+// Enhanced loadRequestFromCollection method
+loadRequestFromCollection(collectionId, requestIndex) {
+    const collection = this.getCollection(collectionId);
+    if (!collection || !collection.requests[requestIndex]) return;
+    
+    const request = collection.requests[requestIndex];
+    
+    if (window.RequestManager && window.RequestManager.loadRequest) {
+        window.RequestManager.loadRequest(request);
+    }
+    
+    // Switch to workspace
+    if (window.UI && window.UI.showSection) {
+        window.UI.showSection('workspace');
+    }
+    
+    this.showNotification('Request Loaded', `"${request.name}" loaded into workspace`);
+}
+
+// Enhanced method to handle current request save with proper name handling
+handleSaveCurrentRequest(collectionId, requestName, description) {
+    if (!window.RequestManager || !window.RequestManager.getCurrentRequestData) {
+        this.showNotification('Error', 'Request Manager not available', { type: 'error' });
+        return;
+    }
+    
+    const requestData = window.RequestManager.getCurrentRequestData();
+    const collection = this.getCollection(collectionId);
+    if (!collection) return;
+    
+    // Use provided name or current name from workspace
+    const finalName = requestName || requestData.name || `${requestData.method} Request`;
+    
+    const request = {
+        id: this.generateId('req'),
+        name: finalName,
+        description: description || '',
+        method: requestData.method,
+        url: requestData.url,
+        headers: requestData.headers,
+        params: requestData.params,
+        cookies: requestData.cookies,
+        auth: requestData.auth,
+        body: requestData.body,
+        createdAt: new Date().toISOString()
+    };
+    
+    collection.requests.push(request);
+    collection.updatedAt = new Date().toISOString();
+    
+    this.saveCollections();
+    this.updateDisplay();
+    
+    // Update the workspace request name if it was auto-generated
+    const nameInput = document.getElementById('requestName');
+    if (nameInput && !nameInput.value.trim()) {
+        nameInput.value = finalName;
+    }
+    
+    this.showNotification('Request Saved', `Request "${finalName}" added to collection`);
+    
+    return request;
+}
+
+// Enhanced saveToCollection method to work with the save modal
+saveToCollection() {
+    const nameInput = document.getElementById('requestName');
+    const descriptionInput = document.getElementById('requestDescription');
+    const collectionInput = document.getElementById('targetCollection');
+    
+    const name = nameInput ? nameInput.value.trim() : '';
+    const description = descriptionInput ? descriptionInput.value.trim() : '';
+    const collectionId = collectionInput ? collectionInput.value : '';
+    
+    if (!name) {
+        alert('Please enter a request name');
+        return;
+    }
+    
+    if (!collectionId) {
+        alert('Please select a collection');
+        return;
+    }
+    
+    this.handleSaveCurrentRequest(collectionId, name, description);
+    this.closeSaveModal();
+    
+    // Refresh requests sidebar if it's showing this collection
+    const requestsSelect = document.getElementById('requestsCollectionSelect');
+    if (requestsSelect && requestsSelect.value === collectionId) {
+        if (window.updateRequestsList) {
+            window.updateRequestsList(collectionId);
+        }
+    }
+}
+
+// Enhanced renderRequestsList method with better styling and actions
+renderRequestsList(requests, collectionId) {
+    if (requests.length === 0) {
+        return '<p style="color: #64748b; text-align: center; padding: 2rem;">No requests in this collection yet</p>';
+    }
+
+    return requests.map((request, index) => `
+        <div class="request-item" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; margin-bottom: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;" onclick="loadRequestFromCollection('${collectionId}', ${index})">
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <span class="method-badge method-${request.method.toLowerCase()}" style="margin-right: 0.75rem;">
+                            ${request.method}
+                        </span>
+                        <strong>${this.escapeHtml(request.name || 'Untitled Request')}</strong>
+                    </div>
+                    <div style="color: #64748b; font-size: 0.9rem; word-break: break-all;">
+                        ${this.escapeHtml(this.truncateUrl(request.url))}
+                    </div>
+                    ${request.description ? `<div style="color: #64748b; font-size: 0.85rem; margin-top: 0.5rem;">${this.escapeHtml(request.description)}</div>` : ''}
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-sm btn-edit" onclick="event.stopPropagation(); loadRequestFromCollection('${collectionId}', ${index})" title="Load to Workspace">
+                        Load
+                    </button>
+                    <button class="btn-sm btn-edit" onclick="event.stopPropagation(); editRequest('${collectionId}', ${index})" title="Edit Request">
+                        Edit
+                    </button>
+                    <button class="btn-sm btn-delete" onclick="event.stopPropagation(); removeRequestFromCollection('${collectionId}', ${index})" title="Remove Request">
+                        ×
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Helper method to truncate URL for display
+truncateUrl(url, maxLength = 40) {
+    if (!url || url.length <= maxLength) return url;
+    
+    try {
+        const urlObj = new URL(url);
+        const path = urlObj.pathname + urlObj.search;
+        
+        if (path.length <= maxLength) {
+            return path;
         }
         
-        this.updateTargetCollectionSelect();
-        this.showModal('saveRequestModal');
+        return path.substring(0, maxLength - 3) + '...';
+    } catch (e) {
+        return url.substring(0, maxLength - 3) + '...';
     }
+}
+
+// Enhanced openCollection method with improved request display
+openCollection(collectionId) {
+    const collection = this.getCollection(collectionId);
+    if (!collection) return;
+    
+    this.currentCollection = collection;
+    
+    const modalBody = document.getElementById('collectionModalBody');
+    const modalTitle = document.getElementById('collectionModalTitle');
+    
+    if (modalTitle) modalTitle.textContent = collection.name;
+    
+    if (modalBody) {
+        modalBody.innerHTML = `
+            <div class="collection-details">
+                <div class="collection-meta">
+                    <p><strong>Description:</strong> ${collection.description || 'No description'}</p>
+                    <p><strong>Created:</strong> ${this.formatDate(collection.createdAt)}</p>
+                    <p><strong>Last Updated:</strong> ${this.formatDate(collection.updatedAt)}</p>
+                    <p><strong>Requests:</strong> ${collection.requests.length}</p>
+                </div>
+                
+                <div class="collection-actions" style="margin: 1rem 0; padding: 1rem 0; border-top: 1px solid #e2e8f0;">
+                    <button class="action-btn" onclick="CollectionManager.showAddRequestModal('${collection.id}')">
+                        ➕ Add Current Request
+                    </button>
+                    <button class="action-btn" onclick="exportCollection('${collection.id}')">
+                        📤 Export Collection
+                    </button>
+                    <button class="action-btn" onclick="runCollection('${collection.id}')">
+                        ▶️ Run Collection
+                    </button>
+                </div>
+                
+                <div class="requests-list">
+                    <h4 style="margin-bottom: 1rem; color: #0ea5e9;">Requests in Collection</h4>
+                    ${this.renderRequestsList(collection.requests, collection.id)}
+                </div>
+            </div>
+        `;
+    }
+    
+    this.showModal('collectionModal');
+}
+
+// New method to show add request modal with better UX
+showAddRequestModal(collectionId) {
+    if (!window.RequestManager || !window.RequestManager.getCurrentRequestData) {
+        this.showNotification('Error', 'Request Manager not available', { type: 'error' });
+        return;
+    }
+    
+    const requestData = window.RequestManager.getCurrentRequestData();
+    if (!requestData.url) {
+        alert('Please enter a URL for the request first');
+        return;
+    }
+    
+    // Close collection modal first
+    this.closeModal();
+    
+    // Pre-fill and show save modal
+    const defaultName = requestData.name || `${requestData.method} ${this.getUrlPath(requestData.url)}`;
+    
+    const nameInput = document.getElementById('requestName');
+    const descriptionInput = document.getElementById('requestDescription');
+    const collectionSelect = document.getElementById('targetCollection');
+    
+    if (nameInput) nameInput.value = defaultName;
+    if (descriptionInput) descriptionInput.value = '';
+    if (collectionSelect) {
+        this.updateTargetCollectionSelect();
+        collectionSelect.value = collectionId;
+    }
+    
+    this.showModal('saveRequestModal');
+}
+
+// Enhanced method to get all collections for dropdowns
+getCollectionsForDropdown() {
+    return this.collections.map(collection => ({
+        id: collection.id,
+        name: collection.name,
+        requestCount: collection.requests.length
+    }));
+}
+
+// Method to find requests across all collections
+findRequestsByName(searchTerm) {
+    const results = [];
+    
+    this.collections.forEach(collection => {
+        collection.requests.forEach((request, index) => {
+            if (request.name && request.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+                results.push({
+                    collectionId: collection.id,
+                    collectionName: collection.name,
+                    requestIndex: index,
+                    request: request
+                });
+            }
+        });
+    });
+    
+    return results;
+}
+
+// Method to get recent requests across all collections
+getRecentRequests(limit = 10) {
+    const allRequests = [];
+    
+    this.collections.forEach(collection => {
+        collection.requests.forEach((request, index) => {
+            allRequests.push({
+                collectionId: collection.id,
+                collectionName: collection.name,
+                requestIndex: index,
+                request: request,
+                createdAt: new Date(request.createdAt || collection.createdAt)
+            });
+        });
+    });
+    
+    // Sort by creation date (newest first) and limit
+    return allRequests
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, limit);
+}
 
     closeSaveModal() {
         this.hideModal('saveRequestModal');
@@ -841,28 +1030,7 @@ handleAddCurrentRequestToCollection(event, collectionId) {
         if (targetCollection) targetCollection.value = '';
     }
 
-    saveToCollection() {
-        const nameInput = document.getElementById('requestName');
-        const descriptionInput = document.getElementById('requestDescription');
-        const collectionInput = document.getElementById('targetCollection');
-        
-        const name = nameInput ? nameInput.value.trim() : '';
-        const description = descriptionInput ? descriptionInput.value.trim() : '';
-        const collectionId = collectionInput ? collectionInput.value : '';
-        
-        if (!name) {
-            alert('Please enter a request name');
-            return;
-        }
-        
-        if (!collectionId) {
-            alert('Please select a collection');
-            return;
-        }
-        
-        this.addCurrentRequestToCollection(collectionId);
-        this.closeSaveModal();
-    }
+
 
     updateTargetCollectionSelect() {
         const select = document.getElementById('targetCollection');

@@ -1,0 +1,415 @@
+/* environment-variables.css - Clean Environment Variable Styling */
+
+/* Main styling for inputs with environment variables */
+.has-env-vars {
+    position: relative;
+    border-left: 3px solid #ea580c; /* Dark orange border */
+    background: linear-gradient(90deg, transparent 0%, rgba(234, 88, 12, 0.05) 100%);
+    font-weight: 600; /* Make all text bold when it has variables */
+    color: #ea580c; /* Dark orange text color */
+    transition: all 0.2s ease;
+}
+
+.has-env-vars:focus {
+    border-left-color: #dc2626; /* Slightly darker orange on focus */
+    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+    background: transparent; /* Clear background on focus for better visibility */
+    color: inherit; /* Restore normal text color on focus for editing */
+    font-weight: normal; /* Normal weight on focus for editing */
+}
+
+.has-env-vars:not(:focus) {
+    /* When not focused, show the environment variable styling */
+    text-shadow: 0 1px 2px rgba(234, 88, 12, 0.2);
+}
+
+/* Environment variable indicator icon */
+.has-env-vars::after {
+    content: '{{}}';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    font-weight: 700;
+    color: #ea580c;
+    pointer-events: none;
+    opacity: 0.8;
+    z-index: 5;
+    background: var(--bg-primary);
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid #ea580c;
+}
+
+/* For textareas, position the indicator at top-right */
+textarea.has-env-vars::after {
+    top: 8px;
+    transform: none;
+}
+
+/* Smooth transitions */
+input.has-env-vars,
+textarea.has-env-vars {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Environment variable tooltip */
+.env-var-tooltip {
+    position: absolute;
+    background: var(--bg-primary);
+    border: 1px solid #ea580c;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(234, 88, 12, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 10000;
+    max-width: 350px;
+    font-size: 12px;
+    overflow: hidden;
+    animation: tooltipSlideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes tooltipSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Tooltip header */
+.env-var-tooltip-header {
+    background: linear-gradient(135deg, #ea580c, #dc2626);
+    color: white;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.env-var-tooltip-header::before {
+    content: '{{}}';
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* Tooltip footer */
+.env-var-tooltip-footer {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    font-size: 10px;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/* Tooltip items */
+.env-var-tooltip-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-family: var(--font-mono);
+    transition: background-color 0.2s ease;
+    position: relative;
+}
+
+.env-var-tooltip-item:last-of-type {
+    border-bottom: none;
+}
+
+.env-var-tooltip-item:hover {
+    background: rgba(234, 88, 12, 0.05);
+}
+
+/* Defined variables (green styling) */
+.env-var-tooltip-item.defined {
+    background: linear-gradient(90deg, transparent 0%, rgba(34, 197, 94, 0.05) 100%);
+    border-left: 3px solid #22c55e;
+}
+
+.env-var-tooltip-item.defined .var-name {
+    color: #16a34a;
+    font-weight: 700;
+}
+
+.env-var-tooltip-item.defined .var-value {
+    color: #15803d;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.env-var-tooltip-item.defined .var-status {
+    color: #22c55e;
+}
+
+/* Undefined variables (red styling) */
+.env-var-tooltip-item.undefined {
+    background: linear-gradient(90deg, transparent 0%, rgba(239, 68, 68, 0.05) 100%);
+    border-left: 3px solid #ef4444;
+}
+
+.env-var-tooltip-item.undefined .var-name {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.env-var-tooltip-item.undefined .var-value {
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    font-style: italic;
+}
+
+.env-var-tooltip-item.undefined .var-status {
+    color: #ef4444;
+}
+
+/* Tooltip item elements */
+.var-status {
+    font-size: 12px;
+    min-width: 18px;
+    font-weight: 600;
+}
+
+.var-name {
+    font-weight: 700;
+    flex-shrink: 0;
+    min-width: 80px;
+    font-size: 11px;
+}
+
+.var-arrow {
+    color: var(--text-tertiary);
+    font-size: 10px;
+    opacity: 0.6;
+}
+
+.var-value {
+    word-break: break-all;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex: 1;
+    font-size: 11px;
+    font-family: var(--font-mono);
+}
+
+/* Add Variable Modal */
+#addEnvVarModal .modal-content {
+    max-width: 450px;
+    border: 2px solid #ea580c;
+}
+
+#addEnvVarModal .modal-header {
+    background: linear-gradient(135deg, #ea580c, #dc2626);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+#addEnvVarModal .modal-header h3 {
+    color: white;
+}
+
+#addEnvVarModal .form-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+#addEnvVarModal #newEnvVarName {
+    background: rgba(234, 88, 12, 0.1);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: #ea580c;
+    border: 2px solid rgba(234, 88, 12, 0.3);
+}
+
+#addEnvVarModal #newEnvVarValue {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    border: 2px solid var(--border-color);
+}
+
+#addEnvVarModal #newEnvVarValue:focus {
+    border-color: #ea580c;
+    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
+
+#addEnvVarModal #targetEnvironment {
+    font-weight: 500;
+    border: 2px solid var(--border-color);
+}
+
+#addEnvVarModal #targetEnvironment:focus {
+    border-color: #ea580c;
+    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .has-env-vars {
+    background: linear-gradient(90deg, transparent 0%, rgba(234, 88, 12, 0.1) 100%);
+    color: #fb923c; /* Lighter orange for dark theme */
+}
+
+[data-theme="dark"] .has-env-vars::after {
+    color: #fb923c;
+    border-color: #fb923c;
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .env-var-tooltip {
+    border-color: #fb923c;
+    box-shadow: 0 10px 25px rgba(251, 146, 60, 0.2), 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .env-var-tooltip-item.undefined {
+    background: linear-gradient(90deg, transparent 0%, rgba(239, 68, 68, 0.1) 100%);
+}
+
+[data-theme="dark"] .env-var-tooltip-item.defined {
+    background: linear-gradient(90deg, transparent 0%, rgba(34, 197, 94, 0.1) 100%);
+}
+
+[data-theme="dark"] .env-var-tooltip-item.undefined .var-value {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+}
+
+[data-theme="dark"] .env-var-tooltip-item.defined .var-value {
+    background: rgba(34, 197, 94, 0.15);
+    color: #86efac;
+}
+
+[data-theme="dark"] #addEnvVarModal #newEnvVarName {
+    background: rgba(251, 146, 60, 0.15);
+    color: #fb923c;
+    border-color: rgba(251, 146, 60, 0.3);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .env-var-tooltip {
+        max-width: 300px;
+        font-size: 11px;
+    }
+    
+    .env-var-tooltip-item {
+        padding: 8px 10px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .var-arrow {
+        display: none;
+    }
+    
+    .var-name {
+        min-width: unset;
+    }
+    
+    .has-env-vars::after {
+        right: 6px;
+        font-size: 9px;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .has-env-vars {
+        border-left-width: 4px;
+        font-weight: 900;
+    }
+    
+    .env-var-tooltip-item.undefined .var-name {
+        color: #dc2626;
+        font-weight: 900;
+    }
+    
+    .env-var-tooltip-item.defined .var-name {
+        color: #059669;
+        font-weight: 900;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .has-env-vars,
+    .env-var-tooltip {
+        transition: none;
+        animation: none;
+    }
+}
+
+/* Focus management - ensure cursor is always visible */
+.has-env-vars:focus {
+    cursor: text !important;
+}
+
+.has-env-vars:focus::after {
+    opacity: 0.4; /* Reduce indicator opacity when focused */
+}
+
+/* Ensure proper layering */
+.has-env-vars {
+    z-index: 1;
+}
+
+.has-env-vars::after {
+    z-index: 2;
+}
+
+.env-var-tooltip {
+    z-index: 10000;
+}
+
+/* Animation for when environment variables are detected */
+@keyframes envVarDetected {
+    0% {
+        border-left-color: transparent;
+        background: transparent;
+    }
+    50% {
+        border-left-color: #ea580c;
+        background: rgba(234, 88, 12, 0.1);
+    }
+    100% {
+        border-left-color: #ea580c;
+        background: linear-gradient(90deg, transparent 0%, rgba(234, 88, 12, 0.05) 100%);
+    }
+}
+
+.has-env-vars {
+    animation: envVarDetected 0.5s ease-out;
+}
+
+/* Special styling for different input types */
+input[type="url"].has-env-vars,
+input[type="text"].has-env-vars,
+input[type="password"].has-env-vars {
+    font-family: var(--font-mono); /* Use monospace font for URLs and API keys */
+}
+
+/* Ensure consistent height and alignment */
+.has-env-vars {
+    min-height: inherit;
+    line-height: inherit;
+}
+
+/* Prevent text selection on indicator */
+.has-env-vars::after {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
