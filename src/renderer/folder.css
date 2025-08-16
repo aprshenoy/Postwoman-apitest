@@ -472,3 +472,119 @@
         gap: 4px;
     }
 }
+
+/* Add these styles to your folder.css or styles.css */
+
+/* Folder delete button styling */
+.folder-delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    transition: all 0.2s ease;
+    opacity: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.folder-delete-btn:hover {
+    background-color: var(--error-color);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Folder action button styling */
+.folder-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 1;
+    transition: all 0.2s ease;
+    opacity: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.folder-action-btn:hover {
+    background-color: var(--info-color);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Show folder buttons on hover */
+.sidebar-folder-header:hover .folder-action-btn,
+.sidebar-folder-header:hover .folder-delete-btn {
+    opacity: 1;
+}
+
+/* Folder actions container */
+.sidebar-folder-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar-folder-header:hover .sidebar-folder-actions {
+    opacity: 1;
+}
+
+/* Collection modal folder actions */
+.folder-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.folder-actions .btn-sm {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.folder-actions .btn-edit {
+    background-color: var(--info-color);
+    color: white;
+    border: none;
+}
+
+.folder-actions .btn-edit:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.folder-actions .btn-delete {
+    background-color: var(--error-color);
+    color: white;
+    border: none;
+}
+
+.folder-actions .btn-delete:hover {
+    background-color: #b91c1c;
+    transform: translateY(-1px);
+}
+
+/* Mobile responsive - always show on mobile */
+@media (max-width: 768px) {
+    .folder-action-btn,
+    .folder-delete-btn,
+    .sidebar-folder-actions {
+        opacity: 1 !important;
+    }
+}

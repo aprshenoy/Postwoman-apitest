@@ -1401,25 +1401,18 @@ window.duplicateRequest = (collectionId, requestIndex, folderId = '') => {
     }
 };
 
-// ================== DRAG & DROP SUPPORT ==================
-window.enableDragAndDrop = () => {
+window.switchResponseTab = (tabName) => {
     try {
-        if (window.CollectionManager && typeof window.CollectionManager.enableDragAndDrop === 'function') {
-            window.CollectionManager.enableDragAndDrop();
+        if (window.RequestManager && typeof window.RequestManager.switchResponseTab === 'function') {
+            window.RequestManager.switchResponseTab(tabName);
         } else {
-            console.warn('CollectionManager.enableDragAndDrop not available yet');
+            console.warn('RequestManager.switchResponseTab not available yet');
         }
     } catch (error) {
-        console.error('Error in enableDragAndDrop:', error);
+        console.error('Error in switchResponseTab:', error);
     }
 };
 
-console.log('✅ Enhanced global function aliases set up successfully');
-</script>
-
-<!-- ALSO UPDATE these existing functions -->
-<script>
-// Enhanced saveCurrentRequest to check for unsaved changes
 window.saveCurrentRequest = async () => {
     try {
         if (window.CollectionManager && typeof window.CollectionManager.saveCurrentRequest === 'function') {
@@ -1481,8 +1474,22 @@ window.loadFolderRequestToWorkspace = (collectionId, folderId, requestIndex) => 
         console.error('Error in loadFolderRequestToWorkspace:', error);
     }
 };
+// ================== DRAG & DROP SUPPORT ==================
+window.enableDragAndDrop = () => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.enableDragAndDrop === 'function') {
+            window.CollectionManager.enableDragAndDrop();
+        } else {
+            console.warn('CollectionManager.enableDragAndDrop not available yet');
+        }
+    } catch (error) {
+        console.error('Error in enableDragAndDrop:', error);
+    }
+};
+
+console.log('✅ Enhanced global function aliases set up successfully');
 </script>
-<!-- Auto-ensure collection selection on load -->
+
 <script>
 // Ensure collection is selected when app loads
 document.addEventListener('DOMContentLoaded', () => {
@@ -1493,21 +1500,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 2000);
 });
-</script>
-<!-- Add this to the global function aliases section -->
-<script>
-// Global function for response tab switching
-window.switchResponseTab = (tabName) => {
-    try {
-        if (window.RequestManager && typeof window.RequestManager.switchResponseTab === 'function') {
-            window.RequestManager.switchResponseTab(tabName);
-        } else {
-            console.warn('RequestManager.switchResponseTab not available yet');
-        }
-    } catch (error) {
-        console.error('Error in switchResponseTab:', error);
-    }
-};
 </script>
 </body>
 </html>

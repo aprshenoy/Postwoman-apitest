@@ -3664,3 +3664,79 @@ select:focus-visible {
         opacity: 1; /* Always show on mobile */
     }
 }
+
+/* Add these styles to your styles.css to remove response section margins */
+
+/* Remove all margins from response section */
+.response-section {
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.response-section.compact {
+    margin: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+}
+
+/* Ensure response container has no margin */
+.response-container {
+    margin: 0 !important;
+    margin-top: 2px; /* Only small top margin for spacing from header */
+}
+
+/* Remove any margin from response content */
+.response-body,
+.response-header,
+.response-tabs,
+.response-tab-content {
+    margin: 0 !important;
+}
+
+/* Fix response header spacing */
+.response-header {
+    margin-bottom: 5px !important; /* Only bottom margin for spacing */
+}
+
+/* Fix response tabs spacing */
+.response-tabs {
+    margin-bottom: 5px !important; /* Only bottom margin for spacing */
+}
+
+/* Ensure workspace has proper spacing without response section margins */
+.workspace-header {
+    margin-bottom: var(--spacing-lg);
+}
+
+.request-builder.compact {
+    margin-bottom: 2px; /* Small gap between request builder and response */
+}
+
+/* cURL section spacing adjustment */
+.curl-section {
+    margin-bottom: 2px; /* Small gap before response section */
+    margin-top: 0;
+}
+
+/* Override any inherited margins */
+#workspace .response-section {
+    margin: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .response-section,
+    .response-section.compact {
+        margin: 0 !important;
+        padding: 4px;
+    }
+}

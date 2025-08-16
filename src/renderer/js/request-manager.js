@@ -1084,8 +1084,8 @@ displayResponse(response) {
         
         <!-- Response Tabs -->
         <div class="response-tabs">
-            <button class="response-tab-btn active" data-tab="response-body" onclick="RequestManager.switchResponseTab('response-body')">Body</button>
-            <button class="response-tab-btn" data-tab="response-headers" onclick="RequestManager.switchResponseTab('response-headers')">Headers (${Object.keys(response.headers).length})</button>
+            <button class="response-tab-btn active" data-tab="response-body" onclick="switchResponseTab('response-body')">Body</button>
+            <button class="response-tab-btn" data-tab="response-headers" onclick="switchResponseTab('response-headers')">Headers (${Object.keys(response.headers).length})</button>
         </div>
         
         <!-- Response Tab Content -->
