@@ -4,515 +4,988 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PostWoman - API Testing Tool</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src *; img-src 'self' data: https:;">
     <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/png" href="assets/icon.png">
 </head>
 <body>
-    <div class="app">
-        <!-- Compact Header -->
-        <header class="header">
-            <h1>🌊 PostWoman</h1>
-            <div class="header-actions">
-                <select id="currentEnvironment" class="env-dropdown">
-                    <option value="development">🛠️ Development</option>
-                    <option value="staging">🔧 Staging</option>
-                    <option value="production">🚀 Production</option>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-section">
+                <div class="logo">🌊</div>
+                <h1>PostWoman</h1>
+                <span class="version">v1.0.0</span>
+            </div>
+            <div class="header-controls">
+                <select id="currentEnvironment" title="Current Environment">
+                    <option value="">Select Environment</option>
                 </select>
-                <button class="env-button" onclick="EnvironmentManager.openModal()">⚙️ Environments</button>
-                <button class="user-button" onclick="UserManager.showProfile()">👤 Profile</button>
+                <button class="header-btn" onclick="showNotifications()" title="Notifications">
+                    🔔
+                </button>
+                <button class="header-btn" onclick="showSettings()" title="Settings">
+                    ⚙️
+                </button>
             </div>
         </header>
 
-        <div class="main-layout">
-            <!-- Left Sidebar Navigation -->
-            <aside class="sidebar-nav">
-                <div class="nav-section">
-                    <div class="nav-item active" onclick="showSection('workspace')" data-section="workspace">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-item active" data-section="workspace" onclick="showSection('workspace')">
                         <span class="nav-icon">🚀</span>
                         <span class="nav-label">Workspace</span>
-                    </div>
-                    <div class="nav-item" onclick="showSection('collections')" data-section="collections">
+                    </button>
+                    <button class="nav-item" data-section="collections" onclick="showSection('collections')">
                         <span class="nav-icon">📁</span>
                         <span class="nav-label">Collections</span>
-                    </div>
-                    <div class="nav-item" onclick="showSection('history')" data-section="history">
-                        <span class="nav-icon">🕒</span>
+                    </button>
+                    <button class="nav-item" data-section="history" onclick="showSection('history')">
+                        <span class="nav-icon">📜</span>
                         <span class="nav-label">History</span>
-                    </div>
-                    <div class="nav-item" onclick="showSection('environments')" data-section="environments">
+                    </button>
+                    <button class="nav-item" data-section="environments" onclick="showSection('environments')">
                         <span class="nav-icon">🌍</span>
                         <span class="nav-label">Environments</span>
-                    </div>
-                    <div class="nav-item" onclick="showSection('teams')" data-section="teams">
+                    </button>
+                    <button class="nav-item" data-section="teams" onclick="showSection('teams')">
                         <span class="nav-icon">👥</span>
                         <span class="nav-label">Teams</span>
-                    </div>
-                </div>
+                    </button>
+                </nav>
             </aside>
 
             <!-- Content Area -->
-            <div class="content-area">
+            <main class="content-area">
                 <!-- Workspace Section -->
-                <div id="workspaceSection" class="section-content active">
-                    <!-- API Testing Tabs -->
-                    <div class="workspace-tabs">
-                        <button class="workspace-tab active" onclick="switchWorkspaceTab('http')">HTTP Requests</button>
-                        <button class="workspace-tab" onclick="switchWorkspaceTab('sqs')">SQS Messages</button>
-                        <button class="workspace-tab" onclick="switchWorkspaceTab('kafka')">Kafka Messages</button>
+                <section id="workspace" class="content-section active">
+                    <div class="workspace-header">
+                        <h2>API Request Workspace</h2>
+                        <div class="workspace-actions">
+                            <button class="btn btn-secondary" onclick="saveCurrentRequest()">💾 Save Request</button>
+                            <button class="btn btn-secondary" onclick="toggleCurlSection()">🔧 Show cURL</button>
+                        </div>
                     </div>
 
-                    <!-- HTTP Requests -->
-                    <div id="httpWorkspace" class="workspace-content active">
-                        <div class="request-builder">
-                            <div class="request-line">
-                                <select id="method" class="method-select" onchange="updateCurlCommand()">
-                                    <option value="GET">GET</option>
-                                    <option value="POST">POST</option>
-                                    <option value="PUT">PUT</option>
-                                    <option value="DELETE">DELETE</option>
-                                    <option value="PATCH">PATCH</option>
-                                    <option value="HEAD">HEAD</option>
-                                    <option value="OPTIONS">OPTIONS</option>
-                                </select>
-                                
-                                <input type="text" id="url" class="url-input" 
-                                       placeholder="Enter request URL (use {{variableName}} for env variables)" 
-                                       value="{{baseUrl}}/posts"
-                                       oninput="updateCurlCommand()">
-                                
-                                <button id="sendBtn" class="send-button" onclick="sendRequest()">
-                                    Send Request
-                                </button>
-                                <button class="save-request-btn" onclick="CollectionManager.saveCurrentRequest()">
-                                    💾 Save
-                                </button>
-                            </div>
+                    <!-- Request Builder -->
+                    <div class="request-builder">
+                        <div class="request-line">
+                            <select id="method" class="method-select" onchange="updateCurlCommand()">
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                                <option value="PATCH">PATCH</option>
+                                <option value="DELETE">DELETE</option>
+                                <option value="HEAD">HEAD</option>
+                                <option value="OPTIONS">OPTIONS</option>
+                            </select>
+                            <input type="text" id="url" class="url-input" placeholder="Enter request URL (use {{variables}})" oninput="updateCurlCommand()">
+                            <button id="sendBtn" class="send-button" onclick="sendRequest()">Send Request</button>
+                        </div>
 
-                            <div class="request-tabs">
-                                <div class="tab active" onclick="switchTab('params')">Params</div>
-                                <div class="tab" onclick="switchTab('auth')">Authorization</div>
-                                <div class="tab" onclick="switchTab('headers')">Headers</div>
-                                <div class="tab" onclick="switchTab('cookies')">Cookies</div>
-                                <div class="tab" onclick="switchTab('body')">Body</div>
-                            </div>
+                        <!-- Request Tabs -->
+                        <div class="request-tabs">
+                            <button class="tab-btn active" data-tab="params" onclick="switchTab('params')">Parameters</button>
+                            <button class="tab-btn" data-tab="headers" onclick="switchTab('headers')">Headers</button>
+                            <button class="tab-btn" data-tab="auth" onclick="switchTab('auth')">Authorization</button>
+                            <button class="tab-btn" data-tab="body" onclick="switchTab('body')">Body</button>
+                            <button class="tab-btn" data-tab="cookies" onclick="switchTab('cookies')">Cookies</button>
+                        </div>
 
-                            <div class="tab-content-area">
-                                <div id="params" class="tab-content active">
-                                    <div id="paramsContainer">
-                                        <div class="key-value-pair">
-                                            <input type="text" placeholder="Key" class="param-key" oninput="updateCurlCommand()">
-                                            <input type="text" placeholder="Value (use {{var}} for env variables)" class="param-value" oninput="updateCurlCommand()">
-                                            <button class="remove-btn" onclick="this.parentNode.remove(); updateCurlCommand()">×</button>
-                                        </div>
-                                    </div>
-                                    <button class="add-btn" onclick="addParam()">Add Parameter</button>
+                        <!-- Tab Content -->
+                        <div class="tab-content">
+                            <!-- Parameters Tab -->
+                            <div id="params" class="tab-pane active">
+                                <div class="section-header">
+                                    <h3>Query Parameters</h3>
+                                    <button class="btn-add" onclick="addParam()">+ Add Parameter</button>
                                 </div>
+                                <div id="paramsContainer" class="key-value-container">
+                                    <!-- Dynamic content -->
+                                </div>
+                            </div>
 
-                                <div id="auth" class="tab-content">
-                                    <div class="form-group">
-                                        <label for="authType">Authentication Type:</label>
-                                        <select id="authType" onchange="toggleAuthFields()">
-                                            <option value="none">No Authentication</option>
-                                            <option value="bearer">Bearer Token</option>
-                                            <option value="basic">Basic Authentication</option>
-                                            <option value="apikey">API Key</option>
+                            <!-- Headers Tab -->
+                            <div id="headers" class="tab-pane">
+                                <div class="section-header">
+                                    <h3>Request Headers</h3>
+                                    <button class="btn-add" onclick="addHeader()">+ Add Header</button>
+                                </div>
+                                <div id="headersContainer" class="key-value-container">
+                                    <!-- Dynamic content -->
+                                </div>
+                            </div>
+
+                            <!-- Authorization Tab -->
+                            <div id="auth" class="tab-pane">
+                                <div class="section-header">
+                                    <h3>Authorization</h3>
+                                    <select id="authType" onchange="toggleAuthFields()">
+                                        <option value="none">No Auth</option>
+                                        <option value="bearer">Bearer Token</option>
+                                        <option value="basic">Basic Auth</option>
+                                        <option value="apikey">API Key</option>
+                                    </select>
+                                </div>
+                                <div class="auth-content">
+                                    <div id="bearerAuth" class="auth-fields" style="display: none;">
+                                        <label for="bearerToken">Bearer Token:</label>
+                                        <input type="password" id="bearerToken" placeholder="Enter bearer token (use {{variables}})" oninput="updateCurlCommand()">
+                                    </div>
+                                    <div id="basicAuth" class="auth-fields" style="display: none;">
+                                        <label for="basicUsername">Username:</label>
+                                        <input type="text" id="basicUsername" placeholder="Enter username (use {{variables}})" oninput="updateCurlCommand()">
+                                        <label for="basicPassword">Password:</label>
+                                        <input type="password" id="basicPassword" placeholder="Enter password (use {{variables}})" oninput="updateCurlCommand()">
+                                    </div>
+                                    <div id="apikeyAuth" class="auth-fields" style="display: none;">
+                                        <label for="apikeyKey">Key:</label>
+                                        <input type="text" id="apikeyKey" placeholder="API Key name" oninput="updateCurlCommand()">
+                                        <label for="apikeyValue">Value:</label>
+                                        <input type="password" id="apikeyValue" placeholder="API Key value (use {{variables}})" oninput="updateCurlCommand()">
+                                        <label for="apikeyLocation">Add to:</label>
+                                        <select id="apikeyLocation" onchange="updateCurlCommand()">
+                                            <option value="header">Header</option>
+                                            <option value="query">Query Parameter</option>
                                         </select>
                                     </div>
-
-                                    <div id="authFields">
-                                        <div id="bearerAuth" style="display: none;">
-                                            <div class="form-group">
-                                                <label for="bearerToken">Bearer Token:</label>
-                                                <input type="text" id="bearerToken" placeholder="{{apiToken}} or enter token directly" oninput="updateCurlCommand()">
-                                            </div>
-                                        </div>
-
-                                        <div id="basicAuth" style="display: none;">
-                                            <div class="form-group">
-                                                <label for="basicUsername">Username:</label>
-                                                <input type="text" id="basicUsername" placeholder="{{username}} or enter username" oninput="updateCurlCommand()">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="basicPassword">Password:</label>
-                                                <input type="password" id="basicPassword" placeholder="{{password}} or enter password" oninput="updateCurlCommand()">
-                                            </div>
-                                        </div>
-
-                                        <div id="apikeyAuth" style="display: none;">
-                                            <div class="form-group">
-                                                <label for="apikeyKey">Key:</label>
-                                                <input type="text" id="apikeyKey" placeholder="API Key name" oninput="updateCurlCommand()">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="apikeyValue">Value:</label>
-                                                <input type="text" id="apikeyValue" placeholder="{{apiKey}} or enter key directly" oninput="updateCurlCommand()">
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="apikeyLocation">Add to:</label>
-                                                <select id="apikeyLocation" onchange="updateCurlCommand()">
-                                                    <option value="header">Header</option>
-                                                    <option value="query">Query Params</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
+                            </div>
 
-                                <div id="headers" class="tab-content">
-                                    <div id="headersContainer">
-                                        <!-- Standard headers will be populated here -->
-                                    </div>
-                                    <button class="add-btn" onclick="addHeader()">Add Header</button>
+                            <!-- Body Tab -->
+                            <div id="body" class="tab-pane">
+                                <div class="section-header">
+                                    <h3>Request Body</h3>
+                                    <select id="bodyType" onchange="toggleBodyFields()">
+                                        <option value="none">No Body</option>
+                                        <option value="json">JSON</option>
+                                        <option value="form">Form Data</option>
+                                        <option value="raw">Raw Text</option>
+                                    </select>
                                 </div>
-
-                                <div id="cookies" class="tab-content">
-                                    <div id="cookiesContainer">
-                                        <div class="key-value-pair">
-                                            <input type="text" placeholder="Cookie Name" class="cookie-key" oninput="updateCurlCommand()">
-                                            <input type="text" placeholder="Cookie Value (use {{var}})" class="cookie-value" oninput="updateCurlCommand()">
-                                            <button class="remove-btn" onclick="this.parentNode.remove(); updateCurlCommand()">×</button>
+                                <div class="body-content">
+                                    <div id="jsonBody" class="body-fields" style="display: none;">
+                                        <textarea id="jsonInput" placeholder='{"key": "value"}' rows="10" oninput="updateCurlCommand()"></textarea>
+                                        <button class="btn-format" onclick="formatJSON()">Format JSON</button>
+                                    </div>
+                                    <div id="formBody" class="body-fields" style="display: none;">
+                                        <div class="section-header">
+                                            <button class="btn-add" onclick="addFormData()">+ Add Field</button>
+                                        </div>
+                                        <div id="formDataContainer" class="key-value-container">
+                                            <!-- Dynamic content -->
                                         </div>
                                     </div>
-                                    <button class="add-btn" onclick="addCookie()">Add Cookie</button>
-                                </div>
-
-                                <div id="body" class="tab-content">
-                                    <div class="form-group">
-                                        <label for="bodyType">Body Type:</label>
-                                        <select id="bodyType" onchange="toggleBodyFields()">
-                                            <option value="none">No Body</option>
-                                            <option value="json">JSON</option>
-                                            <option value="form">Form Data</option>
-                                            <option value="raw">Raw Text</option>
-                                        </select>
-                                    </div>
-
-                                    <div id="bodyContent">
-                                        <div id="jsonBody" style="display: none;">
-                                            <div class="form-group">
-                                                <label for="jsonInput">JSON (use {{variables}} for env vars):</label>
-                                                <textarea id="jsonInput" rows="8" placeholder='{"userId": "{{userId}}", "name": "Test User"}' oninput="updateCurlCommand()"></textarea>
-                                            </div>
-                                        </div>
-
-                                        <div id="formBody" style="display: none;">
-                                            <div id="formDataContainer">
-                                                <div class="key-value-pair">
-                                                    <input type="text" placeholder="Key" class="form-key" oninput="updateCurlCommand()">
-                                                    <input type="text" placeholder="Value (use {{var}})" class="form-value" oninput="updateCurlCommand()">
-                                                    <button class="remove-btn" onclick="this.parentNode.remove(); updateCurlCommand()">×</button>
-                                                </div>
-                                            </div>
-                                            <button class="add-btn" onclick="addFormData()">Add Form Field</button>
-                                        </div>
-
-                                        <div id="rawBody" style="display: none;">
-                                            <div class="form-group">
-                                                <label for="rawInput">Raw Text (use {{variables}}):</label>
-                                                <textarea id="rawInput" rows="8" placeholder="Enter raw text with {{variables}}" oninput="updateCurlCommand()"></textarea>
-                                            </div>
-                                        </div>
+                                    <div id="rawBody" class="body-fields" style="display: none;">
+                                        <textarea id="rawInput" placeholder="Enter raw text data" rows="10" oninput="updateCurlCommand()"></textarea>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="curl-controls">
-                                <button class="show-curl-btn" onclick="toggleCurlSection()">
-                                    🔧 Show cURL Command
-                                </button>
-                            </div>
-
-                            <div id="curlSection" class="curl-section">
-                                <h3>🔧 Generated cURL Command</h3>
-                                <div id="curlCode" class="curl-code">curl -X GET "{{baseUrl}}/posts"</div>
-                                <button class="copy-btn" onclick="copyCurl()">Copy cURL</button>
-                            </div>
-                        </div>
-
-                        <div class="response-section">
-                            <h3>📋 Response</h3>
-                            <div id="responseContainer">
-                                <p style="color: #64748b; text-align: center; padding: 2rem;">
-                                    Send a request to see the response here
-                                </p>
+                            <!-- Cookies Tab -->
+                            <div id="cookies" class="tab-pane">
+                                <div class="section-header">
+                                    <h3>Cookies</h3>
+                                    <button class="btn-add" onclick="addCookie()">+ Add Cookie</button>
+                                </div>
+                                <div id="cookiesContainer" class="key-value-container">
+                                    <!-- Dynamic content -->
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SQS Messages -->
-                    <div id="sqsWorkspace" class="workspace-content">
-                        <div class="messaging-form">
-                            <h3>📨 Send SQS Message</h3>
-                            
-                            <div class="form-group">
-                                <label for="sqsRegion">AWS Region:</label>
-                                <select id="sqsRegion">
-                                    <option value="us-east-1">US East (N. Virginia)</option>
-                                    <option value="us-west-2">US West (Oregon)</option>
-                                    <option value="eu-west-1">Europe (Ireland)</option>
-                                    <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="sqsQueueUrl">Queue URL:</label>
-                                <input type="text" id="sqsQueueUrl" placeholder="{{sqsQueueUrl}} or https://sqs.region.amazonaws.com/account-id/queue-name">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="sqsAccessKey">Access Key ID:</label>
-                                <input type="text" id="sqsAccessKey" placeholder="{{awsAccessKey}} or your AWS Access Key ID">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="sqsSecretKey">Secret Access Key:</label>
-                                <input type="password" id="sqsSecretKey" placeholder="{{awsSecretKey}} or your AWS Secret Access Key">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="sqsMessageBody">Message Body:</label>
-                                <textarea id="sqsMessageBody" rows="6" placeholder='{"message": "{{messageContent}}", "userId": "{{userId}}"}'></textarea>
-                            </div>
-
-                            <button class="send-button" onclick="sendSqsMessage()">Send SQS Message</button>
+                    <!-- cURL Section -->
+                    <div id="curlSection" class="curl-section">
+                        <div class="section-header">
+                            <h3>🔧 cURL Command</h3>
+                            <button class="btn-copy" onclick="copyCurl()">Copy</button>
                         </div>
+                        <pre id="curlCode" class="curl-code"></pre>
+                    </div>
 
-                        <div class="response-section">
-                            <h3>📋 SQS Response</h3>
-                            <div id="sqsResponseContainer">
-                                <p style="color: #64748b; text-align: center; padding: 2rem;">
-                                    Send an SQS message to see the response here
-                                </p>
+                    <!-- Response Section -->
+                    <div class="response-section">
+                        <h3>Response</h3>
+                        <div id="responseContainer" class="response-container">
+                            <div class="response-placeholder">
+                                <p>Send a request to see the response here</p>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Kafka Messages -->
-                    <div id="kafkaWorkspace" class="workspace-content">
-                        <div class="messaging-form">
-                            <h3>🚀 Send Kafka Message</h3>
-                            
-                            <div class="form-group">
-                                <label for="kafkaBrokers">Kafka Brokers:</label>
-                                <input type="text" id="kafkaBrokers" placeholder="{{kafkaBrokers}} or localhost:9092" value="{{kafkaBrokers}}">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="kafkaTopic">Topic:</label>
-                                <input type="text" id="kafkaTopic" placeholder="{{topicName}} or my-topic">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="kafkaMessage">Message Value:</label>
-                                <textarea id="kafkaMessage" rows="6" placeholder='{"event": "{{eventType}}", "user_id": "{{userId}}"}'></textarea>
-                            </div>
-
-                            <button class="send-button" onclick="sendKafkaMessage()">Send Kafka Message</button>
-                        </div>
-
-                        <div class="response-section">
-                            <h3>📋 Kafka Response</h3>
-                            <div id="kafkaResponseContainer">
-                                <p style="color: #64748b; text-align: center; padding: 2rem;">
-                                    Send a Kafka message to see the response here
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </section>
 
                 <!-- Collections Section -->
-                <div id="collectionsSection" class="section-content">
+                <section id="collections" class="content-section">
                     <div class="section-header">
                         <h2>📁 Collections</h2>
                         <div class="section-actions">
-                            <button class="action-btn" onclick="CollectionManager.createCollection()">➕ New Collection</button>
-                            <button class="action-btn" onclick="CollectionManager.importPostmanCollection()">📥 Import Postman</button>
-                            <button class="action-btn" onclick="CollectionManager.exportAllCollections()">📤 Export All</button>
+                            <button class="btn btn-primary" onclick="createCollection()">+ Create Collection</button>
+                            <button class="btn btn-secondary" onclick="importPostmanCollection()">📥 Import</button>
+                            <button class="btn btn-secondary" onclick="exportAllCollections()">📤 Export All</button>
                         </div>
                     </div>
-                    
-                    <div id="collectionsContainer" class="collections-grid">
-                        <!-- Collections will be populated here -->
+                    <div id="collectionsContainer" class="collections-container">
+                        <!-- Dynamic content -->
                     </div>
-                </div>
+                </section>
 
                 <!-- History Section -->
-                <div id="historySection" class="section-content">
+                <section id="history" class="content-section">
                     <div class="section-header">
-                        <h2>🕒 Request History</h2>
+                        <h2>📜 Request History</h2>
                         <div class="section-actions">
-                            <button class="action-btn" onclick="HistoryManager.clearHistory()">🗑️ Clear All</button>
-                            <button class="action-btn" onclick="HistoryManager.exportHistory()">📤 Export</button>
+                            <button class="btn btn-secondary" onclick="exportHistory()">📤 Export</button>
+                            <button class="btn btn-secondary" onclick="importHistory()">📥 Import</button>
+                            <button class="btn btn-danger" onclick="clearHistory()">🗑️ Clear All</button>
                         </div>
                     </div>
-                    
-                    <div id="historyContainer" class="history-list">
-                        <!-- History items will be populated here -->
+                    <div id="historyContainer" class="history-container">
+                        <!-- Dynamic content -->
                     </div>
-                </div>
+                </section>
 
                 <!-- Environments Section -->
-                <div id="environmentsSection" class="section-content">
+                <section id="environments" class="content-section">
                     <div class="section-header">
-                        <h2>🌍 Environment Management</h2>
+                        <h2>🌍 Environments</h2>
                         <div class="section-actions">
-                            <button class="action-btn" onclick="EnvironmentManager.createEnvironment()">➕ New Environment</button>
-                            <button class="action-btn" onclick="EnvironmentManager.importEnvironments()">📥 Import</button>
+                            <button class="btn btn-primary" onclick="createEnvironment()">+ Create Environment</button>
+                            <button class="btn btn-secondary" onclick="importEnvironments()">📥 Import</button>
+                            <button class="btn btn-secondary" onclick="exportEnvironments()">📤 Export All</button>
                         </div>
                     </div>
-                    
-                    <div id="environmentsContainer" class="environments-grid">
-                        <!-- Environments will be populated here -->
+                    <div id="environmentsContainer" class="environments-container">
+                        <!-- Dynamic content -->
                     </div>
-                </div>
+                </section>
 
                 <!-- Teams Section -->
-                <div id="teamsSection" class="section-content">
+                <section id="teams" class="content-section">
                     <div class="section-header">
-                        <h2>👥 Teams & Collaboration</h2>
-                        <div class="section-actions">
-                            <button class="action-btn" onclick="TeamsManager.createTeam()">➕ Create Team</button>
-                            <button class="action-btn" onclick="TeamsManager.joinTeam()">🔗 Join Team</button>
-                        </div>
+                        <h2>👥 Teams</h2>
                     </div>
-                    
-                    <div id="teamsContainer" class="teams-content">
-                        <!-- Teams content will be populated here -->
+                    <div id="teamsContainer" class="teams-container">
+                        <!-- Dynamic content -->
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modals -->
-        <div id="envModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>🌍 Environment Variables</h3>
-                    <button class="close" onclick="EnvironmentManager.closeModal()">&times;</button>
-                </div>
-                
-                <div class="form-group">
-                    <label for="envSelect">Select Environment:</label>
-                    <select id="envSelect" onchange="EnvironmentManager.loadVariables()">
-                        <option value="development">Development</option>
-                        <option value="staging">Staging</option>
-                        <option value="production">Production</option>
-                    </select>
-                </div>
-
-                <h4>Environment Variables</h4>
-                <div id="envVariablesContainer">
-                    <!-- Environment variables will be populated here -->
-                </div>
-                <button class="add-btn" onclick="EnvironmentManager.addVariable()">Add Variable</button>
-                
-                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                    <button class="send-button" onclick="EnvironmentManager.saveEnvironment()">Save Environment</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Collection Modal -->
-        <div id="collectionModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="collectionModalTitle">Collection Details</h3>
-                    <button class="close" onclick="CollectionManager.closeModal()">&times;</button>
-                </div>
-                <div id="collectionModalBody">
-                    <!-- Collection details will be loaded here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Save Request Modal -->
-        <div id="saveRequestModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>💾 Save Request</h3>
-                    <button class="close" onclick="CollectionManager.closeSaveModal()">&times;</button>
-                </div>
-                
-                <div class="form-group">
-                    <label for="requestName">Request Name:</label>
-                    <input type="text" id="requestName" placeholder="Enter request name">
-                </div>
-
-                <div class="form-group">
-                    <label for="requestDescription">Description (Optional):</label>
-                    <textarea id="requestDescription" rows="3" placeholder="Describe what this request does"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="targetCollection">Save to Collection:</label>
-                    <select id="targetCollection">
-                        <option value="">Select Collection</option>
-                    </select>
-                </div>
-                
-                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
-                    <button class="send-button" onclick="CollectionManager.saveToCollection()">Save Request</button>
-                    <button class="cancel-btn" onclick="CollectionManager.closeSaveModal()">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- User Profile Modal -->
-        <div id="userModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>👤 User Profile</h3>
-                    <button class="close" onclick="UserManager.closeProfile()">&times;</button>
-                </div>
-                <div id="userModalBody">
-                    <!-- User profile content will be loaded here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Import File Input -->
-        <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="ImportManager.handleFileImport(event)">
-
-        <!-- Environment Variable Tooltip -->
-        <div id="envTooltip" class="env-tooltip">
-            <div class="tooltip-content"></div>
+                </section>
+            </main>
         </div>
     </div>
 
-    <!-- Core Scripts - Order matters! -->
+    <!-- Environment Modal -->
+    <div id="envModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Environment Variables</h3>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="envSelect">Environment:</label>
+                    <select id="envSelect" onchange="loadVariables()">
+                        <!-- Dynamic options -->
+                    </select>
+                </div>
+                <div class="section-header">
+                    <h4>Variables</h4>
+                    <button class="btn-add" onclick="addVariable()">+ Add Variable</button>
+                </div>
+                <div id="envVariablesContainer" class="env-variables-container">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveEnvironment()">Save Environment</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collection Modal -->
+    <div id="collectionModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="collectionModalTitle">Collection Details</h3>
+                <button class="close" onclick="closeCollectionModal()">&times;</button>
+            </div>
+            <div id="collectionModalBody" class="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Request Modal -->
+    <div id="saveRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💾 Save Request</h3>
+                <button class="close" onclick="closeSaveModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="requestName">Request Name:</label>
+                    <input type="text" id="requestName" placeholder="Enter request name" required>
+                </div>
+                <div class="form-group">
+                    <label for="requestDescription">Description:</label>
+                    <textarea id="requestDescription" rows="3" placeholder="Optional description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="targetCollection">Target Collection:</label>
+                    <select id="targetCollection" required>
+                        <option value="">Select Collection</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveToCollection()">Save Request</button>
+                <button class="btn btn-secondary" onclick="closeSaveModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <!-- Context Menu -->
+    <div id="contextMenu" class="context-menu" style="display: none;">
+        <!-- Dynamic content -->
+    </div>
+
+    <!-- Scripts -->
     <script src="js/core.js"></script>
-    <script src="js/electron-integration.js"></script> 
-    <script src="js/database-adapter.js"></script>
     <script src="js/ui-components.js"></script>
+    <script src="js/database-adapter.js"></script>
+    <script src="js/electron-integration.js"></script>
     <script src="js/environment-manager.js"></script>
     <script src="js/collection-manager.js"></script>
     <script src="js/history-manager.js"></script>
-    <script src="js/teams-manager.js"></script>
-    <script src="js/user-manager.js"></script>
-    <script src="js/import-manager.js"></script>
     <script src="js/request-manager.js"></script>
+    <script src="js/teams-manager.js"></script>
+    <script src="js/import-manager.js"></script>
+    <script src="js/user-manager.js"></script>
     <script src="js/app.js"></script>
 
-    <!-- Global function aliases for HTML onclick handlers -->
+    <!-- IMPORTANT: Global Manager Setup and Verification -->
     <script>
-        // Make functions available globally for HTML onclick handlers
-        window.showSection = (section) => UI?.showSection(section);
-        window.switchWorkspaceTab = (tab) => UI?.switchWorkspaceTab(tab);
-        window.switchTab = (tab) => UI?.switchTab(tab);
-        window.toggleAuthFields = () => UI?.toggleAuthFields();
-        window.toggleBodyFields = () => UI?.toggleBodyFields();
-        window.addParam = () => UI?.addParam();
-        window.addHeader = () => UI?.addHeader();
-        window.addCookie = () => UI?.addCookie();
-        window.addFormData = () => UI?.addFormData();
-        window.sendRequest = () => RequestManager?.sendRequest();
-        window.sendSqsMessage = () => RequestManager?.sendSqsMessage();
-        window.sendKafkaMessage = () => RequestManager?.sendKafkaMessage();
-        window.toggleCurlSection = () => RequestManager?.toggleCurlSection();
-        window.copyCurl = () => RequestManager?.copyCurl();
-        window.updateCurlCommand = () => RequestManager?.updateCurlCommand();
+        // Global Manager Setup and Verification
+        (function() {
+            console.log('🔧 Setting up global managers...');
+            
+            // Wait for all managers to be loaded
+            function waitForManagers() {
+                return new Promise((resolve) => {
+                    const checkManagers = () => {
+                        const managersReady = [
+                            'CollectionManager',
+                            'HistoryManager', 
+                            'EnvironmentManager',
+                            'TeamsManager',
+                            'UserManager',
+                            'RequestManager',
+                            'ImportManager',
+                            'UI'
+                        ].every(managerName => {
+                            return window[managerName] && typeof window[managerName] === 'object';
+                        });
+                        
+                        if (managersReady) {
+                            resolve();
+                        } else {
+                            setTimeout(checkManagers, 50);
+                        }
+                    };
+                    checkManagers();
+                });
+            }
+            
+            // Set up global manager functions
+            waitForManagers().then(() => {
+                console.log('✅ All managers loaded, setting up global access...');
+                
+                // Verify each manager and its key methods
+                const managers = {
+                    CollectionManager: window.CollectionManager,
+                    HistoryManager: window.HistoryManager,
+                    EnvironmentManager: window.EnvironmentManager, 
+                    TeamsManager: window.TeamsManager,
+                    UserManager: window.UserManager,
+                    RequestManager: window.RequestManager,
+                    ImportManager: window.ImportManager,
+                    UI: window.UI
+                };
+                
+                Object.entries(managers).forEach(([name, manager]) => {
+                    if (!manager) {
+                        console.error(`❌ ${name} not found!`);
+                        return;
+                    }
+                    
+                    // Make sure the manager is globally accessible
+                    window[name] = manager;
+                    
+                    // Log available methods for debugging
+                    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(manager))
+                        .filter(method => typeof manager[method] === 'function' && method !== 'constructor');
+                    
+                    console.log(`✅ ${name} loaded with methods:`, methods.slice(0, 5).join(', '), methods.length > 5 ? '...' : '');
+                });
+                
+                console.log('🎉 All global managers verified and ready!');
+                
+                // Emit ready event
+                if (window.Core) {
+                    window.Core.emit('managers-ready');
+                }
+            });
+        })();
+    </script>
+
+    <!-- Complete Global Function Aliases - Covers ALL manager methods called from HTML -->
+    <script>
+        // Complete Global Function Aliases - Covers ALL manager methods called from HTML
+        console.log('🔧 Setting up complete global function aliases...');
+
+        // ================== UI METHODS ==================
+        window.showSection = (section) => {
+            try {
+                if (window.UI && typeof window.UI.showSection === 'function') {
+                    window.UI.showSection(section);
+                } else {
+                    console.warn('UI.showSection not available yet');
+                }
+            } catch (error) {
+                console.error('Error in showSection:', error);
+            }
+        };
+
+        window.switchTab = (tab) => {
+            try {
+                if (window.UI && typeof window.UI.showTab === 'function') {
+                    window.UI.showTab(tab);
+                } else {
+                    console.warn('UI.showTab not available yet');
+                }
+            } catch (error) {
+                console.error('Error in switchTab:', error);
+            }
+        };
+
+        window.toggleAuthFields = () => {
+            try {
+                if (window.UI && typeof window.UI.toggleAuthFields === 'function') {
+                    window.UI.toggleAuthFields();
+                } else {
+                    console.warn('UI.toggleAuthFields not available yet');
+                }
+            } catch (error) {
+                console.error('Error in toggleAuthFields:', error);
+            }
+        };
+
+        window.toggleBodyFields = () => {
+            try {
+                if (window.UI && typeof window.UI.toggleBodyFields === 'function') {
+                    window.UI.toggleBodyFields();
+                } else {
+                    console.warn('UI.toggleBodyFields not available yet');
+                }
+            } catch (error) {
+                console.error('Error in toggleBodyFields:', error);
+            }
+        };
+
+        window.formatJSON = () => {
+            try {
+                if (window.UI && typeof window.UI.formatJSON === 'function') {
+                    window.UI.formatJSON();
+                } else {
+                    console.warn('UI.formatJSON not available yet');
+                }
+            } catch (error) {
+                console.error('Error in formatJSON:', error);
+            }
+        };
+
+        // ================== REQUEST MANAGER METHODS ==================
+        window.addParam = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.addParamRow === 'function') {
+                    window.RequestManager.addParamRow();
+                } else {
+                    console.warn('RequestManager.addParamRow not available yet');
+                }
+            } catch (error) {
+                console.error('Error in addParam:', error);
+            }
+        };
+
+        window.addHeader = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.addHeaderRow === 'function') {
+                    window.RequestManager.addHeaderRow();
+                } else {
+                    console.warn('RequestManager.addHeaderRow not available yet');
+                }
+            } catch (error) {
+                console.error('Error in addHeader:', error);
+            }
+        };
+
+        window.addCookie = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.addCookieRow === 'function') {
+                    window.RequestManager.addCookieRow();
+                } else {
+                    console.warn('RequestManager.addCookieRow not available yet');
+                }
+            } catch (error) {
+                console.error('Error in addCookie:', error);
+            }
+        };
+
+        window.addFormData = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.addFormDataRow === 'function') {
+                    window.RequestManager.addFormDataRow();
+                } else {
+                    console.warn('RequestManager.addFormDataRow not available yet');
+                }
+            } catch (error) {
+                console.error('Error in addFormData:', error);
+            }
+        };
+
+        window.sendRequest = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.sendRequest === 'function') {
+                    window.RequestManager.sendRequest();
+                } else {
+                    console.warn('RequestManager.sendRequest not available yet');
+                }
+            } catch (error) {
+                console.error('Error in sendRequest:', error);
+            }
+        };
+
+        window.updateCurlCommand = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.updateCurlCommand === 'function') {
+                    window.RequestManager.updateCurlCommand();
+                } else {
+                    console.warn('RequestManager.updateCurlCommand not available yet');
+                }
+            } catch (error) {
+                console.error('Error in updateCurlCommand:', error);
+            }
+        };
+
+        window.toggleCurlSection = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.toggleCurlSection === 'function') {
+                    window.RequestManager.toggleCurlSection();
+                } else {
+                    console.warn('RequestManager.toggleCurlSection not available yet');
+                }
+            } catch (error) {
+                console.error('Error in toggleCurlSection:', error);
+            }
+        };
+
+        window.copyCurl = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.copyCurl === 'function') {
+                    window.RequestManager.copyCurl();
+                } else {
+                    console.warn('RequestManager.copyCurl not available yet');
+                }
+            } catch (error) {
+                console.error('Error in copyCurl:', error);
+            }
+        };
+
+        window.saveCurrentRequest = () => {
+            try {
+                if (window.RequestManager && typeof window.RequestManager.saveCurrentRequest === 'function') {
+                    window.RequestManager.saveCurrentRequest();
+                } else if (window.CollectionManager && typeof window.CollectionManager.saveCurrentRequest === 'function') {
+                    window.CollectionManager.saveCurrentRequest();
+                } else {
+                    console.warn('saveCurrentRequest not available yet');
+                }
+            } catch (error) {
+                console.error('Error in saveCurrentRequest:', error);
+            }
+        };
+
+        // ================== COLLECTION MANAGER METHODS ==================
+        window.createCollection = () => {
+            try {
+                if (window.CollectionManager && typeof window.CollectionManager.createCollection === 'function') {
+                    window.CollectionManager.createCollection();
+                } else {
+                    console.warn('CollectionManager.createCollection not available yet');
+                }
+            } catch (error) {
+                console.error('Error in createCollection:', error);
+            }
+        };
+
+        window.importPostmanCollection = () => {
+            try {
+                if (window.CollectionManager && typeof window.CollectionManager.importPostmanCollection === 'function') {
+                    window.CollectionManager.importPostmanCollection();
+                } else {
+                    console.warn('CollectionManager.importPostmanCollection not available yet');
+                }
+            } catch (error) {
+                console.error('Error in importPostmanCollection:', error);
+            }
+        };
+
+        window.exportAllCollections = () => {
+            try {
+                if (window.CollectionManager && typeof window.CollectionManager.exportAllCollections === 'function') {
+                    window.CollectionManager.exportAllCollections();
+                } else {
+                    console.warn('CollectionManager.exportAllCollections not available yet');
+                }
+            } catch (error) {
+                console.error('Error in exportAllCollections:', error);
+            }
+        };
+
+        // Collection-specific global functions (called from generated HTML)
+        ['openCollection', 'deleteCollection', 'duplicateCollection', 'renameCollection', 
+         'showCollectionMenu', 'exportCollection', 'addCurrentRequestToCollection', 
+         'removeRequestFromCollection', 'loadRequestFromCollection', 'editRequest',
+         'closeModal', 'closeSaveModal', 'saveToCollection', 'runCollection',
+         'handleCreateCollection', 'handleRenameCollection', 'handleEditRequest', 
+         'handleAddCurrentRequestToCollection'].forEach(methodName => {
+            window[methodName] = (...args) => {
+                try {
+                    if (window.CollectionManager && typeof window.CollectionManager[methodName] === 'function') {
+                        return window.CollectionManager[methodName](...args);
+                    } else {
+                        console.warn(`CollectionManager.${methodName} not available yet`);
+                    }
+                } catch (error) {
+                    console.error(`Error in ${methodName}:`, error);
+                }
+            };
+        });
+
+        // ================== ENVIRONMENT MANAGER METHODS ==================
+        window.createEnvironment = () => {
+            try {
+                if (window.EnvironmentManager && typeof window.EnvironmentManager.createEnvironment === 'function') {
+                    window.EnvironmentManager.createEnvironment();
+                } else {
+                    console.warn('EnvironmentManager.createEnvironment not available yet');
+                }
+            } catch (error) {
+                console.error('Error in createEnvironment:', error);
+            }
+        };
+
+        window.importEnvironments = () => {
+            try {
+                if (window.EnvironmentManager && typeof window.EnvironmentManager.importEnvironments === 'function') {
+                    window.EnvironmentManager.importEnvironments();
+                } else {
+                    console.warn('EnvironmentManager.importEnvironments not available yet');
+                }
+            } catch (error) {
+                console.error('Error in importEnvironments:', error);
+            }
+        };
+
+        window.exportEnvironments = () => {
+            try {
+                if (window.EnvironmentManager && typeof window.EnvironmentManager.exportEnvironments === 'function') {
+                    window.EnvironmentManager.exportEnvironments();
+                } else {
+                    console.warn('EnvironmentManager.exportEnvironments not available yet');
+                }
+            } catch (error) {
+                console.error('Error in exportEnvironments:', error);
+            }
+        };
+
+        window.closeModal = () => {
+            try {
+                if (window.EnvironmentManager && typeof window.EnvironmentManager.closeModal === 'function') {
+                    window.EnvironmentManager.closeModal();
+                } else {
+                    console.warn('EnvironmentManager.closeModal not available yet');
+                }
+            } catch (error) {
+                console.error('Error in closeModal:', error);
+            }
+        };
+
+        window.loadVariables = () => {
+            try {
+                if (window.EnvironmentManager && typeof window.EnvironmentManager.loadVariables === 'function') {
+                    window.EnvironmentManager.loadVariables();
+                } else {
+                    console.warn('EnvironmentManager.loadVariables not available yet');
+                }
+            } catch (error) {
+                console.error('Error in loadVariables:', error);
+            }
+        };
+
+        window.addVariable = () => {
+            try {
+                if (window.EnvironmentManager && typeof window.EnvironmentManager.addVariable === 'function') {
+                    window.EnvironmentManager.addVariable();
+                } else {
+                    console.warn('EnvironmentManager.addVariable not available yet');
+                }
+            } catch (error) {
+                console.error('Error in addVariable:', error);
+            }
+        };
+
+        window.saveEnvironment = () => {
+            try {
+                if (window.EnvironmentManager && typeof window.EnvironmentManager.saveEnvironment === 'function') {
+                    window.EnvironmentManager.saveEnvironment();
+                } else {
+                    console.warn('EnvironmentManager.saveEnvironment not available yet');
+                }
+            } catch (error) {
+                console.error('Error in saveEnvironment:', error);
+            }
+        };
+
+        // Environment-specific global functions (called from generated HTML)
+        ['editEnvironment', 'setActiveEnvironment', 'duplicateEnvironment', 'deleteEnvironment', 
+         'openModal', 'exportEnvironment', 'handleCreateEnvironment', 'handleDuplicateEnvironment'].forEach(methodName => {
+            window[methodName] = (...args) => {
+                try {
+                    if (window.EnvironmentManager && typeof window.EnvironmentManager[methodName] === 'function') {
+                        return window.EnvironmentManager[methodName](...args);
+                    } else {
+                        console.warn(`EnvironmentManager.${methodName} not available yet`);
+                    }
+                } catch (error) {
+                    console.error(`Error in ${methodName}:`, error);
+                }
+            };
+        });
+
+        // ================== CRITICAL FIX: DIRECT MANAGER ACCESS ==================
+        // Ensure managers are accessible with their methods after initialization
+        setTimeout(() => {
+            // Make sure EnvironmentManager is globally accessible with all methods
+            if (window.EnvironmentManager) {
+                const envManager = window.EnvironmentManager;
+                
+                // Verify all methods are accessible
+                ['editEnvironment', 'setActiveEnvironment', 'duplicateEnvironment', 'deleteEnvironment', 
+                 'openModal', 'exportEnvironment', 'createEnvironment', 'importEnvironments', 
+                 'exportEnvironments', 'closeModal', 'loadVariables', 'addVariable', 'saveEnvironment'].forEach(method => {
+                    if (typeof envManager[method] === 'function') {
+                        console.log(`✅ EnvironmentManager.${method} is accessible`);
+                    } else {
+                        console.error(`❌ EnvironmentManager.${method} is NOT accessible`);
+                    }
+                });
+            }
+
+            // Same for CollectionManager
+            if (window.CollectionManager) {
+                const colManager = window.CollectionManager;
+                
+                ['openCollection', 'deleteCollection', 'duplicateCollection', 'renameCollection', 
+                 'showCollectionMenu', 'exportCollection', 'createCollection'].forEach(method => {
+                    if (typeof colManager[method] === 'function') {
+                        console.log(`✅ CollectionManager.${method} is accessible`);
+                    } else {
+                        console.error(`❌ CollectionManager.${method} is NOT accessible`);
+                    }
+                });
+            }
+
+            // Same for TeamsManager
+            if (window.TeamsManager) {
+                const teamManager = window.TeamsManager;
+                
+                ['createTeam', 'joinTeam', 'selectTeam', 'deleteTeam'].forEach(method => {
+                    if (typeof teamManager[method] === 'function') {
+                        console.log(`✅ TeamsManager.${method} is accessible`);
+                    } else {
+                        console.error(`❌ TeamsManager.${method} is NOT accessible`);
+                    }
+                });
+            }
+
+            // Same for HistoryManager
+            if (window.HistoryManager) {
+                const histManager = window.HistoryManager;
+                
+                ['loadFromHistory', 'showDetails', 'removeFromHistory'].forEach(method => {
+                    if (typeof histManager[method] === 'function') {
+                        console.log(`✅ HistoryManager.${method} is accessible`);
+                    } else {
+                        console.error(`❌ HistoryManager.${method} is NOT accessible`);
+                    }
+                });
+            }
+        }, 1000);
+
+        // ================== HISTORY MANAGER METHODS ==================
+        window.exportHistory = () => {
+            try {
+                if (window.HistoryManager && typeof window.HistoryManager.exportHistory === 'function') {
+                    window.HistoryManager.exportHistory();
+                } else {
+                    console.warn('HistoryManager.exportHistory not available yet');
+                }
+            } catch (error) {
+                console.error('Error in exportHistory:', error);
+            }
+        };
+
+        window.importHistory = () => {
+            try {
+                if (window.HistoryManager && typeof window.HistoryManager.importHistory === 'function') {
+                    window.HistoryManager.importHistory();
+                } else {
+                    console.warn('HistoryManager.importHistory not available yet');
+                }
+            } catch (error) {
+                console.error('Error in importHistory:', error);
+            }
+        };
+
+        window.clearHistory = () => {
+            try {
+                if (window.HistoryManager && typeof window.HistoryManager.clearHistory === 'function') {
+                    window.HistoryManager.clearHistory();
+                } else {
+                    console.warn('HistoryManager.clearHistory not available yet');
+                }
+            } catch (error) {
+                console.error('Error in clearHistory:', error);
+            }
+        };
+
+        // History-specific global functions (called from generated HTML)
+        ['loadFromHistory', 'showDetails', 'saveToCollection', 'removeFromHistory', 
+         'exportHistoryItem', 'searchHistory', 'filterByMethod', 'filterByStatus'].forEach(methodName => {
+            window[methodName] = (...args) => {
+                try {
+                    if (window.HistoryManager && typeof window.HistoryManager[methodName] === 'function') {
+                        return window.HistoryManager[methodName](...args);
+                    } else {
+                        console.warn(`HistoryManager.${methodName} not available yet`);
+                    }
+                } catch (error) {
+                    console.error(`Error in ${methodName}:`, error);
+                }
+            };
+        });
+
+        // ================== TEAMS MANAGER METHODS ==================
+        // Teams-specific global functions (called from generated HTML)
+        ['createTeam', 'joinTeam', 'selectTeam', 'showTeamDetails', 'showTeamMenu', 
+         'inviteMembers', 'manageTeam', 'shareCollection', 'shareEnvironment', 
+         'leaveTeam', 'deleteTeam', 'exportTeam', 'handleCreateTeam', 'handleJoinByLink', 
+         'handleJoinByCode', 'browsePublicTeams'].forEach(methodName => {
+            window[methodName] = (...args) => {
+                try {
+                    if (window.TeamsManager && typeof window.TeamsManager[methodName] === 'function') {
+                        return window.TeamsManager[methodName](...args);
+                    } else {
+                        console.warn(`TeamsManager.${methodName} not available yet`);
+                    }
+                } catch (error) {
+                    console.error(`Error in ${methodName}:`, error);
+                }
+            };
+        });
+
+        // ================== UTILITY FUNCTIONS ==================
+        // Placeholder functions for header controls
+        window.showNotifications = () => {
+            if (window.UI && window.UI.showNotification) {
+                window.UI.showNotification('Notifications', 'Notification center coming soon!', { type: 'info' });
+            } else {
+                console.log('Show notifications clicked');
+            }
+        };
+
+        window.showSettings = () => {
+            if (window.UI && window.UI.showNotification) {
+                window.UI.showNotification('Settings', 'Settings panel coming soon!', { type: 'info' });
+            } else {
+                console.log('Show settings clicked');
+            }
+        };
+
+        // ================== ELECTRON WORKAROUNDS ==================
+        // Replace prompt() calls with modern alternatives for Electron
+        window.prompt = window.prompt || function(message, defaultValue = '') {
+            // For Electron environments where prompt() is disabled
+            const result = window.showInputDialog ? 
+                window.showInputDialog(message, defaultValue) : 
+                defaultValue || 'New Item';
+            return result;
+        };
+
+        console.log('✅ Complete global function aliases set up successfully');
+
+        // ================== DEBUGGING HELPERS ==================
+        // Global debug function to check what methods are available
+        window.debugManagers = function() {
+            const managers = ['UI', 'CollectionManager', 'HistoryManager', 'EnvironmentManager', 
+                             'TeamsManager', 'RequestManager', 'ImportManager', 'UserManager'];
+            
+            managers.forEach(managerName => {
+                const manager = window[managerName];
+                if (manager) {
+                    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(manager))
+                        .filter(method => typeof manager[method] === 'function' && method !== 'constructor');
+                    console.log(`${managerName} methods:`, methods);
+                } else {
+                    console.log(`${managerName}: NOT AVAILABLE`);
+                }
+            });
+        };
+        
+        // Final initialization check
+        setTimeout(() => {
+            console.log('🔍 Final initialization status check:');
+            console.log('- Core:', window.Core ? '✅' : '❌');
+            console.log('- UI:', window.UI ? '✅' : '❌');
+            console.log('- CollectionManager:', window.CollectionManager ? '✅' : '❌');
+            console.log('- RequestManager:', window.RequestManager ? '✅' : '❌');
+            console.log('- HistoryManager:', window.HistoryManager ? '✅' : '❌');
+            console.log('- EnvironmentManager:', window.EnvironmentManager ? '✅' : '❌');
+            console.log('- TeamsManager:', window.TeamsManager ? '✅' : '❌');
+            console.log('- UserManager:', window.UserManager ? '✅' : '❌');
+            console.log('- ImportManager:', window.ImportManager ? '✅' : '❌');
+            console.log('- App:', window.app ? '✅' : '❌');
+            
+            // Run debug check
+            if (window.debugManagers) {
+                console.log('🔍 Running manager debug check...');
+                window.debugManagers();
+            }
+        }, 3000);
     </script>
 </body>
 </html>

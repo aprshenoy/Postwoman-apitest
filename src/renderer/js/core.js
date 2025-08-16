@@ -1,4 +1,4 @@
-// Core Module - Foundation for PostWoman Application
+// Core Module - Foundation for PostWoman Application (Fixed Version)
 class Core {
     constructor() {
         this.version = '1.0.0';
@@ -8,6 +8,7 @@ class Core {
             session: {}
         };
         this.initialized = false;
+        this.modules = new Map();
         
         // Initialize storage from localStorage if available
         this.initializeStorage();
@@ -34,7 +35,7 @@ class Core {
     on(event, callback) {
         if (typeof event !== 'string' || typeof callback !== 'function') {
             console.error('Core.on: Invalid arguments. Expected (string, function)');
-            return;
+            return this;
         }
         
         if (!this.events.has(event)) {
@@ -68,6 +69,16 @@ class Core {
             }
         });
         return this; // Allow chaining
+    }
+
+    // Add once method for single-time event listeners
+    once(event, callback) {
+        const onceWrapper = (data) => {
+            this.off(event, onceWrapper);
+            callback(data);
+        };
+        this.on(event, onceWrapper);
+        return this;
     }
 
     // ID Generation
@@ -179,6 +190,10 @@ class Core {
         }
     }
 
+    deepClone(obj) {
+        return this.clone(obj);
+    }
+
     merge(target, source) {
         for (const key in source) {
             if (source.hasOwnProperty(key)) {
@@ -191,6 +206,14 @@ class Core {
             }
         }
         return target;
+    }
+
+    // String utilities
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     // Date/Time utilities
@@ -331,11 +354,20 @@ class Core {
         return text.substring(0, length) + '...';
     }
 
-    // Notification system
+    // File size formatting
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Notification system - Updated to work with UI module
     showNotification(title, message, options = {}) {
         const { type = 'info', duration = 5000 } = options;
         
-        console.log(`📢 ${type.toUpperCase()}: ${title} - ${message}`);
+        console.log(`🔔 ${type.toUpperCase()}: ${title} - ${message}`);
         
         // Emit event for UI to handle
         this.emit('notification', {
@@ -346,12 +378,43 @@ class Core {
             timestamp: new Date().toISOString()
         });
 
+        // Try to use UI module if available
+        if (window.UI && typeof window.UI.showNotification === 'function') {
+            window.UI.showNotification(title, message, options);
+            return;
+        }
+
         // If notification API is available
         if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(title, {
                 body: message,
-                icon: '/icon.png'
+                icon: '/assets/icon.png'
             });
+        }
+    }
+
+    // Modal utilities - Updated to work with UI module
+    showModal(modalId) {
+        if (window.UI && typeof window.UI.showModal === 'function') {
+            window.UI.showModal(modalId);
+            return;
+        }
+        
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+        }
+    }
+
+    hideModal(modalId) {
+        if (window.UI && typeof window.UI.hideModal === 'function') {
+            window.UI.hideModal(modalId);
+            return;
+        }
+        
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
         }
     }
 
@@ -501,28 +564,6 @@ class Core {
         }
     }
 
-    // Health check
-    healthCheck() {
-        const health = {
-            timestamp: new Date().toISOString(),
-            version: this.version,
-            initialized: this.initialized,
-            storage: {
-                local: Object.keys(this.storage.local).length,
-                session: Object.keys(this.storage.session).length
-            },
-            events: this.events.size,
-            errors: this.getErrorLogs().length,
-            memory: typeof performance !== 'undefined' && performance.memory ? {
-                used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
-                total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024)
-            } : null
-        };
-
-        console.log('💚 Health Check:', health);
-        return health;
-    }
-
     // Module management
     registerModule(name, module) {
         if (!this.modules) {
@@ -542,27 +583,48 @@ class Core {
         return this.modules ? this.modules.has(name) : false;
     }
 
-    // Ensure all required methods exist and are accessible
+    // Enhanced ready method
     ready() {
         return new Promise((resolve) => {
             if (this.initialized) {
                 resolve(this);
             } else {
                 this.once('ready', () => resolve(this));
-                this.init();
-                this.emit('ready');
+                // Auto-initialize if not already done
+                if (!this.initialized) {
+                    this.init();
+                    this.emit('ready');
+                }
             }
         });
     }
 
-    // Add once method for single-time event listeners
-    once(event, callback) {
-        const onceWrapper = (data) => {
-            this.off(event, onceWrapper);
-            callback(data);
+    // Check if Core is properly initialized
+    isInitialized() {
+        return this.initialized;
+    }
+
+    // Health check
+    healthCheck() {
+        const health = {
+            timestamp: new Date().toISOString(),
+            version: this.version,
+            initialized: this.initialized,
+            storage: {
+                local: Object.keys(this.storage.local).length,
+                session: Object.keys(this.storage.session).length
+            },
+            events: this.events.size,
+            modules: this.modules.size,
+            errors: this.getErrorLogs().length,
+            memory: typeof performance !== 'undefined' && performance.memory ? {
+                used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
+                total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024)
+            } : null
         };
-        this.on(event, onceWrapper);
-        return this;
+
+        console.log('💚 Health Check:', health);
+        return health;
     }
 }
 
@@ -572,11 +634,32 @@ const coreInstance = new Core();
 // Ensure initialization
 coreInstance.init();
 
+// Enhanced error checking for method calls
+const originalOn = coreInstance.on;
+coreInstance.on = function(event, callback) {
+    if (typeof event !== 'string' || typeof callback !== 'function') {
+        console.error('Core.on: Invalid arguments. Expected (string, function)');
+        return this;
+    }
+    return originalOn.call(this, event, callback);
+};
+
+const originalGenerateId = coreInstance.generateId;
+coreInstance.generateId = function(prefix = 'id') {
+    if (typeof prefix !== 'string') {
+        console.warn('Core.generateId: prefix should be a string');
+        prefix = 'id';
+    }
+    return originalGenerateId.call(this, prefix);
+};
+
 // Make it globally available in multiple ways for compatibility
 if (typeof window !== 'undefined') {
     window.Core = coreInstance;
-    // Also make it available as a global variable for older modules
-    window.core = coreInstance;
+    window.core = coreInstance; // Also make available as lowercase
+    
+    // Set up a global ready promise
+    window.CoreReady = coreInstance.ready();
 }
 
 // Export for different module systems
@@ -591,25 +674,28 @@ if (typeof exports !== 'undefined') {
 }
 
 // Global assignment for immediate availability
-globalThis.Core = coreInstance;
+if (typeof globalThis !== 'undefined') {
+    globalThis.Core = coreInstance;
+}
 
 // Auto-apply saved theme when DOM is ready
 if (typeof document !== 'undefined') {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = coreInstance.getTheme();
-            coreInstance.applyTheme(savedTheme);
-        });
-    } else {
-        // DOM is already loaded
+    const initializeTheme = () => {
         const savedTheme = coreInstance.getTheme();
         coreInstance.applyTheme(savedTheme);
+    };
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeTheme);
+    } else {
+        initializeTheme();
     }
 }
 
-// Emit ready event
+// Emit ready event after a short delay to ensure all scripts are loaded
 setTimeout(() => {
     coreInstance.emit('core-ready', coreInstance);
-}, 0);
+    coreInstance.emit('ready');
+}, 10);
 
 console.log('✅ Core module loaded and ready');

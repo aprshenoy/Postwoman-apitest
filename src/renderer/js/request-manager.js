@@ -1,4 +1,4 @@
-// Request Manager - Handles HTTP requests and response processing
+// Request Manager - Handles HTTP requests and response processing (Fixed Version)
 
 class RequestManager {
     constructor() {
@@ -6,34 +6,127 @@ class RequestManager {
         this.currentResponse = null;
         this.isLoading = false;
         this.controller = null; // For aborting requests
-        this.initialize();
+        this.initialized = false;
+        
+        console.log('🚀 RequestManager initializing...');
+        
+        // Wait for Core and DOM to be ready
+        this.waitForDOMAndInitialize();
+    }
+
+    async waitForDOMAndInitialize() {
+        try {
+            // Wait for DOM to be ready
+            if (document.readyState === 'loading') {
+                await new Promise(resolve => {
+                    document.addEventListener('DOMContentLoaded', resolve);
+                });
+            }
+            
+            // Wait for Core to be available
+            let attempts = 0;
+            while (attempts < 50 && (!window.Core || typeof window.Core.on !== 'function')) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (window.Core && typeof window.Core.on === 'function') {
+                console.log('✅ RequestManager: Core is ready, initializing...');
+                this.initialize();
+            } else {
+                console.warn('⚠️ RequestManager: Core not available, using fallback');
+                this.initializeWithFallback();
+            }
+        } catch (error) {
+            console.error('RequestManager initialization error:', error);
+            this.initializeWithFallback();
+        }
     }
 
     initialize() {
-        this.setupEventListeners();
-        this.updateCurlCommand();
+        try {
+            this.setupEventListeners();
+            this.updateCurlCommand();
+            this.initialized = true;
+            
+            console.log('✅ RequestManager initialized successfully');
+            
+            // Emit initialization event
+            if (window.Core && typeof window.Core.emit === 'function') {
+                window.Core.emit('request-manager-initialized');
+            }
+        } catch (error) {
+            console.error('❌ RequestManager initialization failed:', error);
+            this.initializeWithFallback();
+        }
+    }
+
+    initializeWithFallback() {
+        try {
+            // Basic initialization without Core dependencies
+            this.setupBasicEventListeners();
+            this.updateCurlCommand();
+            this.initialized = true;
+            
+            console.log('⚠️ RequestManager initialized in fallback mode');
+        } catch (error) {
+            console.error('❌ RequestManager fallback initialization failed:', error);
+        }
     }
 
     setupEventListeners() {
-        // Auto-update cURL command when inputs change
-        const inputs = [
-            'url', 'method', 'currentEnvironment'
-        ];
-        
-        inputs.forEach(inputId => {
-            const element = document.getElementById(inputId);
-            if (element) {
-                element.addEventListener('change', () => this.updateCurlCommand());
-                element.addEventListener('input', () => this.updateCurlCommand());
-            }
-        });
+        try {
+            // Auto-update cURL command when inputs change
+            const inputs = ['url', 'method', 'currentEnvironment'];
+            
+            inputs.forEach(inputId => {
+                const element = document.getElementById(inputId);
+                if (element) {
+                    element.addEventListener('change', () => this.updateCurlCommand());
+                    element.addEventListener('input', () => this.updateCurlCommand());
+                }
+            });
 
-        // Listen for environment changes
-        Core.on('environmentChanged', () => this.updateCurlCommand());
-        Core.on('paramAdded', () => this.updateCurlCommand());
-        Core.on('headerAdded', () => this.updateCurlCommand());
-        Core.on('authFieldsChanged', () => this.updateCurlCommand());
-        Core.on('bodyFieldsChanged', () => this.updateCurlCommand());
+            // Listen for Core events if available
+            if (window.Core && typeof window.Core.on === 'function') {
+                window.Core.on('environmentChanged', () => this.updateCurlCommand());
+                window.Core.on('paramAdded', () => this.updateCurlCommand());
+                window.Core.on('headerAdded', () => this.updateCurlCommand());
+                window.Core.on('authFieldsChanged', () => this.updateCurlCommand());
+                window.Core.on('bodyFieldsChanged', () => this.updateCurlCommand());
+            }
+        } catch (error) {
+            console.error('Error setting up event listeners:', error);
+            this.setupBasicEventListeners();
+        }
+    }
+
+    setupBasicEventListeners() {
+        try {
+            // Basic event listeners without Core dependencies
+            const inputs = ['url', 'method', 'currentEnvironment'];
+            
+            inputs.forEach(inputId => {
+                const element = document.getElementById(inputId);
+                if (element) {
+                    element.addEventListener('change', () => this.updateCurlCommand());
+                    element.addEventListener('input', () => this.updateCurlCommand());
+                }
+            });
+        } catch (error) {
+            console.error('Error setting up basic event listeners:', error);
+        }
+    }
+
+    // Safe Core event emission
+    emitCoreEvent(eventName, data) {
+        try {
+            if (window.Core && typeof window.Core.emit === 'function') {
+                window.Core.emit(eventName, data);
+            }
+        } catch (error) {
+            // Silently fail if Core is not available
+        }
     }
 
     getCurrentRequestData() {
@@ -304,7 +397,9 @@ class RequestManager {
         if (!authType) return;
         
         authType.value = auth.type || 'none';
-        UI.toggleAuthFields();
+        if (window.UI && window.UI.toggleAuthFields) {
+            window.UI.toggleAuthFields();
+        }
         
         switch (auth.type) {
             case 'bearer':
@@ -335,7 +430,9 @@ class RequestManager {
         if (!bodyType) return;
         
         bodyType.value = body.type || 'none';
-        UI.toggleBodyFields();
+        if (window.UI && window.UI.toggleBodyFields) {
+            window.UI.toggleBodyFields();
+        }
         
         switch (body.type) {
             case 'json':
@@ -371,8 +468,8 @@ class RequestManager {
         const headerDiv = document.createElement('div');
         headerDiv.className = 'key-value-pair';
         headerDiv.innerHTML = `
-            <input type="text" placeholder="Header Name" class="header-key" value="${Core.escapeHtml(key)}">
-            <input type="text" placeholder="Header Value (use {{variables}})" class="header-value" value="${Core.escapeHtml(value)}">
+            <input type="text" placeholder="Header Name" class="header-key" value="${this.escapeHtml(key)}">
+            <input type="text" placeholder="Header Value (use {{variables}})" class="header-value" value="${this.escapeHtml(value)}">
             <button class="remove-btn" onclick="this.parentNode.remove(); RequestManager.updateCurlCommand()">×</button>
         `;
         container.appendChild(headerDiv);
@@ -385,8 +482,8 @@ class RequestManager {
         const paramDiv = document.createElement('div');
         paramDiv.className = 'key-value-pair';
         paramDiv.innerHTML = `
-            <input type="text" placeholder="Key" class="param-key" value="${Core.escapeHtml(key)}">
-            <input type="text" placeholder="Value (use {{variables}})" class="param-value" value="${Core.escapeHtml(value)}">
+            <input type="text" placeholder="Key" class="param-key" value="${this.escapeHtml(key)}">
+            <input type="text" placeholder="Value (use {{variables}})" class="param-value" value="${this.escapeHtml(value)}">
             <button class="remove-btn" onclick="this.parentNode.remove(); RequestManager.updateCurlCommand()">×</button>
         `;
         container.appendChild(paramDiv);
@@ -399,8 +496,8 @@ class RequestManager {
         const cookieDiv = document.createElement('div');
         cookieDiv.className = 'key-value-pair';
         cookieDiv.innerHTML = `
-            <input type="text" placeholder="Cookie Name" class="cookie-key" value="${Core.escapeHtml(key)}">
-            <input type="text" placeholder="Cookie Value (use {{variables}})" class="cookie-value" value="${Core.escapeHtml(value)}">
+            <input type="text" placeholder="Cookie Name" class="cookie-key" value="${this.escapeHtml(key)}">
+            <input type="text" placeholder="Cookie Value (use {{variables}})" class="cookie-value" value="${this.escapeHtml(value)}">
             <button class="remove-btn" onclick="this.parentNode.remove(); RequestManager.updateCurlCommand()">×</button>
         `;
         container.appendChild(cookieDiv);
@@ -413,8 +510,8 @@ class RequestManager {
         const formDiv = document.createElement('div');
         formDiv.className = 'key-value-pair';
         formDiv.innerHTML = `
-            <input type="text" placeholder="Key" class="form-key" value="${Core.escapeHtml(key)}">
-            <input type="text" placeholder="Value (use {{variables}})" class="form-value" value="${Core.escapeHtml(value)}">
+            <input type="text" placeholder="Key" class="form-key" value="${this.escapeHtml(key)}">
+            <input type="text" placeholder="Value (use {{variables}})" class="form-value" value="${this.escapeHtml(value)}">
             <button class="remove-btn" onclick="this.parentNode.remove(); RequestManager.updateCurlCommand()">×</button>
         `;
         container.appendChild(formDiv);
@@ -424,94 +521,100 @@ class RequestManager {
         const curlCode = document.getElementById('curlCode');
         if (!curlCode) return;
         
-        const requestData = this.getCurrentRequestData();
-        const processedData = this.processRequestData(requestData);
-        
-        let curlCommand = `curl -X ${processedData.method}`;
-        
-        // Add headers
-        processedData.headers.forEach(header => {
-            if (header.key && header.value) {
-                curlCommand += ` \\\n  -H "${header.key}: ${header.value}"`;
+        try {
+            const requestData = this.getCurrentRequestData();
+            const processedData = this.processRequestData(requestData);
+            
+            let curlCommand = `curl -X ${processedData.method}`;
+            
+            // Add headers
+            processedData.headers.forEach(header => {
+                if (header.key && header.value) {
+                    curlCommand += ` \\\n  -H "${header.key}: ${header.value}"`;
+                }
+            });
+            
+            // Add cookies
+            if (processedData.cookies.length > 0) {
+                const cookieString = processedData.cookies
+                    .filter(cookie => cookie.key && cookie.value)
+                    .map(cookie => `${cookie.key}=${cookie.value}`)
+                    .join('; ');
+                if (cookieString) {
+                    curlCommand += ` \\\n  -H "Cookie: ${cookieString}"`;
+                }
             }
-        });
-        
-        // Add cookies
-        if (processedData.cookies.length > 0) {
-            const cookieString = processedData.cookies
-                .filter(cookie => cookie.key && cookie.value)
-                .map(cookie => `${cookie.key}=${cookie.value}`)
-                .join('; ');
-            if (cookieString) {
-                curlCommand += ` \\\n  -H "Cookie: ${cookieString}"`;
+            
+            // Add body
+            if (processedData.body && processedData.body.type !== 'none') {
+                const bodyContent = this.getBodyContent(processedData.body);
+                if (bodyContent) {
+                    curlCommand += ` \\\n  -d '${bodyContent}'`;
+                }
             }
+            
+            // Add URL with params
+            let finalUrl = processedData.url;
+            if (processedData.params.length > 0) {
+                const paramString = processedData.params
+                    .filter(param => param.key && param.value)
+                    .map(param => `${encodeURIComponent(param.key)}=${encodeURIComponent(param.value)}`)
+                    .join('&');
+                if (paramString) {
+                    finalUrl += (finalUrl.includes('?') ? '&' : '?') + paramString;
+                }
+            }
+            
+            curlCommand += ` \\\n  "${finalUrl}"`;
+            
+            curlCode.textContent = curlCommand;
+        } catch (error) {
+            console.error('Error updating cURL command:', error);
         }
-        
-        // Add body
-        if (processedData.body && processedData.body.type !== 'none') {
-            const bodyContent = this.getBodyContent(processedData.body);
-            if (bodyContent) {
-                curlCommand += ` \\\n  -d '${bodyContent}'`;
-            }
-        }
-        
-        // Add URL with params
-        let finalUrl = processedData.url;
-        if (processedData.params.length > 0) {
-            const paramString = processedData.params
-                .filter(param => param.key && param.value)
-                .map(param => `${encodeURIComponent(param.key)}=${encodeURIComponent(param.value)}`)
-                .join('&');
-            if (paramString) {
-                finalUrl += (finalUrl.includes('?') ? '&' : '?') + paramString;
-            }
-        }
-        
-        curlCommand += ` \\\n  "${finalUrl}"`;
-        
-        curlCode.textContent = curlCommand;
     }
 
     processRequestData(requestData) {
         // Replace environment variables in all fields
-        const processed = Core.deepClone(requestData);
+        const processed = this.deepClone(requestData);
         
-        processed.url = EnvironmentManager.replaceVariables(processed.url);
-        
-        processed.headers = processed.headers.map(header => ({
-            key: header.key,
-            value: EnvironmentManager.replaceVariables(header.value)
-        }));
-        
-        processed.params = processed.params.map(param => ({
-            key: param.key,
-            value: EnvironmentManager.replaceVariables(param.value)
-        }));
-        
-        processed.cookies = processed.cookies.map(cookie => ({
-            key: cookie.key,
-            value: EnvironmentManager.replaceVariables(cookie.value)
-        }));
-        
-        // Process auth
-        if (processed.auth.type === 'bearer' && processed.auth.token) {
-            processed.auth.token = EnvironmentManager.replaceVariables(processed.auth.token);
-        } else if (processed.auth.type === 'basic') {
-            processed.auth.username = EnvironmentManager.replaceVariables(processed.auth.username);
-            processed.auth.password = EnvironmentManager.replaceVariables(processed.auth.password);
-        } else if (processed.auth.type === 'apikey') {
-            processed.auth.value = EnvironmentManager.replaceVariables(processed.auth.value);
-        }
-        
-        // Process body
-        if (processed.body.type === 'json' && processed.body.data) {
-            processed.body.data = EnvironmentManager.replaceVariables(processed.body.data);
-        } else if (processed.body.type === 'form' && processed.body.data) {
-            Object.keys(processed.body.data).forEach(key => {
-                processed.body.data[key] = EnvironmentManager.replaceVariables(processed.body.data[key]);
-            });
-        } else if (processed.body.type === 'raw' && processed.body.data) {
-            processed.body.data = EnvironmentManager.replaceVariables(processed.body.data);
+        if (window.EnvironmentManager && window.EnvironmentManager.replaceVariables) {
+            processed.url = window.EnvironmentManager.replaceVariables(processed.url);
+            
+            processed.headers = processed.headers.map(header => ({
+                key: header.key,
+                value: window.EnvironmentManager.replaceVariables(header.value)
+            }));
+            
+            processed.params = processed.params.map(param => ({
+                key: param.key,
+                value: window.EnvironmentManager.replaceVariables(param.value)
+            }));
+            
+            processed.cookies = processed.cookies.map(cookie => ({
+                key: cookie.key,
+                value: window.EnvironmentManager.replaceVariables(cookie.value)
+            }));
+            
+            // Process auth
+            if (processed.auth.type === 'bearer' && processed.auth.token) {
+                processed.auth.token = window.EnvironmentManager.replaceVariables(processed.auth.token);
+            } else if (processed.auth.type === 'basic') {
+                processed.auth.username = window.EnvironmentManager.replaceVariables(processed.auth.username);
+                processed.auth.password = window.EnvironmentManager.replaceVariables(processed.auth.password);
+            } else if (processed.auth.type === 'apikey') {
+                processed.auth.value = window.EnvironmentManager.replaceVariables(processed.auth.value);
+            }
+            
+            // Process body
+            if (processed.body.type === 'json' && processed.body.data) {
+                processed.body.data = window.EnvironmentManager.replaceVariables(processed.body.data);
+            } else if (processed.body.type === 'form' && processed.body.data) {
+                Object.keys(processed.body.data).forEach(key => {
+                    processed.body.data[key] = window.EnvironmentManager.replaceVariables(processed.body.data[key]);
+                });
+            } else if (processed.body.type === 'raw' && processed.body.data) {
+                processed.body.data = window.EnvironmentManager.replaceVariables(processed.body.data);
+            }
         }
         
         return processed;
@@ -548,7 +651,10 @@ class RequestManager {
         
         // Validate URL
         try {
-            new URL(EnvironmentManager.replaceVariables(requestData.url));
+            const processedUrl = window.EnvironmentManager ? 
+                window.EnvironmentManager.replaceVariables(requestData.url) : 
+                requestData.url;
+            new URL(processedUrl);
         } catch (e) {
             alert('Please enter a valid URL');
             return;
@@ -558,7 +664,10 @@ class RequestManager {
         this.isLoading = true;
         sendBtn.disabled = true;
         sendBtn.textContent = 'Sending...';
-        UI.showLoading(responseContainer, 'Sending request...');
+        
+        if (window.UI && window.UI.showLoading) {
+            window.UI.showLoading(responseContainer, 'Sending request...');
+        }
         
         try {
             const processedData = this.processRequestData(requestData);
@@ -571,7 +680,12 @@ class RequestManager {
             this.displayResponse(response);
             
             // Add to history
-            HistoryManager.addToHistory(processedData, response);
+            if (window.HistoryManager && window.HistoryManager.addToHistory) {
+                window.HistoryManager.addToHistory(processedData, response);
+            }
+            
+            // Track activity
+            this.emitCoreEvent('request-sent');
             
         } catch (error) {
             this.displayError(error);
@@ -580,7 +694,10 @@ class RequestManager {
             this.isLoading = false;
             sendBtn.disabled = false;
             sendBtn.textContent = 'Send Request';
-            UI.hideLoading(responseContainer);
+            
+            if (window.UI && window.UI.hideLoading) {
+                window.UI.hideLoading(responseContainer);
+            }
         }
     }
 
@@ -703,7 +820,7 @@ class RequestManager {
             <div class="response-header">
                 <div class="response-status">
                     <span class="status-badge ${statusClass}">${response.status} ${response.statusText}</span>
-                    <span class="response-meta">Time: ${response.duration}ms • Size: ${Core.formatFileSize(response.size)}</span>
+                    <span class="response-meta">Time: ${response.duration}ms • Size: ${this.formatFileSize(response.size)}</span>
                 </div>
                 <div class="response-actions">
                     <button class="btn-sm btn-edit" onclick="RequestManager.copyResponse()">Copy</button>
@@ -718,8 +835,8 @@ class RequestManager {
                     <div class="headers-list">
                         ${Object.entries(response.headers).map(([key, value]) => 
                             `<div class="header-item">
-                                <span class="header-key">${Core.escapeHtml(key)}:</span>
-                                <span class="header-value">${Core.escapeHtml(value)}</span>
+                                <span class="header-key">${this.escapeHtml(key)}:</span>
+                                <span class="header-value">${this.escapeHtml(value)}</span>
                             </div>`
                         ).join('')}
                     </div>
@@ -766,7 +883,7 @@ Check the browser console for more details.</pre>
         if (typeof body === 'object') {
             return JSON.stringify(body, null, 2);
         }
-        return Core.escapeHtml(String(body));
+        return this.escapeHtml(String(body));
     }
 
     copyResponse() {
@@ -778,7 +895,7 @@ Check the browser console for more details.</pre>
         
         if (navigator.clipboard) {
             navigator.clipboard.writeText(responseText).then(() => {
-                Core.showNotification('Copied', 'Response copied to clipboard');
+                this.showNotification('Copied', 'Response copied to clipboard');
             });
         }
     }
@@ -794,8 +911,8 @@ Check the browser console for more details.</pre>
             typeof this.currentResponse.body === 'object' ? 'json' : 'txt'
         }`;
         
-        Core.downloadFile(responseText, filename);
-        Core.showNotification('Response Saved', 'Response saved to file');
+        this.downloadFile(responseText, filename);
+        this.showNotification('Response Saved', 'Response saved to file');
     }
 
     showRawResponse() {
@@ -812,7 +929,7 @@ Check the browser console for more details.</pre>
                     <button class="close" onclick="this.closest('.modal').remove()">&times;</button>
                 </div>
                 <div class="raw-response-content">
-                    <pre style="white-space: pre-wrap; word-wrap: break-word;">${Core.escapeHtml(this.currentResponse.rawBody)}</pre>
+                    <pre style="white-space: pre-wrap; word-wrap: break-word;">${this.escapeHtml(this.currentResponse.rawBody)}</pre>
                 </div>
             </div>
         `;
@@ -862,57 +979,67 @@ Check the browser console for more details.</pre>
         }
     }
 
-    // Demo methods for SQS and Kafka (to be implemented with actual SDKs)
-    async sendSqsMessage() {
-        const responseContainer = document.getElementById('sqsResponseContainer');
-        if (!responseContainer) return;
-        
-        const region = document.getElementById('sqsRegion')?.value || 'us-east-1';
-        const queueUrl = EnvironmentManager.replaceVariables(document.getElementById('sqsQueueUrl')?.value || '');
-        const messageBody = EnvironmentManager.replaceVariables(document.getElementById('sqsMessageBody')?.value || '');
-        
-        // For demo purposes - in real implementation, use AWS SDK
-        responseContainer.innerHTML = `
-            <div class="response-status">
-                <span class="status-badge status-200">Demo Mode</span>
-                <span class="response-meta">SQS Integration</span>
-            </div>
-            <pre class="response-body">SQS message would be sent with the following configuration:
-
-Region: ${region}
-Queue URL: ${queueUrl}
-Message Body: ${messageBody}
-
-Note: This is a demo. In a real implementation, you would integrate with the AWS SDK.</pre>
-        `;
-        
-        Core.showNotification('SQS Demo', 'SQS message configuration displayed');
+    // Utility methods
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
-    async sendKafkaMessage() {
-        const responseContainer = document.getElementById('kafkaResponseContainer');
-        if (!responseContainer) return;
-        
-        const brokers = EnvironmentManager.replaceVariables(document.getElementById('kafkaBrokers')?.value || '');
-        const topic = EnvironmentManager.replaceVariables(document.getElementById('kafkaTopic')?.value || '');
-        const message = EnvironmentManager.replaceVariables(document.getElementById('kafkaMessage')?.value || '');
-        
-        // For demo purposes - in real implementation, use Kafka client
-        responseContainer.innerHTML = `
-            <div class="response-status">
-                <span class="status-badge status-200">Demo Mode</span>
-                <span class="response-meta">Kafka Integration</span>
-            </div>
-            <pre class="response-body">Kafka message would be sent with the following configuration:
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
 
-Brokers: ${brokers}
-Topic: ${topic}
-Message: ${message}
+    deepClone(obj) {
+        try {
+            return JSON.parse(JSON.stringify(obj));
+        } catch (error) {
+            console.error('Error cloning object:', error);
+            return obj;
+        }
+    }
 
-Note: This is a demo. In a real implementation, you would integrate with a Kafka client library.</pre>
-        `;
-        
-        Core.showNotification('Kafka Demo', 'Kafka message configuration displayed');
+    downloadFile(data, filename) {
+        try {
+            const content = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            const blob = new Blob([content], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading file:', error);
+        }
+    }
+
+    showNotification(title, message, options = {}) {
+        if (window.UI && window.UI.showNotification) {
+            window.UI.showNotification(title, message, options);
+        } else if (window.Core && window.Core.showNotification) {
+            window.Core.showNotification(title, message, options);
+        } else {
+            console.log(`${title}: ${message}`);
+        }
+    }
+
+    // Health check
+    healthCheck() {
+        return {
+            initialized: this.initialized,
+            isLoading: this.isLoading,
+            hasCurrentRequest: !!this.currentRequest,
+            hasCurrentResponse: !!this.currentResponse
+        };
     }
 }
 

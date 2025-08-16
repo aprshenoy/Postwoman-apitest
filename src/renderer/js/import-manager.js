@@ -1,4 +1,4 @@
-// Import Manager - Handles importing from various formats (Postman, Insomnia, etc.)
+// Import Manager - Handles importing from various formats (Postman, Insomnia, etc.) (Fixed Version)
 
 class ImportManager {
     constructor() {
@@ -11,12 +11,27 @@ class ImportManager {
             'curl_commands',
             'har_file'
         ];
+        this.initialized = false;
+        
+        console.log('📥 ImportManager initializing...');
         this.initialize();
     }
 
     initialize() {
-        // Set up file input handlers
-        this.setupFileHandlers();
+        try {
+            // Set up file input handlers
+            this.setupFileHandlers();
+            this.initialized = true;
+            
+            console.log('✅ ImportManager initialized successfully');
+            
+            // Emit initialization event
+            if (window.Core && typeof window.Core.emit === 'function') {
+                window.Core.emit('import-manager-initialized');
+            }
+        } catch (error) {
+            console.error('❌ ImportManager initialization failed:', error);
+        }
     }
 
     setupFileHandlers() {
@@ -36,7 +51,7 @@ class ImportManager {
             const importResult = await this.detectAndImport(content, file.name);
             
             if (importResult.success) {
-                Core.showNotification('Import Successful', importResult.message);
+                this.showNotification('Import Successful', importResult.message);
                 this.refreshDisplays();
             } else {
                 alert('Import failed: ' + importResult.error);
@@ -59,8 +74,10 @@ class ImportManager {
             const result = await this.importCollection(content, file.name);
             
             if (result.success) {
-                Core.showNotification('Collection Imported', result.message);
-                CollectionManager.updateDisplay();
+                this.showNotification('Collection Imported', result.message);
+                if (window.CollectionManager && window.CollectionManager.updateDisplay) {
+                    window.CollectionManager.updateDisplay();
+                }
             } else {
                 alert('Collection import failed: ' + result.error);
             }
@@ -200,7 +217,7 @@ class ImportManager {
             }
 
             const collection = {
-                id: Core.generateId('col'),
+                id: this.generateId('col'),
                 name: postmanCollection.info.name || 'Imported Postman Collection',
                 description: postmanCollection.info.description || 'Imported from Postman',
                 requests: [],
@@ -213,13 +230,15 @@ class ImportManager {
             collection.requests = this.processPostmanItems(postmanCollection.item);
 
             // Check for duplicate collection names
-            const existingCollection = CollectionManager.collections.find(col => col.name === collection.name);
-            if (existingCollection) {
-                collection.name += ' (Imported)';
-            }
+            if (window.CollectionManager) {
+                const existingCollection = window.CollectionManager.collections.find(col => col.name === collection.name);
+                if (existingCollection) {
+                    collection.name += ' (Imported)';
+                }
 
-            CollectionManager.collections.push(collection);
-            CollectionManager.saveCollections();
+                window.CollectionManager.collections.push(collection);
+                window.CollectionManager.saveCollections();
+            }
 
             return {
                 success: true,
@@ -324,7 +343,7 @@ class ImportManager {
             const name = folderPath ? `${folderPath}/${postmanItem.name}` : postmanItem.name;
 
             return {
-                id: Core.generateId('req'),
+                id: this.generateId('req'),
                 name: name || 'Untitled Request',
                 description: postmanItem.description || '',
                 method: (postmanRequest.method || 'GET').toUpperCase(),
@@ -484,12 +503,14 @@ class ImportManager {
             });
 
             // Add to environments
-            if (!EnvironmentManager.environments[environmentName]) {
-                EnvironmentManager.environments[environmentName] = {};
-            }
+            if (window.EnvironmentManager) {
+                if (!window.EnvironmentManager.environments[environmentName]) {
+                    window.EnvironmentManager.environments[environmentName] = {};
+                }
 
-            Object.assign(EnvironmentManager.environments[environmentName], variables);
-            EnvironmentManager.saveEnvironments();
+                Object.assign(window.EnvironmentManager.environments[environmentName], variables);
+                window.EnvironmentManager.saveEnvironments();
+            }
 
             return {
                 success: true,
@@ -550,7 +571,7 @@ class ImportManager {
             Object.values(workspaces).forEach(workspace => {
                 if (workspace.requests.length > 0) {
                     const collection = {
-                        id: Core.generateId('col'),
+                        id: this.generateId('col'),
                         name: workspace.name || 'Imported Insomnia Workspace',
                         description: 'Imported from Insomnia',
                         requests: workspace.requests,
@@ -563,14 +584,18 @@ class ImportManager {
             });
 
             // Save collections
-            collections.forEach(collection => {
-                CollectionManager.collections.push(collection);
-            });
-            CollectionManager.saveCollections();
+            if (window.CollectionManager) {
+                collections.forEach(collection => {
+                    window.CollectionManager.collections.push(collection);
+                });
+                window.CollectionManager.saveCollections();
+            }
 
             // Save environments
-            Object.assign(EnvironmentManager.environments, environments);
-            EnvironmentManager.saveEnvironments();
+            if (window.EnvironmentManager) {
+                Object.assign(window.EnvironmentManager.environments, environments);
+                window.EnvironmentManager.saveEnvironments();
+            }
 
             return {
                 success: true,
@@ -589,7 +614,7 @@ class ImportManager {
     convertInsomniaRequest(insomniaRequest) {
         try {
             return {
-                id: Core.generateId('req'),
+                id: this.generateId('req'),
                 name: insomniaRequest.name || 'Untitled Request',
                 description: insomniaRequest.description || '',
                 method: insomniaRequest.method || 'GET',
@@ -692,7 +717,7 @@ class ImportManager {
             const baseUrl = servers[0].url;
 
             const collection = {
-                id: Core.generateId('col'),
+                id: this.generateId('col'),
                 name: info.title || 'OpenAPI Collection',
                 description: info.description || 'Imported from OpenAPI specification',
                 requests: [],
@@ -717,8 +742,10 @@ class ImportManager {
                 });
             }
 
-            CollectionManager.collections.push(collection);
-            CollectionManager.saveCollections();
+            if (window.CollectionManager) {
+                window.CollectionManager.collections.push(collection);
+                window.CollectionManager.saveCollections();
+            }
 
             return {
                 success: true,
@@ -739,7 +766,7 @@ class ImportManager {
             const url = `{{baseUrl}}${path}`;
             
             return {
-                id: Core.generateId('req'),
+                id: this.generateId('req'),
                 name: operation.summary || `${method.toUpperCase()} ${path}`,
                 description: operation.description || '',
                 method: method.toUpperCase(),
@@ -821,27 +848,27 @@ class ImportManager {
             let imported = 0;
 
             // Import collections
-            if (postwomanData.collections && Array.isArray(postwomanData.collections)) {
+            if (postwomanData.collections && Array.isArray(postwomanData.collections) && window.CollectionManager) {
                 postwomanData.collections.forEach(collection => {
                     // Check for duplicates
-                    const existing = CollectionManager.collections.find(col => col.name === collection.name);
+                    const existing = window.CollectionManager.collections.find(col => col.name === collection.name);
                     if (existing) {
                         collection.name += ' (Imported)';
                     }
                     
-                    collection.id = Core.generateId('col');
+                    collection.id = this.generateId('col');
                     collection.updatedAt = new Date().toISOString();
                     
-                    CollectionManager.collections.push(collection);
+                    window.CollectionManager.collections.push(collection);
                     imported++;
                 });
-                CollectionManager.saveCollections();
+                window.CollectionManager.saveCollections();
             }
 
             // Import environments
-            if (postwomanData.environments) {
-                Object.assign(EnvironmentManager.environments, postwomanData.environments);
-                EnvironmentManager.saveEnvironments();
+            if (postwomanData.environments && window.EnvironmentManager) {
+                Object.assign(window.EnvironmentManager.environments, postwomanData.environments);
+                window.EnvironmentManager.saveEnvironments();
             }
 
             // Import single collection
@@ -876,7 +903,7 @@ class ImportManager {
             }
 
             const collection = {
-                id: Core.generateId('col'),
+                id: this.generateId('col'),
                 name: 'Imported cURL Commands',
                 description: 'Imported from cURL commands',
                 requests: curlCommands,
@@ -885,8 +912,10 @@ class ImportManager {
                 updatedAt: new Date().toISOString()
             };
 
-            CollectionManager.collections.push(collection);
-            CollectionManager.saveCollections();
+            if (window.CollectionManager) {
+                window.CollectionManager.collections.push(collection);
+                window.CollectionManager.saveCollections();
+            }
 
             return {
                 success: true,
@@ -926,7 +955,7 @@ class ImportManager {
 
     parseSingleCurlCommand(curlCommand) {
         const request = {
-            id: Core.generateId('req'),
+            id: this.generateId('req'),
             name: 'cURL Request',
             description: 'Imported from cURL command',
             method: 'GET',
@@ -1014,7 +1043,7 @@ class ImportManager {
             }
 
             const collection = {
-                id: Core.generateId('col'),
+                id: this.generateId('col'),
                 name: 'HAR Import',
                 description: 'Imported from HAR file',
                 requests: requests,
@@ -1023,8 +1052,10 @@ class ImportManager {
                 updatedAt: new Date().toISOString()
             };
 
-            CollectionManager.collections.push(collection);
-            CollectionManager.saveCollections();
+            if (window.CollectionManager) {
+                window.CollectionManager.collections.push(collection);
+                window.CollectionManager.saveCollections();
+            }
 
             return {
                 success: true,
@@ -1050,7 +1081,7 @@ class ImportManager {
         const url = new URL(harRequest.url);
         
         return {
-            id: Core.generateId('req'),
+            id: this.generateId('req'),
             name: `HAR Request ${index + 1} - ${harRequest.method} ${url.pathname}`,
             description: `Imported from HAR - ${url.hostname}`,
             method: harRequest.method || 'GET',
@@ -1106,14 +1137,18 @@ class ImportManager {
 
     refreshDisplays() {
         // Refresh all displays after import
-        if (typeof CollectionManager !== 'undefined') {
-            CollectionManager.updateDisplay();
-            CollectionManager.updateTargetCollectionSelect();
+        if (window.CollectionManager && window.CollectionManager.updateDisplay) {
+            window.CollectionManager.updateDisplay();
+            if (window.CollectionManager.updateTargetCollectionSelect) {
+                window.CollectionManager.updateTargetCollectionSelect();
+            }
         }
         
-        if (typeof EnvironmentManager !== 'undefined') {
-            EnvironmentManager.updateDisplay();
-            EnvironmentManager.updateEnvironmentSelect();
+        if (window.EnvironmentManager && window.EnvironmentManager.updateDisplay) {
+            window.EnvironmentManager.updateDisplay();
+            if (window.EnvironmentManager.updateEnvironmentSelect) {
+                window.EnvironmentManager.updateEnvironmentSelect();
+            }
         }
     }
 
@@ -1147,6 +1182,43 @@ class ImportManager {
                 extension: '.har',
                 description: 'HTTP Archive files'
             }
+        };
+    }
+
+    // Utility methods
+    generateId(prefix = 'id') {
+        try {
+            if (window.Core && typeof window.Core.generateId === 'function') {
+                return window.Core.generateId(prefix);
+            } else {
+                return this.generateFallbackId(prefix);
+            }
+        } catch (error) {
+            return this.generateFallbackId(prefix);
+        }
+    }
+
+    generateFallbackId(prefix = 'id') {
+        const timestamp = Date.now().toString(36);
+        const random = Math.random().toString(36).substr(2, 5);
+        return `${prefix}_${timestamp}_${random}`;
+    }
+
+    showNotification(title, message, options = {}) {
+        if (window.UI && window.UI.showNotification) {
+            window.UI.showNotification(title, message, options);
+        } else if (window.Core && window.Core.showNotification) {
+            window.Core.showNotification(title, message, options);
+        } else {
+            console.log(`${title}: ${message}`);
+        }
+    }
+
+    // Health check
+    healthCheck() {
+        return {
+            initialized: this.initialized,
+            supportedFormats: this.supportedFormats.length
         };
     }
 }

@@ -32,7 +32,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       webSecurity: true
     },
-    icon: path.join(__dirname, '..', '..', 'build', 'icon.png'),
+    icon: path.join(__dirname, '..', '..', 'assets', 'icon.png'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     show: false,
     backgroundColor: '#ffffff'
@@ -614,7 +614,7 @@ ipcMain.handle('show-system-notification', (event, title, body, options = {}) =>
       const notification = new Notification({
         title,
         body,
-        icon: options.icon || path.join(__dirname, '..', 'build', 'icon.png'),
+        icon: options.icon || path.join(__dirname, '..', '..', 'assets', 'icon.png'),
         silent: options.silent || false
       });
       

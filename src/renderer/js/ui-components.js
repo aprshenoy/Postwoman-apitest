@@ -1,751 +1,734 @@
-// UI Components and Interactions
-// Handles all UI-related functionality and environment variable highlighting
+// UI Components - Handles all user interface interactions and utilities
 
 class UI {
     constructor() {
-        this.tooltip = null;
-        this.envVariableRegex = /\{\{([^}]+)\}\}/g;
         this.currentActiveSection = 'workspace';
-        this.standardHeaders = [
-            { key: 'Accept', value: 'application/json' },
-            { key: 'Content-Type', value: 'application/json' },
-            { key: 'User-Agent', value: 'PostWoman/1.0' },
-            { key: 'Cache-Control', value: 'no-cache' }
-        ];
+        this.currentActiveTab = 'params';
+        this.notifications = [];
+        this.contextMenu = null;
+        this.initialized = false;
         
-        this.initializeUI();
+        console.log('🎨 UI module initializing...');
+        
+        // Wait for DOM to be ready
+        this.waitForDOMAndInitialize();
     }
 
-    initializeUI() {
-        // Initialize standard headers
-        this.initializeStandardHeaders();
+    async waitForDOMAndInitialize() {
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            await new Promise(resolve => {
+                document.addEventListener('DOMContentLoaded', resolve);
+            });
+        }
         
-        // Set up environment variable listeners
-        this.setupEnvironmentVariableListeners();
+        // Small delay to ensure all elements are rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Set up modal handlers
-        this.setupModalHandlers();
-        
-        // Set up keyboard shortcuts
-        this.setupKeyboardShortcuts();
-        
-        // Initialize tooltips
-        this.createTooltip();
+        this.initialize();
     }
 
-    // Section Navigation
+    initialize() {
+        try {
+            this.setupEventListeners();
+            this.initializeFirstRows();
+            this.setupKeyboardShortcuts();
+            this.setupContextMenuHandlers();
+            this.setupNotificationSystem();
+            
+            // Initialize default tab and section
+            this.showSection('workspace');
+            this.showTab('params');
+            
+            this.initialized = true;
+            console.log('✅ UI module initialized successfully');
+            
+            // Emit initialization event
+            if (window.Core && typeof window.Core.emit === 'function') {
+                window.Core.emit('ui-initialized');
+            }
+        } catch (error) {
+            console.error('❌ UI initialization failed:', error);
+        }
+    }
+
+    setupEventListeners() {
+        // Modal close handlers
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                this.closeAllModals();
+            }
+        });
+
+        // Escape key to close modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closeAllModals();
+                this.hideContextMenu();
+            }
+        });
+
+        // Input validation and auto-update handlers
+        this.setupInputValidation();
+        
+        // Resize handler
+        window.addEventListener('resize', () => {
+            this.hideContextMenu();
+        });
+
+        console.log('🔗 Event listeners setup complete');
+    }
+
+    setupInputValidation() {
+        // URL validation
+        const urlInput = document.getElementById('url');
+        if (urlInput) {
+            urlInput.addEventListener('input', (e) => {
+                this.validateURL(e.target);
+            });
+        }
+
+        // JSON validation
+        const jsonInput = document.getElementById('jsonInput');
+        if (jsonInput) {
+            jsonInput.addEventListener('input', (e) => {
+                this.validateJSON(e.target);
+            });
+        }
+    }
+
+    validateURL(input) {
+        const value = input.value.trim();
+        if (!value) {
+            input.classList.remove('valid', 'invalid');
+            return;
+        }
+
+        try {
+            // Allow variables in URL
+            const testUrl = value.replace(/\{\{[^}]+\}\}/g, 'placeholder');
+            new URL(testUrl);
+            input.classList.remove('invalid');
+            input.classList.add('valid');
+        } catch (e) {
+            input.classList.remove('valid');
+            input.classList.add('invalid');
+        }
+    }
+
+    validateJSON(input) {
+        const value = input.value.trim();
+        if (!value) {
+            input.classList.remove('valid', 'invalid');
+            return;
+        }
+
+        try {
+            JSON.parse(value);
+            input.classList.remove('invalid');
+            input.classList.add('valid');
+        } catch (e) {
+            input.classList.remove('valid');
+            input.classList.add('invalid');
+        }
+    }
+
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Check for modifier key (Cmd on Mac, Ctrl on others)
+            const modifier = e.metaKey || e.ctrlKey;
+            
+            if (modifier) {
+                switch (e.key) {
+                    case 'Enter':
+                        e.preventDefault();
+                        if (window.RequestManager) {
+                            window.RequestManager.sendRequest();
+                        }
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        if (window.CollectionManager) {
+                            window.CollectionManager.saveCurrentRequest();
+                        }
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        this.clearForm();
+                        break;
+                    case 'l':
+                        e.preventDefault();
+                        document.getElementById('url')?.focus();
+                        break;
+                    case '1':
+                        e.preventDefault();
+                        this.showSection('workspace');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        this.showSection('collections');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        this.showSection('history');
+                        break;
+                    case '4':
+                        e.preventDefault();
+                        this.showSection('environments');
+                        break;
+                    case '5':
+                        e.preventDefault();
+                        this.showSection('teams');
+                        break;
+                }
+            }
+        });
+    }
+
+    setupContextMenuHandlers() {
+        // Prevent default context menu in specific areas
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('.context-menu-zone')) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    setupNotificationSystem() {
+        // Create notification container if it doesn't exist
+        if (!document.getElementById('notificationContainer')) {
+            const container = document.createElement('div');
+            container.id = 'notificationContainer';
+            container.className = 'notification-container';
+            document.body.appendChild(container);
+        }
+
+        // Listen for Core notification events
+        if (window.Core && typeof window.Core.on === 'function') {
+            window.Core.on('notification', (data) => {
+                this.showNotification(data.title, data.message, data);
+            });
+        }
+    }
+
+    initializeFirstRows() {
+        try {
+            // Add initial empty rows for key-value pairs
+            if (window.RequestManager) {
+                window.RequestManager.addParamRow();
+                window.RequestManager.addHeaderRow();
+                window.RequestManager.addCookieRow();
+                window.RequestManager.addFormDataRow();
+            }
+        } catch (error) {
+            console.warn('Could not initialize first rows:', error);
+        }
+    }
+
+    // Section Management
     showSection(sectionName) {
         // Hide all sections
-        document.querySelectorAll('.section-content').forEach(section => {
+        document.querySelectorAll('.content-section').forEach(section => {
             section.classList.remove('active');
         });
-        
+
         // Remove active class from all nav items
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
-        
-        // Show selected section
-        const targetSection = document.getElementById(sectionName + 'Section');
+
+        // Show target section
+        const targetSection = document.getElementById(sectionName);
         if (targetSection) {
             targetSection.classList.add('active');
         }
-        
-        // Add active class to clicked nav item
+
+        // Activate corresponding nav item
         const navItem = document.querySelector(`[data-section="${sectionName}"]`);
         if (navItem) {
             navItem.classList.add('active');
         }
-        
+
         this.currentActiveSection = sectionName;
-        
-        // Trigger section-specific updates
-        Core.emit('sectionChanged', sectionName);
-        
-        // Update display based on section
+
+        // Trigger section-specific initialization
+        this.onSectionChange(sectionName);
+
+        console.log(`📄 Switched to section: ${sectionName}`);
+    }
+
+    onSectionChange(sectionName) {
         switch (sectionName) {
-            case 'history':
-                if (typeof HistoryManager !== 'undefined') {
-                    HistoryManager.updateDisplay();
+            case 'collections':
+                if (window.CollectionManager && window.CollectionManager.updateDisplay) {
+                    window.CollectionManager.updateDisplay();
                 }
                 break;
-            case 'collections':
-                if (typeof CollectionManager !== 'undefined') {
-                    CollectionManager.updateDisplay();
+            case 'history':
+                if (window.HistoryManager && window.HistoryManager.updateDisplay) {
+                    window.HistoryManager.updateDisplay();
                 }
                 break;
             case 'environments':
-                if (typeof EnvironmentManager !== 'undefined') {
-                    EnvironmentManager.updateDisplay();
+                if (window.EnvironmentManager && window.EnvironmentManager.updateDisplay) {
+                    window.EnvironmentManager.updateDisplay();
                 }
                 break;
             case 'teams':
-                if (typeof TeamsManager !== 'undefined') {
-                    TeamsManager.updateDisplay();
+                if (window.TeamsManager && window.TeamsManager.updateDisplay) {
+                    window.TeamsManager.updateDisplay();
                 }
                 break;
         }
     }
 
-    // Workspace tab switching
-    switchWorkspaceTab(tabName) {
-        // Hide all workspace content
-        document.querySelectorAll('.workspace-content').forEach(content => {
-            content.classList.remove('active');
+    // Tab Management
+    showTab(tabName) {
+        // Hide all tab panes
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active');
         });
-        
-        // Remove active class from all workspace tabs
-        document.querySelectorAll('.workspace-tab').forEach(tab => {
-            tab.classList.remove('active');
+
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
         });
-        
-        // Show selected workspace content
-        const targetContent = document.getElementById(tabName + 'Workspace');
-        if (targetContent) {
-            targetContent.classList.add('active');
+
+        // Show target tab pane
+        const targetPane = document.getElementById(tabName);
+        if (targetPane) {
+            targetPane.classList.add('active');
         }
-        
-        // Add active class to clicked tab
-        event.target.classList.add('active');
-        
-        Core.emit('workspaceTabChanged', tabName);
-    }
 
-    // Tab switching
-    switchTab(tabName) {
-        // Hide all tab contents
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        
-        // Remove active class from all tabs
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        
-        // Show selected tab content
-        const targetContent = document.getElementById(tabName);
-        if (targetContent) {
-            targetContent.classList.add('active');
+        // Activate corresponding tab button
+        const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        if (tabBtn) {
+            tabBtn.classList.add('active');
         }
-        
-        // Add active class to clicked tab
-        if (event && event.target) {
-            event.target.classList.add('active');
-        }
-        
-        this.setupEnvironmentVariableListeners();
-        Core.emit('tabChanged', tabName);
+
+        this.currentActiveTab = tabName;
+        console.log(`📑 Switched to tab: ${tabName}`);
     }
 
-    // Initialize standard headers
-    initializeStandardHeaders() {
-        const container = document.getElementById('headersContainer');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        this.standardHeaders.forEach(header => {
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'key-value-pair';
-            headerDiv.innerHTML = `
-                <input type="text" placeholder="Header Name" class="header-key" value="${header.key}">
-                <input type="text" placeholder="Header Value (use {{variables}})" class="header-value" value="${header.value}">
-                <button class="remove-btn" onclick="this.parentNode.remove()">×</button>
-            `;
-            container.appendChild(headerDiv);
-        });
-        
-        this.setupEnvironmentVariableListeners();
-    }
-
-    // Environment variable highlighting and tooltips
-    setupEnvironmentVariableListeners() {
-        // Get all input fields and textareas
-        const inputs = document.querySelectorAll('input[type="text"], input[type="password"], textarea');
-        
-        inputs.forEach(input => {
-            // Remove existing listeners to prevent duplicates
-            const newInput = input.cloneNode(true);
-            input.parentNode.replaceChild(newInput, input);
-            
-            // Add input event listener for real-time highlighting
-            newInput.addEventListener('input', (e) => {
-                this.handleEnvironmentVariableInput(e.target);
-            });
-            
-            // Add focus event for initial highlighting
-            newInput.addEventListener('focus', (e) => {
-                this.handleEnvironmentVariableInput(e.target);
-            });
-            
-            // Add mouseover event for tooltips
-            newInput.addEventListener('mouseover', (e) => {
-                this.handleEnvironmentVariableHover(e);
-            });
-            
-            // Add mouseout event to hide tooltips
-            newInput.addEventListener('mouseout', (e) => {
-                this.hideTooltip();
-            });
-            
-            // Add mousemove event for tooltip positioning
-            newInput.addEventListener('mousemove', (e) => {
-                this.updateTooltipPosition(e);
-            });
-            
-            // Initial highlighting
-            this.handleEnvironmentVariableInput(newInput);
-        });
-    }
-
-    handleEnvironmentVariableInput(input) {
-        const value = input.value;
-        const hasEnvVars = this.envVariableRegex.test(value);
-        
-        if (hasEnvVars) {
-            input.classList.add('env-variable-input');
-            input.style.backgroundImage = this.createEnvironmentVariableBackground(value);
-        } else {
-            input.classList.remove('env-variable-input');
-            input.style.backgroundImage = '';
-        }
-        
-        // Reset regex for next use
-        this.envVariableRegex.lastIndex = 0;
-    }
-
-    createEnvironmentVariableBackground(text) {
-        // Create a subtle gradient to indicate env variables are present
-        const hasVars = /\{\{[^}]+\}\}/.test(text);
-        if (hasVars) {
-            return 'linear-gradient(90deg, rgba(14, 165, 233, 0.05) 0%, rgba(14, 165, 233, 0.1) 50%, rgba(14, 165, 233, 0.05) 100%)';
-        }
-        return '';
-    }
-
-    handleEnvironmentVariableHover(event) {
-        const input = event.target;
-        const value = input.value;
-        const envVars = this.extractEnvironmentVariables(value);
-        
-        if (envVars.length > 0) {
-            const tooltipContent = this.createTooltipContent(envVars);
-            this.showTooltip(event, tooltipContent);
-        }
-    }
-
-    extractEnvironmentVariables(text) {
-        const matches = [];
-        let match;
-        
-        // Reset regex
-        this.envVariableRegex.lastIndex = 0;
-        
-        while ((match = this.envVariableRegex.exec(text)) !== null) {
-            const varName = match[1].trim();
-            const varValue = this.getEnvironmentVariableValue(varName);
-            matches.push({
-                name: varName,
-                value: varValue,
-                found: varValue !== null
-            });
-        }
-        
-        return matches;
-    }
-
-    getEnvironmentVariableValue(varName) {
-        const currentEnv = document.getElementById('currentEnvironment')?.value || 'development';
-        const environments = Core.getStorage('environments') || {};
-        const envVars = environments[currentEnv] || {};
-        
-        return envVars[varName] || null;
-    }
-
-    createTooltipContent(envVars) {
-        return envVars.map(envVar => {
-            const statusIcon = envVar.found ? '✅' : '❌';
-            const value = envVar.found ? envVar.value : 'Not defined';
-            const valueClass = envVar.found ? 'tooltip-value' : 'tooltip-error';
-            
-            return `
-                <div class="tooltip-variable-item">
-                    ${statusIcon} <span class="tooltip-variable">{{${envVar.name}}}</span>
-                    <div class="${valueClass}">${Core.escapeHtml(value)}</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    createTooltip() {
-        if (this.tooltip) return;
-        
-        this.tooltip = document.createElement('div');
-        this.tooltip.id = 'envTooltip';
-        this.tooltip.className = 'env-tooltip';
-        this.tooltip.innerHTML = '<div class="tooltip-content"></div>';
-        document.body.appendChild(this.tooltip);
-        
-        // Add enhanced tooltip styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .tooltip-variable-item {
-                margin-bottom: 0.5rem;
-                padding: 0.25rem 0;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-            }
-            .tooltip-variable-item:last-child {
-                border-bottom: none;
-                margin-bottom: 0;
-            }
-            .tooltip-variable {
-                color: #fbbf24;
-                font-weight: 600;
-                font-family: 'Monaco', 'Consolas', monospace;
-            }
-            .tooltip-value {
-                color: #34d399;
-                font-size: 0.8rem;
-                margin-top: 0.25rem;
-                word-break: break-all;
-            }
-            .tooltip-error {
-                color: #f87171;
-                font-size: 0.8rem;
-                margin-top: 0.25rem;
-                font-style: italic;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    showTooltip(event, content) {
-        if (!this.tooltip) return;
-        
-        const tooltipContent = this.tooltip.querySelector('.tooltip-content');
-        tooltipContent.innerHTML = content;
-        
-        this.tooltip.classList.add('visible');
-        this.updateTooltipPosition(event);
-    }
-
-    updateTooltipPosition(event) {
-        if (!this.tooltip || !this.tooltip.classList.contains('visible')) return;
-        
-        const rect = this.tooltip.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        
-        let x = event.clientX + 10;
-        let y = event.clientY - rect.height - 10;
-        
-        // Adjust if tooltip goes off screen
-        if (x + rect.width > viewportWidth) {
-            x = event.clientX - rect.width - 10;
-        }
-        
-        if (y < 0) {
-            y = event.clientY + 10;
-        }
-        
-        this.tooltip.style.left = x + 'px';
-        this.tooltip.style.top = y + 'px';
-    }
-
-    hideTooltip() {
-        if (this.tooltip) {
-            this.tooltip.classList.remove('visible');
-        }
-    }
-
-    // Toggle authentication fields
+    // Auth Fields Management
     toggleAuthFields() {
-        const authType = document.getElementById('authType');
-        if (!authType) return;
-        
-        const authTypeValue = authType.value;
+        const authType = document.getElementById('authType')?.value;
         
         // Hide all auth fields
-        document.querySelectorAll('#authFields > div').forEach(field => {
+        document.querySelectorAll('.auth-fields').forEach(field => {
             field.style.display = 'none';
         });
-        
-        // Show selected auth field
-        if (authTypeValue !== 'none') {
-            const authField = document.getElementById(authTypeValue + 'Auth');
-            if (authField) {
-                authField.style.display = 'block';
-            }
+
+        // Show relevant auth fields
+        switch (authType) {
+            case 'bearer':
+                const bearerAuth = document.getElementById('bearerAuth');
+                if (bearerAuth) bearerAuth.style.display = 'block';
+                break;
+            case 'basic':
+                const basicAuth = document.getElementById('basicAuth');
+                if (basicAuth) basicAuth.style.display = 'block';
+                break;
+            case 'apikey':
+                const apikeyAuth = document.getElementById('apikeyAuth');
+                if (apikeyAuth) apikeyAuth.style.display = 'block';
+                break;
         }
-        
-        this.setupEnvironmentVariableListeners();
-        Core.emit('authFieldsChanged', authTypeValue);
+
+        // Update cURL command
+        if (window.RequestManager && window.RequestManager.updateCurlCommand) {
+            window.RequestManager.updateCurlCommand();
+        }
     }
 
-    // Toggle body fields
+    // Body Fields Management
     toggleBodyFields() {
-        const bodyType = document.getElementById('bodyType');
-        if (!bodyType) return;
-        
-        const bodyTypeValue = bodyType.value;
+        const bodyType = document.getElementById('bodyType')?.value;
         
         // Hide all body fields
-        document.querySelectorAll('#bodyContent > div').forEach(field => {
+        document.querySelectorAll('.body-fields').forEach(field => {
             field.style.display = 'none';
         });
-        
-        // Show selected body field
-        if (bodyTypeValue !== 'none') {
-            const bodyField = document.getElementById(bodyTypeValue + 'Body');
-            if (bodyField) {
-                bodyField.style.display = 'block';
-            }
+
+        // Show relevant body fields
+        switch (bodyType) {
+            case 'json':
+                const jsonBody = document.getElementById('jsonBody');
+                if (jsonBody) jsonBody.style.display = 'block';
+                break;
+            case 'form':
+                const formBody = document.getElementById('formBody');
+                if (formBody) formBody.style.display = 'block';
+                break;
+            case 'raw':
+                const rawBody = document.getElementById('rawBody');
+                if (rawBody) rawBody.style.display = 'block';
+                break;
         }
-        
-        this.setupEnvironmentVariableListeners();
-        Core.emit('bodyFieldsChanged', bodyTypeValue);
+
+        // Update cURL command
+        if (window.RequestManager && window.RequestManager.updateCurlCommand) {
+            window.RequestManager.updateCurlCommand();
+        }
     }
 
-    // Add form elements
-    addParam() {
-        const container = document.getElementById('paramsContainer');
-        if (!container) return;
-        
-        const paramDiv = document.createElement('div');
-        paramDiv.className = 'key-value-pair';
-        paramDiv.innerHTML = `
-            <input type="text" placeholder="Key" class="param-key">
-            <input type="text" placeholder="Value (use {{variables}})" class="param-value">
-            <button class="remove-btn" onclick="this.parentNode.remove()">×</button>
-        `;
-        container.appendChild(paramDiv);
-        this.setupEnvironmentVariableListeners();
-        Core.emit('paramAdded');
+    // JSON Formatting
+    formatJSON() {
+        const jsonInput = document.getElementById('jsonInput');
+        if (!jsonInput) return;
+
+        try {
+            const parsed = JSON.parse(jsonInput.value);
+            jsonInput.value = JSON.stringify(parsed, null, 2);
+            jsonInput.classList.remove('invalid');
+            jsonInput.classList.add('valid');
+            this.showNotification('Success', 'JSON formatted successfully', { type: 'success' });
+        } catch (error) {
+            this.showNotification('Error', 'Invalid JSON format', { type: 'error' });
+        }
     }
 
-    addHeader() {
-        const container = document.getElementById('headersContainer');
-        if (!container) return;
-        
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'key-value-pair';
-        headerDiv.innerHTML = `
-            <input type="text" placeholder="Header Name" class="header-key">
-            <input type="text" placeholder="Header Value (use {{variables}})" class="header-value">
-            <button class="remove-btn" onclick="this.parentNode.remove()">×</button>
-        `;
-        container.appendChild(headerDiv);
-        this.setupEnvironmentVariableListeners();
-        Core.emit('headerAdded');
-    }
-
-    addCookie() {
-        const container = document.getElementById('cookiesContainer');
-        if (!container) return;
-        
-        const cookieDiv = document.createElement('div');
-        cookieDiv.className = 'key-value-pair';
-        cookieDiv.innerHTML = `
-            <input type="text" placeholder="Cookie Name" class="cookie-key">
-            <input type="text" placeholder="Cookie Value (use {{variables}})" class="cookie-value">
-            <button class="remove-btn" onclick="this.parentNode.remove()">×</button>
-        `;
-        container.appendChild(cookieDiv);
-        this.setupEnvironmentVariableListeners();
-        Core.emit('cookieAdded');
-    }
-
-    addFormData() {
-        const container = document.getElementById('formDataContainer');
-        if (!container) return;
-        
-        const formDiv = document.createElement('div');
-        formDiv.className = 'key-value-pair';
-        formDiv.innerHTML = `
-            <input type="text" placeholder="Key" class="form-key">
-            <input type="text" placeholder="Value (use {{variables}})" class="form-value">
-            <button class="remove-btn" onclick="this.parentNode.remove()">×</button>
-        `;
-        container.appendChild(formDiv);
-        this.setupEnvironmentVariableListeners();
-        Core.emit('formDataAdded');
-    }
-
-    // Clear form for new request
+    // Form Management
     clearForm() {
+        // Clear URL and method
         const urlInput = document.getElementById('url');
         const methodSelect = document.getElementById('method');
         
         if (urlInput) urlInput.value = '';
         if (methodSelect) methodSelect.value = 'GET';
-        
-        // Clear auth fields
+
+        // Clear all containers
+        const containers = [
+            'paramsContainer',
+            'headersContainer', 
+            'cookiesContainer',
+            'formDataContainer'
+        ];
+
+        containers.forEach(containerId => {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = '';
+            }
+        });
+
+        // Reset auth
         const authType = document.getElementById('authType');
         if (authType) {
             authType.value = 'none';
             this.toggleAuthFields();
         }
-        
-        // Clear body
+
+        // Clear auth fields
+        const authInputs = document.querySelectorAll('.auth-fields input');
+        authInputs.forEach(input => input.value = '');
+
+        // Reset body
         const bodyType = document.getElementById('bodyType');
         if (bodyType) {
             bodyType.value = 'none';
             this.toggleBodyFields();
         }
-        
-        // Reset to standard headers
-        this.initializeStandardHeaders();
-        
-        Core.emit('formCleared');
-        Core.showNotification('New Request', 'Form cleared for new request');
-    }
 
-    // Modal handling
-    setupModalHandlers() {
-        // Close modal when clicking outside
-        window.addEventListener('click', (event) => {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                if (event.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        });
-        
-        // Handle escape key for modals
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                const visibleModal = document.querySelector('.modal[style*="block"]');
-                if (visibleModal) {
-                    visibleModal.style.display = 'none';
-                }
-            }
-        });
-    }
+        // Clear body fields
+        const jsonInput = document.getElementById('jsonInput');
+        const rawInput = document.getElementById('rawInput');
+        if (jsonInput) jsonInput.value = '';
+        if (rawInput) rawInput.value = '';
 
-    // Keyboard shortcuts
-    setupKeyboardShortcuts() {
-        Core.on('shortcut:newRequest', () => {
-            this.clearForm();
-        });
-        
-        Core.on('shortcut:save', () => {
-            if (typeof CollectionManager !== 'undefined') {
-                CollectionManager.saveCurrentRequest();
-            }
-        });
-        
-        Core.on('shortcut:environment', () => {
-            if (typeof EnvironmentManager !== 'undefined') {
-                EnvironmentManager.openModal();
-            }
-        });
-        
-        Core.on('shortcut:escape', () => {
-            this.hideTooltip();
-            // Close any open modals
-            document.querySelectorAll('.modal').forEach(modal => {
-                if (modal.style.display === 'block') {
-                    modal.style.display = 'none';
-                }
-            });
-        });
-    }
-
-    // Loading states
-    showLoading(element, text = 'Loading...') {
-        if (typeof element === 'string') {
-            element = document.getElementById(element);
+        // Clear response
+        const responseContainer = document.getElementById('responseContainer');
+        if (responseContainer) {
+            responseContainer.innerHTML = `
+                <div class="response-placeholder">
+                    <p>Send a request to see the response here</p>
+                </div>
+            `;
         }
-        
-        if (!element) return;
-        
-        element.classList.add('loading');
-        const originalContent = element.innerHTML;
-        element.dataset.originalContent = originalContent;
-        
-        element.innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: center; padding: 2rem; color: #64748b;">
-                <div style="margin-right: 0.5rem;">⏳</div>
-                <div>${text}</div>
+
+        // Re-initialize first rows
+        this.initializeFirstRows();
+
+        // Update cURL
+        if (window.RequestManager && window.RequestManager.updateCurlCommand) {
+            window.RequestManager.updateCurlCommand();
+        }
+
+        this.showNotification('Form Cleared', 'Request form has been reset', { type: 'info' });
+    }
+
+    // Loading States
+    showLoading(container, message = 'Loading...') {
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                </div>
+                <p>${message}</p>
             </div>
         `;
     }
 
-    hideLoading(element) {
-        if (typeof element === 'string') {
-            element = document.getElementById(element);
-        }
+    hideLoading(container) {
+        if (!container) return;
         
-        if (!element) return;
-        
-        element.classList.remove('loading');
-        if (element.dataset.originalContent) {
-            element.innerHTML = element.dataset.originalContent;
-            delete element.dataset.originalContent;
+        const loadingState = container.querySelector('.loading-state');
+        if (loadingState) {
+            loadingState.remove();
         }
     }
 
-    // Animation helpers
-    slideDown(element, duration = 300) {
-        element.style.height = '0px';
-        element.style.overflow = 'hidden';
-        element.style.display = 'block';
-        
-        const targetHeight = element.scrollHeight + 'px';
-        
-        element.animate([
-            { height: '0px' },
-            { height: targetHeight }
-        ], {
-            duration: duration,
-            easing: 'ease-out'
-        }).onfinish = () => {
-            element.style.height = 'auto';
-            element.style.overflow = '';
-        };
+    // Modal Management
+    showModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
+            
+            // Focus first input in modal
+            const firstInput = modal.querySelector('input, textarea, select');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
+            }
+        }
     }
 
-    slideUp(element, duration = 300) {
-        const currentHeight = element.offsetHeight + 'px';
-        element.style.height = currentHeight;
-        element.style.overflow = 'hidden';
-        
-        element.animate([
-            { height: currentHeight },
-            { height: '0px' }
-        ], {
-            duration: duration,
-            easing: 'ease-in'
-        }).onfinish = () => {
-            element.style.display = 'none';
-            element.style.height = '';
-            element.style.overflow = '';
-        };
+    hideModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
     }
 
-    // Context menu
-    showContextMenu(event, items) {
+    closeAllModals() {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.style.display = 'none';
+        });
+        document.body.classList.remove('modal-open');
+    }
+
+    // Context Menu
+    showContextMenu(event, menuItems) {
         event.preventDefault();
+        event.stopPropagation();
+
+        let contextMenu = document.getElementById('contextMenu');
         
-        // Remove existing context menu
-        const existingMenu = document.querySelector('.context-menu');
-        if (existingMenu) {
-            existingMenu.remove();
+        if (!contextMenu) {
+            contextMenu = document.createElement('div');
+            contextMenu.id = 'contextMenu';
+            contextMenu.className = 'context-menu';
+            document.body.appendChild(contextMenu);
         }
-        
-        const menu = document.createElement('div');
-        menu.className = 'context-menu';
-        
-        menu.innerHTML = items.map(item => {
+
+        // Build menu HTML
+        const menuHTML = menuItems.map(item => {
             if (item.separator) {
-                return '<div class="menu-separator"></div>';
+                return '<div class="context-menu-separator"></div>';
             }
             
-            const className = item.danger ? 'menu-item danger' : 'menu-item';
+            const className = `context-menu-item ${item.danger ? 'danger' : ''}`;
             return `
-                <div class="${className}" onclick="${item.action}">
-                    ${item.icon ? `<span class="menu-icon">${item.icon}</span>` : ''}
-                    ${item.label}
+                <div class="${className}" onclick="${item.action}; UI.hideContextMenu();">
+                    <span class="menu-icon">${item.icon || ''}</span>
+                    <span class="menu-label">${item.label}</span>
                 </div>
             `;
         }).join('');
-        
-        document.body.appendChild(menu);
+
+        contextMenu.innerHTML = menuHTML;
         
         // Position menu
-        const rect = menu.getBoundingClientRect();
-        const x = Math.min(event.clientX, window.innerWidth - rect.width);
-        const y = Math.min(event.clientY, window.innerHeight - rect.height);
+        const rect = contextMenu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
         
-        menu.style.left = x + 'px';
-        menu.style.top = y + 'px';
+        let x = event.pageX;
+        let y = event.pageY;
         
-        // Close menu on outside click
-        const closeMenu = (e) => {
-            if (!menu.contains(e.target)) {
-                menu.remove();
-                document.removeEventListener('click', closeMenu);
+        // Adjust position if menu would go off-screen
+        if (x + rect.width > viewportWidth) {
+            x = viewportWidth - rect.width - 10;
+        }
+        
+        if (y + rect.height > viewportHeight) {
+            y = viewportHeight - rect.height - 10;
+        }
+        
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+        contextMenu.style.display = 'block';
+
+        // Hide menu when clicking elsewhere
+        const hideMenu = (e) => {
+            if (!contextMenu.contains(e.target)) {
+                this.hideContextMenu();
+                document.removeEventListener('click', hideMenu);
             }
         };
         
         setTimeout(() => {
-            document.addEventListener('click', closeMenu);
-        }, 100);
+            document.addEventListener('click', hideMenu);
+        }, 0);
     }
 
-    // Theme utilities
-    setTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        Core.setStorage('theme', theme);
-        Core.emit('themeChanged', theme);
-    }
-
-    getTheme() {
-        return Core.getStorage('theme') || 'light';
-    }
-
-    // Responsive utilities
-    isMobile() {
-        return window.innerWidth <= 768;
-    }
-
-    isTablet() {
-        return window.innerWidth > 768 && window.innerWidth <= 1024;
-    }
-
-    isDesktop() {
-        return window.innerWidth > 1024;
-    }
-
-    // Focus management
-    focusFirstInput(container) {
-        const input = container.querySelector('input:not([disabled]), textarea:not([disabled])');
-        if (input) {
-            input.focus();
+    hideContextMenu() {
+        const contextMenu = document.getElementById('contextMenu');
+        if (contextMenu) {
+            contextMenu.style.display = 'none';
         }
     }
 
-    // Form validation helpers
-    validateForm(formElement) {
-        const inputs = formElement.querySelectorAll('input[required], textarea[required]');
-        let isValid = true;
+    // Notifications
+    showNotification(title, message, options = {}) {
+        const { type = 'info', duration = 5000 } = options;
         
-        inputs.forEach(input => {
-            if (!input.value.trim()) {
-                input.classList.add('error');
-                isValid = false;
-            } else {
-                input.classList.remove('error');
-            }
-        });
+        const container = document.getElementById('notificationContainer');
+        if (!container) return;
+
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
         
-        return isValid;
+        const icon = this.getNotificationIcon(type);
+        
+        notification.innerHTML = `
+            <div class="notification-icon">${icon}</div>
+            <div class="notification-content">
+                <div class="notification-title">${title}</div>
+                <div class="notification-message">${message}</div>
+            </div>
+            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+        `;
+
+        container.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => notification.classList.add('show'), 10);
+
+        // Auto remove
+        if (duration > 0) {
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+
+        return notification;
     }
 
-    // Auto-resize textareas
-    autoResizeTextarea(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
+    getNotificationIcon(type) {
+        const icons = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+        return icons[type] || icons.info;
     }
 
-    setupAutoResizeTextareas() {
-        document.querySelectorAll('textarea').forEach(textarea => {
-            textarea.addEventListener('input', () => {
-                this.autoResizeTextarea(textarea);
-            });
+    // Utility Functions
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    formatDate(date) {
+        const d = new Date(date);
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString();
+    }
+
+    // Theme Management
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('postwoman_theme', theme);
+    }
+
+    getTheme() {
+        return localStorage.getItem('postwoman_theme') || 'light';
+    }
+
+    toggleTheme() {
+        const currentTheme = this.getTheme();
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        this.setTheme(newTheme);
+        return newTheme;
+    }
+
+    // Animation helpers
+    fadeIn(element, duration = 300) {
+        element.style.opacity = '0';
+        element.style.display = 'block';
+        
+        let start = null;
+        const animate = (timestamp) => {
+            if (!start) start = timestamp;
+            const progress = (timestamp - start) / duration;
             
-            // Initial resize
-            this.autoResizeTextarea(textarea);
-        });
+            element.style.opacity = Math.min(progress, 1);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+
+    fadeOut(element, duration = 300) {
+        let start = null;
+        const animate = (timestamp) => {
+            if (!start) start = timestamp;
+            const progress = (timestamp - start) / duration;
+            
+            element.style.opacity = 1 - Math.min(progress, 1);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                element.style.display = 'none';
+            }
+        };
+        
+        requestAnimationFrame(animate);
+    }
+
+    // Health check
+    healthCheck() {
+        return {
+            initialized: this.initialized,
+            currentSection: this.currentActiveSection,
+            currentTab: this.currentActiveTab,
+            notifications: this.notifications.length,
+            theme: this.getTheme()
+        };
     }
 }
 
-// Global UI instance
+// Create global instance
 window.UI = new UI();
 
-// Export for use in other modules
+// Utility functions for backward compatibility
+function showNotifications() {
+    window.UI.showNotification('Notifications', 'Notification center coming soon!', { type: 'info' });
+}
+
+function showSettings() {
+    window.UI.showNotification('Settings', 'Settings panel coming soon!', { type: 'info' });
+}
+
+// Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = UI;
 }
