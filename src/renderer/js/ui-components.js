@@ -368,48 +368,48 @@ loadHistoryToSidebar() {
         return;
     }
     
-    requestsList.innerHTML = history.slice(0, 50).map((item, index) => {
-        const statusClass = this.getStatusClass(item.response.status);
-        
-        // Generate a meaningful name from the request
-        let requestName = 'Untitled Request';
-        if (item.request.url) {
-            try {
-                const url = new URL(item.request.url);
-                const path = url.pathname;
-                if (path && path !== '/') {
-                    requestName = `${item.request.method} ${path}`;
-                } else {
-                    requestName = `${item.request.method} ${url.hostname}`;
-                }
-            } catch (e) {
-                // If URL parsing fails, use the raw URL
-                const urlPath = item.request.url.length > 30 
-                    ? item.request.url.substring(0, 27) + '...'
-                    : item.request.url;
-                requestName = `${item.request.method} ${urlPath}`;
+requestsList.innerHTML = history.slice(0, 50).map((item, index) => {
+    const statusClass = this.getStatusClass(item.response.status);
+    
+    // Generate a meaningful name from the request
+    let requestName = 'Untitled Request';
+    if (item.request.url) {
+        try {
+            const url = new URL(item.request.url);
+            const path = url.pathname;
+            if (path && path !== '/') {
+                requestName = `${item.request.method} ${path}`;
+            } else {
+                requestName = `${item.request.method} ${url.hostname}`;
             }
+        } catch (e) {
+            // If URL parsing fails, use the raw URL
+            const urlPath = item.request.url.length > 30 
+                ? item.request.url.substring(0, 27) + '...'
+                : item.request.url;
+            requestName = `${item.request.method} ${urlPath}`;
         }
-        
-        return `
-            <div class="request-item history-item" onclick="loadHistoryToWorkspace(${index})">
-                <div class="request-method method-${item.request.method.toLowerCase()}">${item.request.method}</div>
-                <div class="request-details">
-                    <div class="request-name" title="${this.escapeHtml(item.request.url)}">${this.escapeHtml(requestName)}</div>
-                    <div class="request-url">${this.formatRelativeTime(item.timestamp)}</div>
-                    <div class="request-status">
-                        <span class="status-badge status-${statusClass}">${item.response.status}</span>
-                        <span class="duration">${item.response.duration}ms</span>
-                    </div>
-                </div>
-                <div class="request-actions">
-                    <button class="request-action-btn" onclick="event.stopPropagation(); saveHistoryToCollection(${index})" title="Save">
-                        💾
-                    </button>
+    }
+    
+    return `
+        <div class="request-item history-item" onclick="loadHistoryToWorkspace(${index})">
+            <div class="request-method method-${item.request.method.toLowerCase()}">${item.request.method}</div>
+            <div class="request-details">
+                <div class="request-name" title="${this.escapeHtml(item.request.url)}">${this.escapeHtml(requestName)}</div>
+                <div class="request-url">${this.formatRelativeTime(item.timestamp)}</div>
+                <div class="request-status">
+                    <span class="status-badge status-${statusClass}">${item.response.status}</span>
+                    <span class="duration">${item.response.duration}ms</span>
                 </div>
             </div>
-        `;
-    }).join('');
+            <div class="request-actions">
+                <button class="request-delete-btn" onclick="event.stopPropagation(); window.HistoryManager.removeFromHistory(${index})" title="Remove from History">
+                    ×
+                </button>
+            </div>
+        </div>
+    `;
+}).join('');
 }
 
 // Helper method to format URLs for history display

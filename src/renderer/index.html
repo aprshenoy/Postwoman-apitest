@@ -13,11 +13,11 @@
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
-            <div class="logo-section">
-                <div class="logo">🌊</div>
-                <h1>PostWoman</h1>
-                <span class="version">v1.0.0</span>
-            </div>
+<div class="logo-section">
+    <img src="../../assets/icon.png" alt="PostWoman" class="logo-image">
+    <h1>PostWoman</h1>
+    <span class="version">v1.0.0</span>
+</div>
 <div class="header-controls">
     <div class="environment-selector">
         <select id="currentEnvironment" class="environment-dropdown" title="Current Environment">
@@ -1493,6 +1493,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 2000);
 });
+</script>
+<!-- Add this to the global function aliases section -->
+<script>
+// Global function for response tab switching
+window.switchResponseTab = (tabName) => {
+    try {
+        if (window.RequestManager && typeof window.RequestManager.switchResponseTab === 'function') {
+            window.RequestManager.switchResponseTab(tabName);
+        } else {
+            console.warn('RequestManager.switchResponseTab not available yet');
+        }
+    } catch (error) {
+        console.error('Error in switchResponseTab:', error);
+    }
+};
 </script>
 </body>
 </html>

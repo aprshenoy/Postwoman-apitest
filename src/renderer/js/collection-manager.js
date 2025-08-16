@@ -1394,22 +1394,24 @@ updateRequestsList(collectionId) {
         folders.forEach(folder => {
             const folderRequests = folder.requests || [];
             content += `
-                <div class="sidebar-folder-item" style="margin-bottom: 0.5rem;">
-                    <div class="sidebar-folder-header" 
-                         data-folder-id="${folder.id}"
-                         style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: var(--bg-secondary); border-radius: 4px; cursor: pointer;" 
-                         onclick="toggleSidebarFolder('${folder.id}')">
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span class="folder-toggle" id="toggle-${folder.id}">📁</span>
-                            <span style="font-weight: 500; font-size: 0.875rem;">${this.escapeHtml(folder.name)}</span>
-                            <span style="font-size: 0.75rem; color: var(--text-tertiary);">(${folderRequests.length})</span>
-                        </div>
-                        <div class="sidebar-folder-actions" onclick="event.stopPropagation();">
-                            <button class="request-action-btn" onclick="window.CollectionManager.editFolder('${collectionId}', '${folder.id}')" title="Edit">
-                                ✏️
-                            </button>
-                        </div>
-                    </div>
+    <div class="sidebar-folder-header" 
+     data-folder-id="${folder.id}"
+     style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: var(--bg-secondary); border-radius: 4px; cursor: pointer;" 
+     onclick="toggleSidebarFolder('${folder.id}')">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span class="folder-toggle" id="toggle-${folder.id}">📁</span>
+        <span style="font-weight: 500; font-size: 0.875rem;">${this.escapeHtml(folder.name)}</span>
+        <span style="font-size: 0.75rem; color: var(--text-tertiary);">(${folderRequests.length})</span>
+    </div>
+    <div class="sidebar-folder-actions" onclick="event.stopPropagation();">
+        <button class="folder-action-btn" onclick="window.CollectionManager.editFolder('${collectionId}', '${folder.id}')" title="Edit Folder">
+            ✏️
+        </button>
+        <button class="folder-delete-btn" onclick="window.CollectionManager.deleteFolder('${collectionId}', '${folder.id}')" title="Delete Folder">
+            ×
+        </button>
+    </div>
+</div>
                     <div class="sidebar-folder-requests" id="folder-${folder.id}" style="display: none; margin-left: 1rem; border-left: 2px solid var(--border-color); padding-left: 0.5rem;">
 ${folderRequests.map((request, index) => `
     <div class="request-item" 
@@ -1423,6 +1425,11 @@ ${folderRequests.map((request, index) => `
         <div class="request-details">
             <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
             <div class="request-url" title="${this.escapeHtml(request.url)}">${this.escapeHtml(this.formatUrlForSidebar(request.url))}</div>
+        </div>
+        <div class="request-actions">
+            <button class="mini-delete-btn" onclick="event.stopPropagation(); window.CollectionManager.deleteRequest('${collectionId}', ${index}, '${folder.id}')" title="Delete Request">
+                ×
+            </button>
         </div>
     </div>
 `).join('')}
@@ -1452,6 +1459,11 @@ ${rootRequests.map((request, index) => `
         <div class="request-details">
             <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
             <div class="request-url" title="${this.escapeHtml(request.url)}">${this.escapeHtml(this.formatUrlForSidebar(request.url))}</div>
+        </div>
+        <div class="request-actions">
+            <button class="mini-delete-btn" onclick="event.stopPropagation(); window.CollectionManager.deleteRequest('${collectionId}', ${index})" title="Delete Request">
+                ×
+            </button>
         </div>
     </div>
 `).join('')}
@@ -1767,6 +1779,7 @@ handleEditFolder(event, collectionId, folderId) {
 }
 
 // Delete folder
+// Enhanced deleteFolder with better confirmation
 deleteFolder(collectionId, folderId) {
     const collection = this.getCollection(collectionId);
     if (!collection) return;
@@ -1775,7 +1788,7 @@ deleteFolder(collectionId, folderId) {
     if (!folder) return;
     
     const requestCount = (folder.requests || []).length;
-    let confirmMessage = `Are you sure you want to delete the "${folder.name}" folder?`;
+    let confirmMessage = `Delete folder "${folder.name}"?`;
     
     if (requestCount > 0) {
         confirmMessage += `\n\nThis folder contains ${requestCount} request${requestCount > 1 ? 's' : ''}. They will be moved to the collection root.`;
@@ -1806,7 +1819,7 @@ deleteFolder(collectionId, folderId) {
     
     this.refreshSidebarIfNeeded(collectionId);
     
-    this.showNotification('Folder Deleted', `"${folder.name}" folder deleted. Requests moved to collection root.`);
+    this.showNotification('Folder Deleted', `"${folder.name}" folder deleted. ${requestCount > 0 ? 'Requests moved to collection root.' : ''}`);
 }
 
 // Refresh sidebar if needed

@@ -177,7 +177,19 @@ html, body {
 }
 
 /* ================== CONDITIONAL SIDEBAR LAYOUT ================== */
+/* Logo image styling */
+.logo-image {
+    width: 24px; /* Reduced from emoji size for compact header */
+    height: 24px;
+    object-fit: contain;
+    border-radius: 4px; /* Slight rounding for modern look */
+    transition: all 0.2s ease;
+}
 
+.logo-image:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
 /* Main content adjustments when sidebar is hidden */
 .main-content.full-width .content-area {
     margin-left: 0;
@@ -3354,4 +3366,301 @@ select:focus-visible {
     text-overflow: ellipsis;
     white-space: nowrap;
     line-height: 1.2;
+}
+/* ================== RESPONSE TABS STYLING ================== */
+
+/* Response section with tabs */
+.response-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.response-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.response-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Response tabs styling */
+.response-tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+}
+
+.response-tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    margin-bottom: -2px;
+}
+
+.response-tab-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+}
+
+.response-tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background-color: var(--bg-primary);
+    font-weight: 600;
+}
+
+/* Response tab content */
+.response-tab-content {
+    min-height: 200px;
+}
+
+.response-tab-pane {
+    display: none;
+}
+
+.response-tab-pane.active {
+    display: block;
+}
+
+/* Raw button styling (like + button) */
+.raw-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    font-size: 12px;
+    font-weight: 500;
+    min-width: auto;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.raw-btn:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+/* Enhanced status badge positioning */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: auto; /* Right align */
+}
+
+/* ================== MINI DELETE BUTTONS ================== */
+
+/* Mini delete button for requests and folders */
+.mini-delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    transition: all 0.2s ease;
+    opacity: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mini-delete-btn:hover {
+    background-color: var(--error-color);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Show delete button on hover */
+.request-item:hover .mini-delete-btn,
+.sidebar-folder-item:hover .mini-delete-btn {
+    opacity: 1;
+}
+
+/* Request actions layout */
+.request-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* ================== FOLDER ACTIONS LAYOUT ================== */
+
+/* Enhanced folder actions */
+.sidebar-folder-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar-folder-item:hover .sidebar-folder-actions {
+    opacity: 1;
+}
+
+.sidebar-folder-actions .request-action-btn {
+    padding: 2px 4px;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 12px;
+    transition: all 0.2s;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-folder-actions .request-action-btn:hover {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* ================== ENHANCED REQUEST ITEM LAYOUT ================== */
+
+/* Better request item layout to accommodate delete button */
+.request-item {
+    position: relative;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    min-height: 36px;
+}
+
+.request-details {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* ================== RESPONSE BODY ENHANCEMENTS ================== */
+
+/* Enhanced response body styling */
+.response-body {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Enhanced headers list in tab */
+.headers-list {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.header-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.header-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.header-key {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 150px;
+    font-size: 12px;
+}
+
+.header-value {
+    color: var(--text-secondary);
+    word-break: break-all;
+    font-size: 12px;
+    font-family: var(--font-mono);
+}
+
+/* ================== RESPONSIVE IMPROVEMENTS ================== */
+
+@media (max-width: 768px) {
+    .response-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .response-actions {
+        justify-content: space-between;
+    }
+    
+    .response-tab-btn {
+        flex: 1;
+        text-align: center;
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+    
+    .mini-delete-btn {
+        opacity: 1; /* Always show on mobile */
+    }
+    
+    .sidebar-folder-actions {
+        opacity: 1; /* Always show on mobile */
+    }
 }

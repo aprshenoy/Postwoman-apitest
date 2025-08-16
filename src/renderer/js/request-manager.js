@@ -1062,47 +1062,127 @@ processRequestData(requestData) {
         }
     }
 
-    displayResponse(response) {
-        const responseContainer = document.getElementById('responseContainer');
-        if (!responseContainer) return;
-        
-        const statusClass = this.getStatusClass(response.status);
-        
-        responseContainer.innerHTML = `
-            <div class="response-header">
-                <div class="response-status">
-                    <span class="status-badge ${statusClass}">${response.status} ${response.statusText}</span>
-                    <span class="response-meta">Time: ${response.duration}ms • Size: ${this.formatFileSize(response.size)}</span>
-                </div>
-                <div class="response-actions">
-                    <button class="btn-sm btn-edit" onclick="RequestManager.copyResponse()">Copy</button>
-                    <button class="btn-sm btn-edit" onclick="RequestManager.saveResponse()">Save</button>
-                    <button class="btn-sm btn-edit" onclick="RequestManager.showRawResponse()">Raw</button>
-                </div>
+    // Enhanced displayResponse with tabs layout
+displayResponse(response) {
+    const responseContainer = document.getElementById('responseContainer');
+    if (!responseContainer) return;
+    
+    const statusClass = this.getStatusClass(response.status);
+    
+    responseContainer.innerHTML = `
+        <div class="response-header">
+            <div class="response-status">
+                <span class="response-meta">Time: ${response.duration}ms • Size: ${this.formatFileSize(response.size)}</span>
             </div>
-            
-            ${Object.keys(response.headers).length > 0 ? `
-                <div class="response-headers">
-                    <h4>Response Headers (${Object.keys(response.headers).length})</h4>
-                    <div class="headers-list">
-                        ${Object.entries(response.headers).map(([key, value]) => 
-                            `<div class="header-item">
-                                <span class="header-key">${this.escapeHtml(key)}:</span>
-                                <span class="header-value">${this.escapeHtml(value)}</span>
-                            </div>`
-                        ).join('')}
-                    </div>
-                </div>
-            ` : ''}
-            
-            <div class="response-body-section">
-                <h4>Response Body</h4>
+            <div class="response-actions">
+                <span class="status-badge ${statusClass}">${response.status} ${response.statusText}</span>
+                <button class="header-btn raw-btn" onclick="RequestManager.showRawResponse()" title="View Raw Response">
+                    Raw
+                </button>
+            </div>
+        </div>
+        
+        <!-- Response Tabs -->
+        <div class="response-tabs">
+            <button class="response-tab-btn active" data-tab="response-body" onclick="RequestManager.switchResponseTab('response-body')">Body</button>
+            <button class="response-tab-btn" data-tab="response-headers" onclick="RequestManager.switchResponseTab('response-headers')">Headers (${Object.keys(response.headers).length})</button>
+        </div>
+        
+        <!-- Response Tab Content -->
+        <div class="response-tab-content">
+            <!-- Body Tab -->
+            <div id="response-body" class="response-tab-pane active">
                 <pre class="response-body">${this.formatResponseBody(response.body)}</pre>
             </div>
-        `;
+            
+            <!-- Headers Tab -->
+            <div id="response-headers" class="response-tab-pane">
+                <div class="headers-list">
+                    ${Object.entries(response.headers).map(([key, value]) => 
+                        `<div class="header-item">
+                            <span class="header-key">${this.escapeHtml(key)}:</span>
+                            <span class="header-value">${this.escapeHtml(value)}</span>
+                        </div>`
+                    ).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+
+// Switch between response tabs
+switchResponseTab(tabName) {
+    // Hide all tab panes
+    document.querySelectorAll('.response-tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+    });
+
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.response-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Show target tab pane
+    const targetPane = document.getElementById(tabName);
+    if (targetPane) {
+        targetPane.classList.add('active');
     }
 
-    displayError(error) {
+    // Activate corresponding tab button
+    const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+    if (tabBtn) {
+        tabBtn.classList.add('active');
+    }
+}
+
+// Enhanced showRawResponse method
+showRawResponse() {
+    if (!this.currentResponse) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 90%; max-height: 90%;">
+            <div class="modal-header">
+                <h3>Raw Response</h3>
+                <button class="close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="raw-response-content">
+                    <pre style="white-space: pre-wrap; word-wrap: break-word; max-height: 500px; overflow-y: auto;">${this.escapeHtml(this.currentResponse.rawBody)}</pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="RequestManager.copyRawResponse()">Copy Raw</button>
+                <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+// Copy raw response
+copyRawResponse() {
+    if (!this.currentResponse) return;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(this.currentResponse.rawBody).then(() => {
+            this.showNotification('Copied', 'Raw response copied to clipboard');
+        });
+    }
+}
+
+displayError(error) {
         const responseContainer = document.getElementById('responseContainer');
         if (!responseContainer) return;
         
