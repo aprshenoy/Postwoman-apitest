@@ -348,3 +348,127 @@
     padding-left: 20px;
     position: relative;
 }
+
+/* ================== HISTORY ITEM STYLING FIXES ================== */
+
+/* Fix history item layout */
+.history-item .request-details {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.history-item .request-name {
+    font-size: 12px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+    max-width: 180px;
+}
+
+.history-item .request-url {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.history-item .request-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.history-item .status-badge {
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.history-item .duration {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+/* History item hover effects */
+.history-item:hover .request-url {
+    opacity: 1;
+    color: var(--text-secondary);
+}
+
+.history-item:hover .duration {
+    color: var(--text-secondary);
+}
+
+.history-item.active .request-url {
+    color: var(--text-inverse);
+    opacity: 0.8;
+}
+
+.history-item.active .duration {
+    color: var(--text-inverse);
+    opacity: 0.7;
+}
+
+/* ================== STATUS BADGE COLORS ================== */
+
+/* Enhanced status badge styling for history */
+.status-badge.status-200 {
+    background-color: #10b981;
+    color: white;
+}
+
+.status-badge.status-300 {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.status-badge.status-400 {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.status-badge.status-500 {
+    background-color: #ef4444;
+    color: white;
+}
+
+.status-badge.status-unknown {
+    background-color: #6b7280;
+    color: white;
+}
+
+/* ================== HISTORY ITEM RESPONSIVE ================== */
+
+@media (max-width: 768px) {
+    .history-item .request-name {
+        font-size: 11px;
+        max-width: 120px;
+    }
+    
+    .history-item .request-url {
+        font-size: 9px;
+    }
+    
+    .history-item .status-badge {
+        font-size: 8px;
+        padding: 1px 3px;
+    }
+    
+    .history-item .duration {
+        font-size: 8px;
+    }
+    
+    .history-item .request-status {
+        gap: 4px;
+    }
+}

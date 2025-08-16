@@ -112,38 +112,39 @@ html, body {
 
 /* Header */
 .app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  min-height: 60px;
-  flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px; /* Reduced from 16px 24px */
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    min-height: 42px; /* Reduced from 60px (30% reduction) */
+    flex-shrink: 0;
 }
 
+/* Adjust logo section sizing */
 .logo-section {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Reduced from 16px */
 }
 
 .logo {
-  font-size: 1.5rem;
+    font-size: 1.2rem; /* Reduced from 1.5rem */
 }
 
 .logo-section h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--primary-color);
+    font-size: 1rem; /* Reduced from 1.25rem */
+    font-weight: 600;
+    color: var(--primary-color);
 }
 
 .version {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  background: var(--bg-tertiary);
-  padding: 0.125rem 0.375rem;
-  border-radius: var(--radius-sm);
+    font-size: 0.7rem; /* Reduced from 0.75rem */
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    padding: 0.1rem 0.3rem; /* Reduced padding */
+    border-radius: var(--radius-sm);
 }
 
 .header-controls {
@@ -169,11 +170,112 @@ html, body {
 
 /* Main content */
 .main-content {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
+/* ================== CONDITIONAL SIDEBAR LAYOUT ================== */
+
+/* Main content adjustments when sidebar is hidden */
+.main-content.full-width .content-area {
+    margin-left: 0;
+    width: 100%;
+}
+
+/* Requests sidebar hidden state */
+.requests-sidebar.hidden {
+    display: none !important;
+}
+
+/* Smooth transition for layout changes */
+.main-content {
+    transition: all 0.3s ease;
+}
+
+.content-area {
+    transition: all 0.3s ease;
+}
+
+.requests-sidebar {
+    transition: all 0.3s ease;
+}
+
+/* ================== LAYOUT ADJUSTMENTS FOR DIFFERENT SECTIONS ================== */
+
+/* When sidebar is hidden, give more space to content */
+.main-content.full-width {
+    overflow: hidden;
+}
+
+.main-content.full-width .content-area {
+    width: calc(100% - 60px); /* Account for icon sidebar only */
+    margin-left: 0;
+}
+
+/* Ensure collections, environments, teams get full width */
+.main-content.full-width #collections,
+.main-content.full-width #environments,
+.main-content.full-width #teams {
+    max-width: 100%;
+    padding: 20px 40px; /* More padding for better use of space */
+}
+
+/* ================== RESPONSIVE IMPROVEMENTS ================== */
+
+@media (max-width: 1024px) {
+    .main-content.full-width .content-area {
+        padding: 16px 24px;
+    }
+    
+    .main-content.full-width #collections,
+    .main-content.full-width #environments,
+    .main-content.full-width #teams {
+        padding: 16px 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content.full-width .content-area {
+        width: calc(100% - 50px); /* Account for smaller icon sidebar */
+        padding: 12px 16px;
+    }
+    
+    .main-content.full-width #collections,
+    .main-content.full-width #environments,
+    .main-content.full-width #teams {
+        padding: 12px 16px;
+    }
+}
+
+/* ================== IMPROVED SECTION LAYOUTS ================== */
+
+/* Better spacing for full-width sections */
+.main-content.full-width .collections-container,
+.main-content.full-width .environments-container,
+.main-content.full-width .teams-container {
+    max-width: 1400px; /* Prevent content from being too wide */
+    margin: 0 auto;
+}
+
+/* Collections grid improvements for full width */
+.main-content.full-width .collections-container {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 24px;
+}
+
+/* Environments grid improvements for full width */
+.main-content.full-width .environments-container {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+/* Teams grid improvements for full width */
+.main-content.full-width .teams-grid {
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 24px;
+}
 /* Sidebar */
 .sidebar {
   width: 240px;
@@ -506,20 +608,28 @@ html, body {
   gap: var(--spacing-sm);
 }
 
+
+
 .key-value-pair {
-  display: flex;
-  gap: var(--spacing-sm);
-  align-items: center;
+    display: flex;
+    gap: 6px; /* Reduced from 8px */
+    align-items: center;
+    margin-bottom: 6px; /* Reduced from 8px */
+    padding: 2px;
+    border-radius: 4px;
+    transition: background 0.2s;
 }
 
+/* EXISTING - Replace .key-value-pair input */
 .key-value-pair input {
-  flex: 1;
-  padding: var(--spacing-sm);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 0.875rem;
+    flex: 1;
+    padding: 6px 8px; /* Reduced padding */
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary) !important; /* Force visible text */
+    font-size: 12px; /* Reduced from 13px */
+    transition: all 0.2s;
 }
 
 .key-value-pair input:focus {
@@ -578,16 +688,16 @@ html, body {
 }
 
 .body-fields textarea {
-  width: 100%;
-  padding: var(--spacing-sm);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 0.875rem;
-  font-family: var(--font-mono);
-  resize: vertical;
-  min-height: 120px;
+    width: 100%;
+    padding: 8px; /* Reduced padding */
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary) !important; /* Force visible text */
+    font-size: 12px; /* Reduced from 13px */
+    font-family: var(--font-mono);
+    resize: vertical;
+    min-height: 80px; /* Reduced from 120px */
 }
 
 .body-fields textarea:focus {
@@ -1964,13 +2074,19 @@ select:focus-visible {
             flex-shrink: 0;
         }
 
-        .requests-header h3 {
-            margin: 0;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
+.requests-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.requests-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
 
         .collection-selector {
             position: relative;
@@ -2098,24 +2214,25 @@ select:focus-visible {
             min-width: 180px;
         }
 
-        .environment-dropdown {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 10px center;
-            background-repeat: no-repeat;
-            background-size: 16px;
-            padding-right: 36px;
-            transition: all 0.2s;
-        }
+.environment-dropdown {
+    width: 100%;
+    padding: 6px 8px; /* Reduced padding */
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 12px; /* Reduced from 13px */
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 8px center;
+    background-repeat: no-repeat;
+    background-size: 14px; /* Reduced from 16px */
+    padding-right: 32px;
+    transition: all 0.2s;
+    height: 28px; /* Set specific height */
+}
 
         .environment-dropdown:focus {
             outline: none;
@@ -2127,6 +2244,10 @@ select:focus-visible {
             border-color: var(--border-hover);
         }
 
+        .environment-selector {
+    position: relative;
+    min-width: 160px; /* Reduced from 180px */
+}
         /* Environment indicator */
         .environment-selector::before {
             content: "🌍";
@@ -2202,11 +2323,9 @@ select:focus-visible {
         }
 
         /* Collection actions */
-        .collection-actions {
-            display: flex;
-            gap: 4px;
-            margin-top: 8px;
-        }
+.collection-actions {
+    display: none; /* Hide old actions */
+}
 
         .collection-action-btn {
             flex: 1;
@@ -2332,34 +2451,51 @@ select:focus-visible {
     box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
+
+
 .url-input {
     flex: 1;
-    padding: 12px 16px;
+    padding: 8px 12px; /* Reduced padding */
     border: 2px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-size: 14px;
+    border-radius: 6px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary) !important; /* Force visible text */
+    font-size: 13px; /* Reduced from 14px */
     transition: all 0.2s;
 }
 
+/* EXISTING - Replace .url-input:focus */
 .url-input:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+    color: var(--text-primary) !important;
 }
 
+/* EXISTING - Replace .method-select */
+.method-select {
+    min-width: 100px; /* Reduced from 120px */
+    padding: 8px 12px; /* Reduced padding */
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px; /* Reduced from 14px */
+    font-weight: 600;
+}
+
+/* EXISTING - Replace .send-button */
 .send-button {
     background: linear-gradient(135deg, var(--primary-color), #0284c7);
     color: white;
     border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 8px 16px; /* Reduced padding */
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px; /* Reduced from 14px */
     font-weight: 600;
     transition: all 0.2s;
-    min-width: 120px;
+    min-width: 100px; /* Reduced from 120px */
     box-shadow: 0 2px 4px rgba(14, 165, 233, 0.2);
 }
 
@@ -2377,25 +2513,27 @@ select:focus-visible {
 }
 
 /* Enhanced tab styling */
+
 .request-tabs {
     display: flex;
-    gap: 4px;
-    margin-bottom: 20px;
+    gap: 2px; /* Reduced from 4px */
+    margin-bottom: 12px; /* Reduced from 20px */
     border-bottom: 2px solid var(--border-color);
     padding-bottom: 0;
 }
 
+/* EXISTING - Replace .tab-btn */
 .tab-btn {
-    padding: 12px 20px;
+    padding: 8px 16px; /* Reduced padding */
     border: none;
     background: none;
     cursor: pointer;
     color: var(--text-secondary);
-    font-size: 13px;
+    font-size: 12px; /* Reduced from 13px */
     font-weight: 500;
     border-bottom: 3px solid transparent;
     transition: all 0.2s;
-    border-radius: 6px 6px 0 0;
+    border-radius: 4px 4px 0 0;
     position: relative;
     margin-bottom: -2px;
 }
@@ -2625,4 +2763,595 @@ select:focus-visible {
     .request-builder {
         break-inside: avoid;
     }
+}
+
+/* ================== DRAG & DROP STYLES ================== */
+.request-item[draggable="true"] {
+    cursor: move;
+    position: relative;
+}
+
+.request-item[draggable="true"]:hover {
+    background: var(--bg-tertiary);
+}
+
+.request-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+    z-index: 1000;
+}
+
+
+
+.sidebar-folder-header.drag-over {
+    background: rgba(14, 165, 233, 0.2);
+    border: 2px dashed var(--primary-color);
+}
+
+/* Drag indicator */
+.request-item[draggable="true"]::before {
+    content: '⋮⋮';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+    font-size: 10px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.request-item[draggable="true"]:hover::before {
+    opacity: 1;
+}
+
+/* ================== CONTEXT MENU ENHANCEMENTS ================== */
+.context-menu {
+    position: absolute;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xl);
+    z-index: 2000;
+    min-width: 200px;
+    padding: var(--spacing-xs);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.context-menu-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.context-menu-item.danger {
+    color: var(--error-color);
+}
+
+.context-menu-item.danger:hover {
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: var(--spacing-xs) 0;
+}
+
+.menu-icon {
+    font-size: 1rem;
+    min-width: 20px;
+    text-align: center;
+}
+
+.menu-label {
+    flex: 1;
+}
+
+/* ================== ENHANCED REQUEST ITEMS ================== */
+.request-item {
+    position: relative;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+}
+
+.request-item:hover {
+    background: var(--bg-primary);
+    border-color: var(--border-color);
+}
+
+.request-item.active {
+    background: var(--primary-color);
+    color: var(--text-inverse);
+    border-color: var(--primary-color);
+}
+
+.request-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: var(--text-inverse);
+    border-radius: 0 2px 2px 0;
+}
+
+/* ================== COLLECTION ACTIONS ENHANCEMENTS ================== */
+.sidebar-collection-actions {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.sidebar-collection-actions .collection-action-btn {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.sidebar-collection-actions .collection-action-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+/* ================== FOLDER ENHANCEMENTS ================== */
+.sidebar-folder-header {
+    transition: all 0.2s;
+    border-radius: 4px;
+}
+
+.sidebar-folder-header:hover {
+    background: var(--bg-primary) !important;
+}
+
+.sidebar-folder-requests {
+    border-left: 2px solid var(--border-color);
+    margin-left: 1rem;
+    padding-left: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+/* ================== ANIMATION ENHANCEMENTS ================== */
+@keyframes slideInContext {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.context-menu {
+    animation: slideInContext 0.15s ease-out;
+}
+
+@keyframes dragPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+
+
+/* ================== RESPONSIVE ENHANCEMENTS ================== */
+@media (max-width: 768px) {
+    .context-menu {
+        min-width: 180px;
+        font-size: 0.8rem;
+    }
+    
+    .context-menu-item {
+        padding: 8px 12px;
+    }
+    
+    .sidebar-collection-actions {
+        padding: 0.4rem;
+    }
+    
+    .sidebar-collection-actions .collection-action-btn {
+        font-size: 10px;
+        padding: 4px 6px;
+    }
+    
+    .request-item[draggable="true"]::before {
+        display: none; /* Hide drag indicator on mobile */
+    }
+}
+
+/* ================== DARK THEME ADJUSTMENTS ================== */
+[data-theme="dark"] .context-menu {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .context-menu-item.danger:hover {
+    background-color: rgba(220, 38, 38, 0.1);
+}
+
+[data-theme="dark"] .sidebar-collection-actions {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .request-item.drag-over {
+    background: rgba(14, 165, 233, 0.15);
+}
+
+.request-item.drag-over {
+    border: 2px dashed var(--primary-color) !important;
+    background: rgba(14, 165, 233, 0.1) !important;
+    animation: dragPulse 0.6s ease-in-out infinite;
+    transform-origin: center;
+}
+
+/* ================== DRAG & DROP ANIMATION FIXES ================== */
+
+/* Fix drag-over to only animate one element at a time */
+.request-item.drag-over {
+    border: 2px dashed var(--primary-color) !important;
+    background: rgba(14, 165, 233, 0.1) !important;
+    animation: dragPulse 0.6s ease-in-out infinite;
+    transform-origin: center;
+}
+
+.sidebar-folder-header.drag-over {
+    background: rgba(14, 165, 233, 0.2) !important;
+    border: 2px dashed var(--primary-color) !important;
+    animation: dragPulse 0.6s ease-in-out infinite;
+}
+
+/* Ensure other elements don't get animated during drag */
+.request-item:not(.drag-over) {
+    animation: none !important;
+    transform: none !important;
+}
+
+/* ================== PLUS BUTTON STYLING ================== */
+
+/* Style for the + button */
+
+
+/* Update collection actions layout for + button */
+.collection-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+
+
+/* New header-style + button */
+.collection-add-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 6px 8px; /* Smaller padding */
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    font-size: 14px;
+    min-width: auto;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.collection-add-btn:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+
+/* Better drag visual feedback */
+.request-item.dragging {
+    opacity: 0.6 !important;
+    transform: rotate(3deg) scale(1.02) !important;
+    z-index: 1000 !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    border: 2px solid var(--primary-color) !important;
+}
+
+/* Improved drag-over pulse animation */
+@keyframes dragPulse {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+    }
+    50% { 
+        transform: scale(1.02);
+        box-shadow: 0 0 0 8px rgba(14, 165, 233, 0.1);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+    }
+}
+
+/* ================== COLLECTION SELECTOR IMPROVEMENTS ================== */
+
+/* Ensure collection selector always shows content */
+.collection-selector select {
+    min-height: 32px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+.collection-selector select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+}
+
+/* ================== MOBILE RESPONSIVENESS FOR + BUTTON ================== */
+
+@media (max-width: 768px) {
+    .collection-plus-btn {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 14px !important;
+    }
+    
+    .collection-actions {
+        margin-top: 0.5rem;
+    }
+}
+
+/* ================== NEW - + BUTTON STYLING ================== */
+
+/* NEW - Header-style + button */
+.collection-add-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 6px 8px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    font-size: 14px;
+    min-width: auto;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.collection-add-btn:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+/* ================== NEW - HEADER LAYOUT ================== */
+
+/* NEW - Header content layout */
+.requests-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.requests-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ================== NEW - COMPACT WORKSPACE STYLES ================== */
+
+/* NEW - Compact request builder */
+.request-builder.compact {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 12px; /* Reduced from 24px */
+    margin-bottom: 8px; /* Reduced from 24px */
+}
+
+/* NEW - Compact request name section */
+.request-name-section {
+    margin-bottom: 12px; /* Reduced from 16px */
+}
+
+.request-name-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.request-name-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    background: var(--bg-primary);
+}
+
+.request-name-input::placeholder {
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+/* NEW - Compact request line */
+.request-line {
+    display: flex;
+    gap: 8px; /* Reduced from 16px */
+    margin-bottom: 12px; /* Reduced from 24px */
+    align-items: stretch;
+}
+
+/* NEW - Compact tab content */
+.tab-content.compact {
+    min-height: 120px; /* Reduced from 200px */
+}
+
+/* NEW - Compact section headers */
+.section-header.compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px; /* Reduced from 16px */
+    flex-wrap: wrap;
+    gap: 8px; /* Reduced from 16px */
+}
+
+.section-header.compact h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* NEW - Compact response section */
+.response-section.compact {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 12px; /* Reduced from 24px */
+    margin-top: 0; /* Remove margin */
+}
+
+.response-section.compact h3 {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+/* ================== NEW - TEXT VISIBILITY FIXES ================== */
+
+/* NEW - URL input placeholder fix */
+.url-input::placeholder {
+    color: var(--text-tertiary) !important;
+    opacity: 0.7;
+}
+
+/* ================== NEW - HIDE OLD STYLES ================== */
+
+/* NEW - Hide old collection actions */
+.collection-actions {
+    display: none;
+}
+
+/* NEW - Hide old plus button styles */
+.collection-plus-btn {
+    display: none !important;
+}
+
+/* ================== NEW - RESPONSIVE IMPROVEMENTS ================== */
+
+@media (max-width: 768px) {
+    .app-header {
+        padding: 6px 12px;
+        min-height: 36px;
+    }
+    
+    .requests-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    
+    .collection-add-btn {
+        align-self: flex-end;
+        margin-top: -20px;
+    }
+    
+    .request-line {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .method-select {
+        width: 100%;
+        min-width: unset;
+    }
+}
+
+/* ================== IMPROVED REQUEST URL DISPLAY ================== */
+
+/* Better styling for request URL in sidebar */
+.request-url {
+    font-size: 11px;
+    opacity: 0.8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    max-width: 200px;
+}
+
+.request-item:hover .request-url {
+    opacity: 1;
+    color: var(--text-primary);
+}
+
+.request-item.active .request-url {
+    opacity: 0.9;
+    color: var(--text-inverse);
+}
+
+/* Tooltip for full URL on hover */
+.request-url[title]:hover {
+    cursor: help;
+}
+
+/* ================== REQUEST DETAILS LAYOUT ================== */
+
+.request-details {
+    flex: 1;
+    min-width: 0; /* Ensure flex child can shrink */
+    overflow: hidden;
+}
+
+.request-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
 }

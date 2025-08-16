@@ -226,179 +226,247 @@ class UI {
     }
 
     // Section Management
-    showSection(sectionName) {
-        // Hide all sections
-        document.querySelectorAll('.content-section').forEach(section => {
-            section.classList.remove('active');
-        });
 
-        // Remove active class from all nav items
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
+showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
 
-        // Show target section
-        const targetSection = document.getElementById(sectionName);
-        if (targetSection) {
-            targetSection.classList.add('active');
-        }
+    // Remove active class from all nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
 
-        // Activate corresponding nav item
-        const navItem = document.querySelector(`[data-section="${sectionName}"]`);
-        if (navItem) {
-            navItem.classList.add('active');
-        }
+    // Show target section
+    const targetSection = document.getElementById(sectionName);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
 
-        this.currentActiveSection = sectionName;
+    // Activate corresponding nav item
+    const navItem = document.querySelector(`[data-section="${sectionName}"]`);
+    if (navItem) {
+        navItem.classList.add('active');
+    }
 
-        // Update sidebar content based on section
+    this.currentActiveSection = sectionName;
+
+    // Show/hide requests sidebar based on section
+    this.toggleRequestsSidebar(sectionName);
+
+    // Update sidebar content based on section (only if sidebar is visible)
+    if (sectionName === 'workspace' || sectionName === 'history') {
         this.updateSidebarForSection(sectionName);
-
-        // Always show workspace for history
-        if (sectionName === 'history') {
-            const workspaceSection = document.getElementById('workspace');
-            if (workspaceSection) {
-                workspaceSection.classList.add('active');
-            }
-        }
-
-        // Trigger section-specific initialization
-        this.onSectionChange(sectionName);
-
-        console.log(`📄 Switched to section: ${sectionName}`);
     }
 
-    // Add this new method to the UI class
-    updateSidebarForSection(sectionName) {
-        const sidebar = document.getElementById('requestsSidebar');
-        if (!sidebar) return;
+    // Always show workspace for history
+    if (sectionName === 'history') {
+        const workspaceSection = document.getElementById('workspace');
+        if (workspaceSection) {
+            workspaceSection.classList.add('active');
+        }
+    }
 
-        const requestsHeader = sidebar.querySelector('.requests-header');
-        const requestsList = sidebar.querySelector('.requests-list');
-        
-        if (!requestsHeader || !requestsList) return;
+    // Trigger section-specific initialization
+    this.onSectionChange(sectionName);
 
-        if (sectionName === 'history') {
-            // Update sidebar for history
-            requestsHeader.innerHTML = `
+    console.log(`📄 Switched to section: ${sectionName}`);
+}
+
+// Toggle requests sidebar visibility based on section
+toggleRequestsSidebar(sectionName) {
+    const requestsSidebar = document.getElementById('requestsSidebar');
+    if (!requestsSidebar) return;
+    
+    // Show sidebar only for workspace and history
+    const showSidebar = sectionName === 'workspace' || sectionName === 'history';
+    
+    if (showSidebar) {
+        requestsSidebar.style.display = 'flex';
+        requestsSidebar.classList.remove('hidden');
+        // Ensure main content adjusts for sidebar
+        document.querySelector('.main-content')?.classList.remove('full-width');
+    } else {
+        requestsSidebar.style.display = 'none';
+        requestsSidebar.classList.add('hidden');
+        // Make main content full width when sidebar is hidden
+        document.querySelector('.main-content')?.classList.add('full-width');
+    }
+    
+    console.log(`📋 Requests sidebar ${showSidebar ? 'shown' : 'hidden'} for section: ${sectionName}`);
+}
+
+// Updated sidebar with improved + button styling
+// Updated sidebar content (only called when sidebar should be visible)
+updateSidebarForSection(sectionName) {
+    const sidebar = document.getElementById('requestsSidebar');
+    if (!sidebar) return;
+
+    const requestsHeader = sidebar.querySelector('.requests-header');
+    const requestsList = sidebar.querySelector('.requests-list');
+    
+    if (!requestsHeader || !requestsList) return;
+
+    if (sectionName === 'history') {
+        // Update sidebar for history
+        requestsHeader.innerHTML = `
+            <div class="requests-header-content">
                 <h3>History</h3>
-                <div class="collection-actions">
-                    <button class="collection-action-btn" onclick="clearHistory()" title="Clear History">
-                        🗑️ Clear All
-                    </button>
-                    <button class="collection-action-btn" onclick="exportHistory()" title="Export History">
-                        📤 Export
-                    </button>
-                </div>
-            `;
-            
-            // Load history items
-            this.loadHistoryToSidebar();
-            
-        } else if (sectionName === 'collections') {
-            // Update sidebar for collections
-            requestsHeader.innerHTML = `
-                <h3>Collections</h3>
-                <div class="collection-actions">
-                    <button class="collection-action-btn" onclick="createCollection()" title="New Collection">
-                        📁 New Collection
-                    </button>
-                </div>
-            `;
-            
-            requestsList.innerHTML = `
-                <div class="empty-requests">
-                    <h4>Collections</h4>
-                    <p>Manage your collections in the main area</p>
-                </div>
-            `;
-            
-        } else {
-            // Default to requests view
-            requestsHeader.innerHTML = `
+            </div>
+        `;
+        
+        // Load history items
+        this.loadHistoryToSidebar();
+        
+    } else if (sectionName === 'workspace') {
+        // Default to requests view for workspace
+        requestsHeader.innerHTML = `
+            <div class="requests-header-content">
                 <h3>Requests</h3>
-                <div class="collection-selector">
-                    <select id="requestsCollectionSelect" class="collection-dropdown" onchange="loadCollectionRequests()">
-                        <option value="">Select Collection</option>
-                    </select>
+                <button class="header-btn collection-add-btn" onclick="createCollection()" title="New Collection">
+                    ➕
+                </button>
+            </div>
+            <div class="collection-selector">
+                <select id="requestsCollectionSelect" class="collection-dropdown" onchange="loadCollectionRequests()">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+        `;
+        
+        // Re-initialize collection dropdown and ensure selection
+        if (window.CollectionManager && window.CollectionManager.ensureCollectionSelected) {
+            setTimeout(() => {
+                window.CollectionManager.ensureCollectionSelected();
+            }, 100);
+        }
+        
+        requestsList.innerHTML = `
+            <div class="empty-requests">
+                <h4>Loading Collections...</h4>
+                <p>Please wait while collections load</p>
+            </div>
+        `;
+    }
+}
+
+// Fixed loadHistoryToSidebar method
+loadHistoryToSidebar() {
+    const requestsList = document.getElementById('requestsList');
+    if (!requestsList || !window.HistoryManager) return;
+    
+    const history = window.HistoryManager.history || [];
+    
+    if (history.length === 0) {
+        requestsList.innerHTML = `
+            <div class="empty-requests">
+                <h4>No History</h4>
+                <p>Your request history will appear here</p>
+            </div>
+        `;
+        return;
+    }
+    
+    requestsList.innerHTML = history.slice(0, 50).map((item, index) => {
+        const statusClass = this.getStatusClass(item.response.status);
+        
+        // Generate a meaningful name from the request
+        let requestName = 'Untitled Request';
+        if (item.request.url) {
+            try {
+                const url = new URL(item.request.url);
+                const path = url.pathname;
+                if (path && path !== '/') {
+                    requestName = `${item.request.method} ${path}`;
+                } else {
+                    requestName = `${item.request.method} ${url.hostname}`;
+                }
+            } catch (e) {
+                // If URL parsing fails, use the raw URL
+                const urlPath = item.request.url.length > 30 
+                    ? item.request.url.substring(0, 27) + '...'
+                    : item.request.url;
+                requestName = `${item.request.method} ${urlPath}`;
+            }
+        }
+        
+        return `
+            <div class="request-item history-item" onclick="loadHistoryToWorkspace(${index})">
+                <div class="request-method method-${item.request.method.toLowerCase()}">${item.request.method}</div>
+                <div class="request-details">
+                    <div class="request-name" title="${this.escapeHtml(item.request.url)}">${this.escapeHtml(requestName)}</div>
+                    <div class="request-url">${this.formatRelativeTime(item.timestamp)}</div>
+                    <div class="request-status">
+                        <span class="status-badge status-${statusClass}">${item.response.status}</span>
+                        <span class="duration">${item.response.duration}ms</span>
+                    </div>
                 </div>
-                <div class="collection-actions">
-                    <button class="collection-action-btn" onclick="createCollection()" title="New Collection">
-                        📁 New Collection
+                <div class="request-actions">
+                    <button class="request-action-btn" onclick="event.stopPropagation(); saveHistoryToCollection(${index})" title="Save">
+                        💾
                     </button>
                 </div>
-            `;
-            
-            // Re-initialize collection dropdown
-            if (window.updateCollectionDropdown) {
-                window.updateCollectionDropdown();
-            }
-            
-            requestsList.innerHTML = `
-                <div class="empty-requests">
-                    <h4>No Collection Selected</h4>
-                    <p>Choose a collection to view its requests</p>
-                </div>
-            `;
-        }
-    }
+            </div>
+        `;
+    }).join('');
+}
 
-    // Add this new method to the UI class
-    loadHistoryToSidebar() {
-        const requestsList = document.getElementById('requestsList');
-        if (!requestsList || !window.HistoryManager) return;
-        
-        const history = window.HistoryManager.history || [];
-        
-        if (history.length === 0) {
-            requestsList.innerHTML = `
-                <div class="empty-requests">
-                    <h4>No History</h4>
-                    <p>Your request history will appear here</p>
-                </div>
-            `;
-            return;
-        }
-        
-        requestsList.innerHTML = history.slice(0, 50).map((item, index) => {
-            const statusClass = this.getStatusClass(item.response.status);
-            return `
-                <div class="request-item history-item" onclick="loadHistoryToWorkspace(${index})">
-                    <div class="request-method method-${item.request.method.toLowerCase()}">${item.request.method}</div>
-                    <div class="request-details">
-                        <div class="request-name">${this.escapeHtml(this.getUrlPath(item.request.url))}</div>
-                        <div class="request-url">${this.formatRelativeTime(item.timestamp)}</div>
-                        <div class="request-status">
-                            <span class="status-badge status-${statusClass}">${item.response.status}</span>
-                            <span class="duration">${item.response.duration}ms</span>
-                        </div>
-                    </div>
-                    <div class="request-actions">
-                        <button class="request-action-btn" onclick="event.stopPropagation(); saveHistoryToCollection(${index})" title="Save">
-                            💾
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
+// Helper method to format URLs for history display
+formatUrlForHistory(request) {
+    if (!request.url) {
+        return 'No URL';
     }
+    
+    try {
+        // Try to parse as complete URL
+        if (request.url.startsWith('http://') || request.url.startsWith('https://')) {
+            const urlObj = new URL(request.url);
+            const path = urlObj.pathname;
+            
+            if (path && path !== '/') {
+                // Show method + path
+                return `${request.method} ${path}`;
+            } else {
+                // Show method + hostname
+                return `${request.method} ${urlObj.hostname}`;
+            }
+        } else {
+            // Relative URL or path
+            const displayUrl = request.url.length > 25 
+                ? request.url.substring(0, 22) + '...'
+                : request.url;
+            return `${request.method} ${displayUrl}`;
+        }
+    } catch (e) {
+        // Fallback for invalid URLs
+        const displayUrl = request.url.length > 25 
+            ? request.url.substring(0, 22) + '...'
+            : request.url;
+        return `${request.method} ${displayUrl}`;
+    }
+}
 
     // Add these helper methods to the UI class
-    formatRelativeTime(timestamp) {
-        const now = new Date();
-        const time = new Date(timestamp);
-        const diffMs = now - time;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-        
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
-        
-        return this.formatDate(timestamp);
-    }
+// Enhanced formatRelativeTime method
+formatRelativeTime(timestamp) {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffMs = now - time;
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffSecs < 30) return 'Just now';
+    if (diffSecs < 60) return `${diffSecs}s ago`;
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+    
+    return this.formatDate(timestamp);
+}
 
     getStatusClass(status) {
         if (status >= 200 && status < 300) return '200';
@@ -547,75 +615,89 @@ class UI {
         }
     }
 
-    // Form Management
-    clearForm() {
-        // Clear URL and method
-        const urlInput = document.getElementById('url');
-        const methodSelect = document.getElementById('method');
-        
-        if (urlInput) urlInput.value = '';
-        if (methodSelect) methodSelect.value = 'GET';
-
-        // Clear all containers
-        const containers = [
-            'paramsContainer',
-            'headersContainer', 
-            'cookiesContainer',
-            'formDataContainer'
-        ];
-
-        containers.forEach(containerId => {
-            const container = document.getElementById(containerId);
-            if (container) {
-                container.innerHTML = '';
-            }
-        });
-
-        // Reset auth
-        const authType = document.getElementById('authType');
-        if (authType) {
-            authType.value = 'none';
-            this.toggleAuthFields();
+// Enhanced clearForm with unsaved changes check
+async clearForm() {
+    // Check for unsaved changes before clearing
+    if (window.RequestManager && window.RequestManager.hasUnsavedChanges && window.RequestManager.hasUnsavedChanges()) {
+        const shouldSave = confirm('You have unsaved changes. Do you want to save the current request before clearing?');
+        if (shouldSave && window.CollectionManager) {
+            await window.CollectionManager.autoSaveCurrentRequest();
         }
+    }
+    
+    // Clear all form fields
+    const urlInput = document.getElementById('requestName');
+    const urlField = document.getElementById('url');
+    const methodSelect = document.getElementById('method');
+    
+    if (urlInput) urlInput.value = '';
+    if (urlField) urlField.value = '';
+    if (methodSelect) methodSelect.value = 'GET';
 
-        // Clear auth fields
-        const authInputs = document.querySelectorAll('.auth-fields input');
-        authInputs.forEach(input => input.value = '');
+    // Clear all containers
+    const containers = [
+        'paramsContainer',
+        'headersContainer', 
+        'cookiesContainer',
+        'formDataContainer'
+    ];
 
-        // Reset body
-        const bodyType = document.getElementById('bodyType');
-        if (bodyType) {
-            bodyType.value = 'none';
-            this.toggleBodyFields();
+    containers.forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = '';
         }
+    });
 
-        // Clear body fields
-        const jsonInput = document.getElementById('jsonInput');
-        const rawInput = document.getElementById('rawInput');
-        if (jsonInput) jsonInput.value = '';
-        if (rawInput) rawInput.value = '';
-
-        // Clear response
-        const responseContainer = document.getElementById('responseContainer');
-        if (responseContainer) {
-            responseContainer.innerHTML = `
-                <div class="response-placeholder">
-                    <p>Send a request to see the response here</p>
-                </div>
-            `;
-        }
-
-        // Re-initialize first rows
-        this.initializeFirstRows();
-
-        // Update cURL
-        if (window.RequestManager && window.RequestManager.updateCurlCommand) {
-            window.RequestManager.updateCurlCommand();
-        }
-
-        this.showNotification('Form Cleared', 'Request form has been reset', { type: 'info' });
+    // Reset auth
+    const authType = document.getElementById('authType');
+    if (authType) {
+        authType.value = 'none';
+        this.toggleAuthFields();
     }
 
+    // Clear auth fields
+    const authInputs = document.querySelectorAll('.auth-fields input');
+    authInputs.forEach(input => input.value = '');
+
+    // Reset body
+    const bodyType = document.getElementById('bodyType');
+    if (bodyType) {
+        bodyType.value = 'none';
+        this.toggleBodyFields();
+    }
+
+    // Clear body fields
+    const jsonInput = document.getElementById('jsonInput');
+    const rawInput = document.getElementById('rawInput');
+    if (jsonInput) jsonInput.value = '';
+    if (rawInput) rawInput.value = '';
+
+    // Clear response
+    const responseContainer = document.getElementById('responseContainer');
+    if (responseContainer) {
+        responseContainer.innerHTML = `
+            <div class="response-placeholder">
+                <p>Send a request to see the response here</p>
+            </div>
+        `;
+    }
+
+    // Re-initialize first rows
+    this.initializeFirstRows();
+
+    // Clear saved state in request manager
+    if (window.RequestManager && window.RequestManager.clearSavedState) {
+        window.RequestManager.clearSavedState();
+    }
+
+    // Update cURL
+    if (window.RequestManager && window.RequestManager.updateCurlCommand) {
+        window.RequestManager.updateCurlCommand();
+    }
+
+    this.showNotification('Form Cleared', 'Request form has been reset', { type: 'info' });
+}
     // Loading States
     showLoading(container, message = 'Loading...') {
         if (!container) return;
@@ -669,70 +751,71 @@ class UI {
         document.body.classList.remove('modal-open');
     }
 
-    // Context Menu
-    showContextMenu(event, menuItems) {
-        event.preventDefault();
-        event.stopPropagation();
+// Enhanced showContextMenu with better positioning and styling
+showContextMenu(event, menuItems) {
+    event.preventDefault();
+    event.stopPropagation();
 
-        let contextMenu = document.getElementById('contextMenu');
-        
-        if (!contextMenu) {
-            contextMenu = document.createElement('div');
-            contextMenu.id = 'contextMenu';
-            contextMenu.className = 'context-menu';
-            document.body.appendChild(contextMenu);
-        }
-
-        // Build menu HTML
-        const menuHTML = menuItems.map(item => {
-            if (item.separator) {
-                return '<div class="context-menu-separator"></div>';
-            }
-            
-            const className = `context-menu-item ${item.danger ? 'danger' : ''}`;
-            return `
-                <div class="${className}" onclick="${item.action}; UI.hideContextMenu();">
-                    <span class="menu-icon">${item.icon || ''}</span>
-                    <span class="menu-label">${item.label}</span>
-                </div>
-            `;
-        }).join('');
-
-        contextMenu.innerHTML = menuHTML;
-        
-        // Position menu
-        const rect = contextMenu.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        
-        let x = event.pageX;
-        let y = event.pageY;
-        
-        // Adjust position if menu would go off-screen
-        if (x + rect.width > viewportWidth) {
-            x = viewportWidth - rect.width - 10;
-        }
-        
-        if (y + rect.height > viewportHeight) {
-            y = viewportHeight - rect.height - 10;
-        }
-        
-        contextMenu.style.left = x + 'px';
-        contextMenu.style.top = y + 'px';
-        contextMenu.style.display = 'block';
-
-        // Hide menu when clicking elsewhere
-        const hideMenu = (e) => {
-            if (!contextMenu.contains(e.target)) {
-                this.hideContextMenu();
-                document.removeEventListener('click', hideMenu);
-            }
-        };
-        
-        setTimeout(() => {
-            document.addEventListener('click', hideMenu);
-        }, 0);
+    let contextMenu = document.getElementById('contextMenu');
+    
+    if (!contextMenu) {
+        contextMenu = document.createElement('div');
+        contextMenu.id = 'contextMenu';
+        contextMenu.className = 'context-menu';
+        document.body.appendChild(contextMenu);
     }
+
+    // Build menu HTML
+    const menuHTML = menuItems.map(item => {
+        if (item.separator) {
+            return '<div class="context-menu-separator"></div>';
+        }
+        
+        const className = `context-menu-item ${item.danger ? 'danger' : ''}`;
+        return `
+            <div class="${className}" onclick="${item.action}; window.UI.hideContextMenu();">
+                <span class="menu-icon">${item.icon || ''}</span>
+                <span class="menu-label">${item.label}</span>
+            </div>
+        `;
+    }).join('');
+
+    contextMenu.innerHTML = menuHTML;
+    contextMenu.style.display = 'block';
+    
+    // Calculate position
+    const rect = contextMenu.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    let x = event.pageX;
+    let y = event.pageY;
+    
+    // Adjust position if menu would go off-screen
+    if (x + rect.width > viewportWidth) {
+        x = viewportWidth - rect.width - 10;
+    }
+    
+    if (y + rect.height > viewportHeight) {
+        y = viewportHeight - rect.height - 10;
+    }
+    
+    contextMenu.style.left = x + 'px';
+    contextMenu.style.top = y + 'px';
+
+    // Hide menu when clicking elsewhere
+    const hideMenu = (e) => {
+        if (!contextMenu.contains(e.target)) {
+            this.hideContextMenu();
+            document.removeEventListener('click', hideMenu);
+        }
+    };
+    
+    // Delay to prevent immediate hiding
+    setTimeout(() => {
+        document.addEventListener('click', hideMenu);
+    }, 0);
+}
 
     hideContextMenu() {
         const contextMenu = document.getElementById('contextMenu');

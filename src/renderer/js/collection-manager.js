@@ -5,7 +5,10 @@ class CollectionManager {
         this.collections = this.loadCollections();
         this.currentCollection = null;
         this.initialized = false;
-        
+            this.draggedRequest = null; // For drag & drop functionality
+    this.draggedFromCollection = null;
+    this.draggedFromFolder = null;
+    this.draggedFromIndex = null;
         console.log('📁 CollectionManager initializing...');
         
         // Wait for Core and DOM before initializing
@@ -41,38 +44,45 @@ class CollectionManager {
         }
     }
 
-    initialize() {
-        try {
-            // Create default collection if none exist
-            if (this.collections.length === 0) {
-                const defaultCollection = {
-                    id: this.generateId('col'), // Use our safe generateId method
-                    name: 'My First Collection',
-                    description: 'Default collection for your API requests',
-                    requests: [],
-                    variables: {},
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                };
-                this.collections.push(defaultCollection);
-                this.saveCollections();
-            }
-            
-            this.updateDisplay();
-            this.updateTargetCollectionSelect();
-            this.initialized = true;
-            
-            console.log('✅ CollectionManager initialized successfully');
-            
-            // Emit initialization event
-            if (window.Core && typeof window.Core.emit === 'function') {
-                window.Core.emit('collection-manager-initialized');
-            }
-        } catch (error) {
-            console.error('❌ CollectionManager initialization failed:', error);
-            this.initializeWithFallback();
+initialize() {
+    try {
+        // Create default collection if none exist
+        if (this.collections.length === 0) {
+            const defaultCollection = {
+                id: this.generateId('col'),
+                name: 'Default Collection',
+                description: 'Your default collection for API requests',
+                requests: [],
+                folders: [],
+                variables: {},
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            this.collections.push(defaultCollection);
+            this.saveCollections();
         }
+        
+        this.updateDisplay();
+        this.updateTargetCollectionSelect();
+        
+        // ALWAYS SELECT FIRST COLLECTION
+        setTimeout(() => {
+            this.ensureCollectionSelected();
+        }, 500);
+        
+        this.initialized = true;
+        
+        console.log('✅ CollectionManager initialized successfully');
+        
+        // Emit initialization event
+        if (window.Core && typeof window.Core.emit === 'function') {
+            window.Core.emit('collection-manager-initialized');
+        }
+    } catch (error) {
+        console.error('❌ CollectionManager initialization failed:', error);
+        this.initializeWithFallback();
     }
+}
 
     initializeWithFallback() {
         try {
@@ -639,13 +649,93 @@ handleAddCurrentRequestToCollection(event, collectionId) {
 
 
 
-    getUrlPath(url) {
-        try {
-            return new URL(url).pathname;
-        } catch (e) {
-            return url;
-        }
+// Fixed getUrlPath to show better URL display
+getUrlPath(url) {
+    if (!url || typeof url !== 'string') {
+        return 'No URL';
     }
+    
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
+        return 'No URL';
+    }
+    
+    try {
+        // If it's a complete URL, show the host + path
+        if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+            const urlObj = new URL(trimmedUrl);
+            const hostPath = urlObj.host + urlObj.pathname + urlObj.search;
+            
+            // Truncate if too long
+            if (hostPath.length > 35) {
+                return hostPath.substring(0, 32) + '...';
+            }
+            return hostPath;
+        }
+        
+        // If it's a relative path or contains variables, show as-is
+        if (trimmedUrl.length > 35) {
+            return trimmedUrl.substring(0, 32) + '...';
+        }
+        return trimmedUrl;
+        
+    } catch (e) {
+        // If URL parsing fails, just show the trimmed URL
+        if (trimmedUrl.length > 35) {
+            return trimmedUrl.substring(0, 32) + '...';
+        }
+        return trimmedUrl;
+    }
+}
+
+// Helper method for better URL display in sidebar
+formatUrlForSidebar(url) {
+    if (!url || typeof url !== 'string') {
+        return 'No URL';
+    }
+    
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) {
+        return 'No URL';
+    }
+    
+    // Handle environment variables in URL
+    const urlWithVariables = trimmedUrl.replace(/\{\{([^}]+)\}\}/g, '{var}');
+    
+    try {
+        // Complete URL with protocol
+        if (urlWithVariables.startsWith('http://') || urlWithVariables.startsWith('https://')) {
+            const urlObj = new URL(urlWithVariables);
+            let display = urlObj.hostname;
+            
+            // Add port if not default
+            if (urlObj.port && 
+                !((urlObj.protocol === 'http:' && urlObj.port === '80') || 
+                  (urlObj.protocol === 'https:' && urlObj.port === '443'))) {
+                display += ':' + urlObj.port;
+            }
+            
+            // Add path if not just /
+            if (urlObj.pathname && urlObj.pathname !== '/') {
+                display += urlObj.pathname;
+            }
+            
+            // Add query params indicator if present
+            if (urlObj.search) {
+                display += urlObj.search.length > 10 ? '?...' : urlObj.search;
+            }
+            
+            return display.length > 35 ? display.substring(0, 32) + '...' : display;
+        }
+        
+        // Relative URL or path
+        return urlWithVariables.length > 35 ? urlWithVariables.substring(0, 32) + '...' : urlWithVariables;
+        
+    } catch (e) {
+        // Fallback for invalid URLs
+        return urlWithVariables.length > 35 ? urlWithVariables.substring(0, 32) + '...' : urlWithVariables;
+    }
+}
 
     removeRequestFromCollection(collectionId, requestIndex) {
         if (!confirm('Are you sure you want to remove this request from the collection?')) {
@@ -1106,7 +1196,7 @@ createCollectionThenFolder() {
     this.createCollection();
 }
 
-// Enhanced handleCreateCollection to support folder creation afterward
+// Enhanced handleCreateCollection with auto-selection
 handleCreateCollection(event) {
     event.preventDefault();
     
@@ -1126,7 +1216,7 @@ handleCreateCollection(event) {
         name: name,
         description: description,
         requests: [],
-        folders: [], // Initialize with empty folders array
+        folders: [], // Initialize with folders support
         variables: {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -1146,30 +1236,16 @@ handleCreateCollection(event) {
         modal.remove();
     }
     
-    this.showNotification('Collection Created', `"${name}" collection created successfully!`);
+    // AUTO-SELECT THE NEW COLLECTION
+    this.autoSelectCollection(newCollection.id);
+    
+    this.showNotification('Collection Created', `"${name}" collection created and selected!`);
     
     // Track activity safely
     try {
         this.emitCoreEvent('collection-created', { collectionId: newCollection.id });
     } catch (error) {
         console.warn('Could not track collection creation activity:', error);
-    }
-    
-    // If we were supposed to create a folder after collection creation
-    if (this._createFolderAfterCollection) {
-        this._createFolderAfterCollection = false;
-        
-        // Update sidebar to show new collection
-        const sidebarSelect = document.getElementById('requestsCollectionSelect');
-        if (sidebarSelect) {
-            sidebarSelect.value = newCollection.id;
-            this.updateRequestsList(newCollection.id);
-        }
-        
-        // Show create folder modal
-        setTimeout(() => {
-            this.showCreateFolderModal(newCollection.id);
-        }, 500);
     }
     
     return newCollection;
@@ -1233,7 +1309,32 @@ updateSidebarForSection(sectionName) {
     }
 }
 
-// Enhanced updateRequestsList to show folders
+// Enhanced loadCollectionRequests with auto-save functionality
+async loadCollectionRequests() {
+    const select = document.getElementById('requestsCollectionSelect');
+    const newCollectionId = select ? select.value : '';
+    
+    // Check if we need to save current request before switching
+    if (window.RequestManager && window.RequestManager.hasUnsavedChanges && window.RequestManager.hasUnsavedChanges()) {
+        const shouldSave = await this.promptAutoSave();
+        if (shouldSave) {
+            await this.autoSaveCurrentRequest();
+        }
+    }
+    
+    // Clear workspace when switching collections
+    if (window.UI && window.UI.clearForm) {
+        window.UI.clearForm();
+    }
+    
+    // Update requests list for new collection
+    this.updateRequestsList(newCollectionId);
+    
+    // Emit collection changed event
+    this.emitCoreEvent('collection-changed', { collectionId: newCollectionId });
+}
+
+// Enhanced updateRequestsList with drag & drop and context menu support
 updateRequestsList(collectionId) {
     const container = document.getElementById('requestsList');
     if (!container || !collectionId) return;
@@ -1254,8 +1355,8 @@ updateRequestsList(collectionId) {
             <div class="empty-requests">
                 <h4>Empty Collection</h4>
                 <p>This collection has no requests or folders yet.</p>
-                <button class="collection-action-btn" onclick="saveCurrentRequest()" style="margin-top: 8px; width: 100%;">
-                    💾 Save Current Request
+                <button class="collection-action-btn" onclick="window.CollectionManager.createNewRequest()" style="margin-top: 8px; width: 100%;">
+                    ➕ Create New Request
                 </button>
                 <button class="collection-action-btn" onclick="window.CollectionManager.showCreateFolderModal('${collectionId}')" style="margin-top: 4px; width: 100%;">
                     📂 Create Folder
@@ -1271,6 +1372,9 @@ updateRequestsList(collectionId) {
     content += `
         <div class="sidebar-collection-actions" style="margin-bottom: 1rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 6px;">
             <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <button class="collection-action-btn" onclick="window.CollectionManager.createNewRequest()" style="flex: 1;">
+                    ➕ New
+                </button>
                 <button class="collection-action-btn" onclick="saveCurrentRequest()" style="flex: 1;">
                     💾 Save
                 </button>
@@ -1291,7 +1395,10 @@ updateRequestsList(collectionId) {
             const folderRequests = folder.requests || [];
             content += `
                 <div class="sidebar-folder-item" style="margin-bottom: 0.5rem;">
-                    <div class="sidebar-folder-header" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: var(--bg-secondary); border-radius: 4px; cursor: pointer;" onclick="toggleSidebarFolder('${folder.id}')">
+                    <div class="sidebar-folder-header" 
+                         data-folder-id="${folder.id}"
+                         style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: var(--bg-secondary); border-radius: 4px; cursor: pointer;" 
+                         onclick="toggleSidebarFolder('${folder.id}')">
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
                             <span class="folder-toggle" id="toggle-${folder.id}">📁</span>
                             <span style="font-weight: 500; font-size: 0.875rem;">${this.escapeHtml(folder.name)}</span>
@@ -1304,15 +1411,21 @@ updateRequestsList(collectionId) {
                         </div>
                     </div>
                     <div class="sidebar-folder-requests" id="folder-${folder.id}" style="display: none; margin-left: 1rem; border-left: 2px solid var(--border-color); padding-left: 0.5rem;">
-                        ${folderRequests.map((request, index) => `
-                            <div class="request-item" onclick="loadFolderRequestToWorkspace('${collectionId}', '${folder.id}', ${index})" style="margin: 0.25rem 0;">
-                                <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
-                                <div class="request-details">
-                                    <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
-                                    <div class="request-url">${this.escapeHtml(this.getUrlPath(request.url))}</div>
-                                </div>
-                            </div>
-                        `).join('')}
+${folderRequests.map((request, index) => `
+    <div class="request-item" 
+         draggable="true"
+         data-request-index="${index}"
+         data-folder-id="${folder.id}"
+         onclick="loadFolderRequestToWorkspace('${collectionId}', '${folder.id}', ${index})" 
+         oncontextmenu="window.CollectionManager.showRequestContextMenu(event, '${collectionId}', ${index}, '${folder.id}')"
+         style="margin: 0.25rem 0;">
+        <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
+        <div class="request-details">
+            <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
+            <div class="request-url" title="${this.escapeHtml(request.url)}">${this.escapeHtml(this.formatUrlForSidebar(request.url))}</div>
+        </div>
+    </div>
+`).join('')}
                         ${folderRequests.length === 0 ? '<div style="padding: 0.5rem; color: var(--text-tertiary); font-size: 0.75rem; font-style: italic;">Empty folder</div>' : ''}
                     </div>
                 </div>
@@ -1328,25 +1441,30 @@ updateRequestsList(collectionId) {
                 <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; padding: 0.25rem 0.5rem; background: var(--bg-tertiary); border-radius: 4px;">
                     📄 Collection Root (${rootRequests.length})
                 </div>
-                ${rootRequests.map((request, index) => `
-                    <div class="request-item" onclick="loadRequestToWorkspace('${collectionId}', ${index})" style="margin: 0.25rem 0;">
-                        <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
-                        <div class="request-details">
-                            <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
-                            <div class="request-url">${this.escapeHtml(this.getUrlPath(request.url))}</div>
-                        </div>
-                        <div class="request-actions">
-                            <button class="request-action-btn" onclick="event.stopPropagation(); editRequest('${collectionId}', ${index})" title="Edit">
-                                ✏️
-                            </button>
-                        </div>
-                    </div>
-                `).join('')}
+${rootRequests.map((request, index) => `
+    <div class="request-item" 
+         draggable="true"
+         data-request-index="${index}"
+         onclick="loadRequestToWorkspace('${collectionId}', ${index})" 
+         oncontextmenu="window.CollectionManager.showRequestContextMenu(event, '${collectionId}', ${index})"
+         style="margin: 0.25rem 0;">
+        <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
+        <div class="request-details">
+            <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
+            <div class="request-url" title="${this.escapeHtml(request.url)}">${this.escapeHtml(this.formatUrlForSidebar(request.url))}</div>
+        </div>
+    </div>
+`).join('')}
             </div>
         `;
     }
     
     container.innerHTML = content;
+    
+    // Enable drag and drop after updating the list
+    setTimeout(() => {
+        this.enableDragAndDrop();
+    }, 100);
 }
 
 // Helper function to load folder request
@@ -2147,6 +2265,795 @@ buildPostmanAuth(auth) {
         this.showNotification('Collection Runner', 'Collection runner feature coming soon!');
     }
 
+    // ================== COLLECTION SWITCHING WITH AUTO-SAVE ==================
+
+// Prompt user for auto-save
+async promptAutoSave() {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>💾 Unsaved Changes</h3>
+                </div>
+                <div class="modal-body">
+                    <p>You have unsaved changes in the current request. Would you like to save it before switching collections?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="saveAndSwitch">Save & Switch</button>
+                    <button class="btn btn-secondary" id="discardAndSwitch">Discard & Switch</button>
+                    <button class="btn btn-secondary" id="cancelSwitch">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById('saveAndSwitch').onclick = () => {
+            modal.remove();
+            resolve(true);
+        };
+        
+        document.getElementById('discardAndSwitch').onclick = () => {
+            modal.remove();
+            resolve(false);
+        };
+        
+        document.getElementById('cancelSwitch').onclick = () => {
+            modal.remove();
+            // Reset the dropdown to previous selection
+            const select = document.getElementById('requestsCollectionSelect');
+            if (select && this.currentCollection) {
+                select.value = this.currentCollection.id;
+            }
+            resolve(null); // Cancel operation
+        };
+    });
+}
+
+// Auto-save current request to the current collection
+async autoSaveCurrentRequest() {
+    try {
+        if (!window.RequestManager || !window.RequestManager.getCurrentRequestData) {
+            return false;
+        }
+        
+        const requestData = window.RequestManager.getCurrentRequestData();
+        if (!requestData.url) {
+            return false; // Nothing to save
+        }
+        
+        // Get current collection
+        const currentCollectionId = document.getElementById('requestsCollectionSelect')?.value;
+        if (!currentCollectionId) {
+            return false;
+        }
+        
+        const collection = this.getCollection(currentCollectionId);
+        if (!collection) {
+            return false;
+        }
+        
+        // Generate auto-save name if no name provided
+        let requestName = requestData.name || '';
+        if (!requestName.trim()) {
+            try {
+                const urlPath = new URL(requestData.url).pathname;
+                requestName = `${requestData.method} ${urlPath}`.trim();
+            } catch (e) {
+                requestName = `${requestData.method} Request`;
+            }
+        }
+        
+        const newRequest = {
+            id: this.generateId('req'),
+            name: requestName,
+            description: '(Auto-saved)',
+            method: requestData.method,
+            url: requestData.url,
+            headers: requestData.headers || [],
+            params: requestData.params || [],
+            cookies: requestData.cookies || [],
+            auth: requestData.auth || { type: 'none' },
+            body: requestData.body || { type: 'none' },
+            folderId: null, // Auto-save to collection root
+            createdAt: new Date().toISOString()
+        };
+        
+        collection.requests.push(newRequest);
+        collection.updatedAt = new Date().toISOString();
+        this.saveCollections();
+        
+        this.showNotification('Auto-saved', `Request "${requestName}" auto-saved to ${collection.name}`);
+        return true;
+    } catch (error) {
+        console.error('Error auto-saving request:', error);
+        return false;
+    }
+}
+
+// ================== REQUEST CREATION & MANAGEMENT ==================
+
+// Create a new blank request
+createNewRequest() {
+    // Clear the workspace
+    if (window.UI && window.UI.clearForm) {
+        window.UI.clearForm();
+    }
+    
+    // Set focus to request name input
+    const nameInput = document.getElementById('requestName');
+    if (nameInput) {
+        nameInput.focus();
+        nameInput.placeholder = 'New Request';
+    }
+    
+    // Switch to workspace if not already there
+    if (window.UI && window.UI.showSection) {
+        window.UI.showSection('workspace');
+    }
+    
+    this.showNotification('New Request', 'Started creating a new request');
+}
+
+// Delete request with confirmation
+deleteRequest(collectionId, requestIndex, fromFolder = null) {
+    const collection = this.getCollection(collectionId);
+    if (!collection) return;
+    
+    let request;
+    let requestList;
+    
+    if (fromFolder) {
+        const folder = this.getFolder(collectionId, fromFolder);
+        if (!folder || !folder.requests[requestIndex]) return;
+        request = folder.requests[requestIndex];
+        requestList = folder.requests;
+    } else {
+        if (!collection.requests[requestIndex]) return;
+        request = collection.requests[requestIndex];
+        requestList = collection.requests;
+    }
+    
+    if (!confirm(`Are you sure you want to delete "${request.name}"? This action cannot be undone.`)) {
+        return;
+    }
+    
+    // Remove request from list
+    requestList.splice(requestIndex, 1);
+    collection.updatedAt = new Date().toISOString();
+    
+    this.saveCollections();
+    
+    // Refresh the requests list
+    const selectedCollectionId = document.getElementById('requestsCollectionSelect')?.value;
+    if (selectedCollectionId === collectionId) {
+        this.updateRequestsList(collectionId);
+    }
+    
+    // Refresh collection modal if open
+    if (this.currentCollection && this.currentCollection.id === collectionId) {
+        this.openCollection(collectionId);
+    }
+    
+    this.showNotification('Request Deleted', `"${request.name}" has been deleted`);
+}
+
+// ================== DRAG & DROP FUNCTIONALITY ==================
+
+// Enable drag and drop for request items
+enableDragAndDrop() {
+    // This will be called when updating the requests list
+    const requestItems = document.querySelectorAll('.request-item[draggable="true"]');
+    
+    requestItems.forEach(item => {
+        item.addEventListener('dragstart', this.handleDragStart.bind(this));
+        item.addEventListener('dragover', this.handleDragOver.bind(this));
+        item.addEventListener('drop', this.handleDrop.bind(this));
+        item.addEventListener('dragend', this.handleDragEnd.bind(this));
+    });
+    
+    // Also enable drop on folders
+    const folderItems = document.querySelectorAll('.sidebar-folder-header');
+    folderItems.forEach(folder => {
+        folder.addEventListener('dragover', this.handleDragOver.bind(this));
+        folder.addEventListener('drop', this.handleDropOnFolder.bind(this));
+    });
+}
+
+// Handle drag start
+handleDragStart(e) {
+    const requestItem = e.target.closest('.request-item');
+    if (!requestItem) return;
+    
+    // Extract data from the request item
+    const collectionId = document.getElementById('requestsCollectionSelect')?.value;
+    const requestIndex = parseInt(requestItem.dataset.requestIndex);
+    const folderId = requestItem.dataset.folderId || null;
+    
+    this.draggedRequest = {
+        collectionId: collectionId,
+        requestIndex: requestIndex,
+        folderId: folderId
+    };
+    
+    requestItem.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+}
+
+// Fixed handle drag over - only highlight target element
+handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    // Clear all existing drag-over states first
+    document.querySelectorAll('.drag-over').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+    
+    // Only add to the immediate target
+    const requestItem = e.target.closest('.request-item');
+    const folderHeader = e.target.closest('.sidebar-folder-header');
+    
+    if (requestItem && requestItem !== e.target.closest('.dragging')) {
+        requestItem.classList.add('drag-over');
+    } else if (folderHeader) {
+        folderHeader.classList.add('drag-over');
+    }
+}
+
+// Handle drop on request item (reordering)
+handleDrop(e) {
+    e.preventDefault();
+    
+    const targetItem = e.target.closest('.request-item');
+    if (!targetItem || !this.draggedRequest) return;
+    
+    const targetIndex = parseInt(targetItem.dataset.requestIndex);
+    const targetFolderId = targetItem.dataset.folderId || null;
+    const collectionId = document.getElementById('requestsCollectionSelect')?.value;
+    
+    // Don't drop on itself
+    if (this.draggedRequest.collectionId === collectionId && 
+        this.draggedRequest.requestIndex === targetIndex && 
+        this.draggedRequest.folderId === targetFolderId) {
+        return;
+    }
+    
+    this.moveRequest(
+        this.draggedRequest.collectionId,
+        this.draggedRequest.requestIndex,
+        this.draggedRequest.folderId,
+        collectionId,
+        targetIndex,
+        targetFolderId
+    );
+    
+    // Clean up
+    document.querySelectorAll('.drag-over').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+}
+
+// Handle drop on folder
+handleDropOnFolder(e) {
+    e.preventDefault();
+    
+    const folderHeader = e.target.closest('.sidebar-folder-header');
+    if (!folderHeader || !this.draggedRequest) return;
+    
+    const folderId = folderHeader.dataset.folderId;
+    const collectionId = document.getElementById('requestsCollectionSelect')?.value;
+    
+    // Move to end of folder
+    this.moveRequestToFolder(
+        this.draggedRequest.collectionId,
+        this.draggedRequest.requestIndex,
+        this.draggedRequest.folderId,
+        collectionId,
+        folderId
+    );
+}
+
+// Handle drag end
+handleDragEnd(e) {
+    // Clean up drag state
+    document.querySelectorAll('.dragging').forEach(item => {
+        item.classList.remove('dragging');
+    });
+    document.querySelectorAll('.drag-over').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+    
+    this.draggedRequest = null;
+}
+
+// Move request between positions/folders
+// Fixed move request - preserve folder states
+moveRequest(fromCollectionId, fromIndex, fromFolderId, toCollectionId, toIndex, toFolderId) {
+    const fromCollection = this.getCollection(fromCollectionId);
+    const toCollection = this.getCollection(toCollectionId);
+    
+    if (!fromCollection || !toCollection) return;
+    
+    // Store current folder states before refresh
+    const folderStates = this.saveFolderStates();
+    
+    // Get the request being moved
+    let request;
+    let fromList;
+    
+    if (fromFolderId) {
+        const fromFolder = this.getFolder(fromCollectionId, fromFolderId);
+        if (!fromFolder) return;
+        fromList = fromFolder.requests;
+    } else {
+        fromList = fromCollection.requests.filter(req => !req.folderId);
+    }
+    
+    if (!fromList[fromIndex]) return;
+    request = fromList[fromIndex];
+    
+    // Remove from source
+    fromList.splice(fromIndex, 1);
+    
+    // Add to destination
+    let toList;
+    if (toFolderId) {
+        const toFolder = this.getFolder(toCollectionId, toFolderId);
+        if (!toFolder) return;
+        toList = toFolder.requests;
+        request.folderId = toFolderId;
+    } else {
+        toList = toCollection.requests;
+        request.folderId = null;
+    }
+    
+    // Insert at the target position
+    toList.splice(toIndex, 0, request);
+    
+    // Update timestamps
+    fromCollection.updatedAt = new Date().toISOString();
+    if (fromCollectionId !== toCollectionId) {
+        toCollection.updatedAt = new Date().toISOString();
+    }
+    
+    this.saveCollections();
+    
+    // Refresh displays and restore folder states
+    const selectedCollectionId = document.getElementById('requestsCollectionSelect')?.value;
+    if (selectedCollectionId === fromCollectionId || selectedCollectionId === toCollectionId) {
+        this.updateRequestsList(selectedCollectionId);
+        
+        // Restore folder states after refresh
+        setTimeout(() => {
+            this.restoreFolderStates(folderStates);
+        }, 100);
+    }
+    
+    this.showNotification('Request Moved', `"${request.name}" moved successfully`);
+}
+
+// Move request to folder (append to end)
+moveRequestToFolder(fromCollectionId, fromIndex, fromFolderId, toCollectionId, toFolderId) {
+    const fromCollection = this.getCollection(fromCollectionId);
+    const toCollection = this.getCollection(toCollectionId);
+    
+    if (!fromCollection || !toCollection) return;
+    
+    const toFolder = this.getFolder(toCollectionId, toFolderId);
+    if (!toFolder) return;
+    
+    // Get the request being moved
+    let request;
+    let fromList;
+    
+    if (fromFolderId) {
+        const fromFolder = this.getFolder(fromCollectionId, fromFolderId);
+        if (!fromFolder) return;
+        fromList = fromFolder.requests;
+    } else {
+        fromList = fromCollection.requests.filter(req => !req.folderId);
+    }
+    
+    if (!fromList[fromIndex]) return;
+    request = fromList[fromIndex];
+    
+    // Remove from source
+    fromList.splice(fromIndex, 1);
+    
+    // Add to target folder
+    request.folderId = toFolderId;
+    toFolder.requests.push(request);
+    
+    // Update timestamps
+    fromCollection.updatedAt = new Date().toISOString();
+    if (fromCollectionId !== toCollectionId) {
+        toCollection.updatedAt = new Date().toISOString();
+    }
+    
+    this.saveCollections();
+    
+    // Refresh displays
+    const selectedCollectionId = document.getElementById('requestsCollectionSelect')?.value;
+    if (selectedCollectionId === fromCollectionId || selectedCollectionId === toCollectionId) {
+        this.updateRequestsList(selectedCollectionId);
+    }
+    
+    this.showNotification('Request Moved', `"${request.name}" moved to folder "${toFolder.name}"`);
+}
+
+// ================== COLLECTION SELECTION FIXES ==================
+
+// Ensure a collection is always selected
+ensureCollectionSelected() {
+    const requestsSelect = document.getElementById('requestsCollectionSelect');
+    if (!requestsSelect) return;
+    
+    // Update dropdown first
+    this.updateCollectionDropdown();
+    
+    // If no collection is selected and we have collections, select the first one
+    if ((!requestsSelect.value || requestsSelect.value === '') && this.collections.length > 0) {
+        const firstCollection = this.collections[0];
+        requestsSelect.value = firstCollection.id;
+        this.updateRequestsList(firstCollection.id);
+        
+        console.log(`Auto-selected collection: ${firstCollection.name}`);
+    }
+}
+
+// Update collection dropdown for requests sidebar
+updateCollectionDropdown() {
+    const select = document.getElementById('requestsCollectionSelect');
+    if (!select) return;
+    
+    const collections = this.collections || [];
+    
+    // Store current selection
+    const currentValue = select.value;
+    
+    // Don't include "Select Collection" option - always have one selected
+    select.innerHTML = '';
+    
+    collections.forEach(collection => {
+        const option = document.createElement('option');
+        option.value = collection.id;
+        option.textContent = `${collection.name} (${this.getTotalRequestCount(collection)})`;
+        select.appendChild(option);
+    });
+    
+    // Restore selection if it still exists
+    if (currentValue && collections.find(c => c.id === currentValue)) {
+        select.value = currentValue;
+    } else if (collections.length > 0) {
+        // Auto-select first collection if no valid selection
+        select.value = collections[0].id;
+        this.updateRequestsList(collections[0].id);
+    }
+    
+    console.log(`📁 Updated collection dropdown with ${collections.length} collections`);
+}
+
+// Fixed missing saveCurrentRequest method
+saveCurrentRequest() {
+    if (!window.RequestManager || !window.RequestManager.getCurrentRequestData) {
+        this.showNotification('Error', 'Request Manager not available', { type: 'error' });
+        return;
+    }
+    
+    const requestData = window.RequestManager.getCurrentRequestData();
+    if (!requestData.url) {
+        alert('Please enter a URL for the request');
+        return;
+    }
+    
+    // Get selected collection (should always be one selected now)
+    const selectedCollectionId = this.getSelectedCollectionId();
+    
+    if (selectedCollectionId) {
+        // Save directly to selected collection
+        this.saveToSelectedCollection(selectedCollectionId, requestData);
+    } else {
+        // This shouldn't happen now, but as fallback create default collection
+        this.createDefaultCollectionAndSave(requestData);
+    }
+}
+
+// Create default collection and save request
+createDefaultCollectionAndSave(requestData) {
+    const defaultCollection = {
+        id: this.generateId('col'),
+        name: 'Default Collection',
+        description: 'Default collection for your API requests',
+        requests: [],
+        folders: [],
+        variables: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    this.collections.push(defaultCollection);
+    this.saveCollections();
+    this.updateDisplay();
+    this.updateTargetCollectionSelect();
+    
+    // Auto-select the new collection
+    this.autoSelectCollection(defaultCollection.id);
+    
+    // Now save to it
+    this.saveToSelectedCollection(defaultCollection.id, requestData);
+}
+
+// ================== FOLDER STATE PRESERVATION ==================
+
+// Save current folder open/closed states
+saveFolderStates() {
+    const states = {};
+    const folderElements = document.querySelectorAll('.sidebar-folder-requests');
+    
+    folderElements.forEach(element => {
+        const folderId = element.id.replace('folder-', '');
+        states[folderId] = element.style.display !== 'none';
+    });
+    
+    return states;
+}
+
+// Restore folder open/closed states
+restoreFolderStates(states) {
+    Object.entries(states).forEach(([folderId, isOpen]) => {
+        const folderElement = document.getElementById(`folder-${folderId}`);
+        const toggleElement = document.getElementById(`toggle-${folderId}`);
+        
+        if (folderElement && toggleElement) {
+            if (isOpen) {
+                folderElement.style.display = 'block';
+                toggleElement.textContent = '📂';
+            } else {
+                folderElement.style.display = 'none';
+                toggleElement.textContent = '📁';
+            }
+        }
+    });
+}
+
+// ================== NEW COLLECTION AUTO-SELECTION ==================
+
+// Auto-select a collection in the dropdown and workspace
+// Fixed auto-select a collection in the dropdown and workspace
+autoSelectCollection(collectionId) {
+    // Update the requests sidebar dropdown
+    const requestsSelect = document.getElementById('requestsCollectionSelect');
+    if (requestsSelect) {
+        // Update dropdown options first
+        this.updateCollectionDropdown();
+        
+        // Then set the value
+        requestsSelect.value = collectionId;
+        
+        // Trigger the change event to update the requests list
+        this.updateRequestsList(collectionId);
+    }
+    
+    // Update any target collection dropdowns
+    const targetSelect = document.getElementById('targetCollection');
+    if (targetSelect) {
+        this.updateTargetCollectionSelect();
+        targetSelect.value = collectionId;
+    }
+    
+    // Switch to workspace to start using the collection
+    if (window.UI && window.UI.showSection) {
+        window.UI.showSection('workspace');
+    }
+    
+    // Clear any existing workspace content
+    if (window.UI && window.UI.clearForm) {
+        window.UI.clearForm();
+    }
+}
+
+// ================== CONTEXT MENU FUNCTIONALITY ==================
+
+// Show context menu for request items
+showRequestContextMenu(event, collectionId, requestIndex, folderId = null) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const collection = this.getCollection(collectionId);
+    if (!collection) return;
+    
+    let request;
+    if (folderId) {
+        const folder = this.getFolder(collectionId, folderId);
+        if (!folder || !folder.requests[requestIndex]) return;
+        request = folder.requests[requestIndex];
+    } else {
+        const rootRequests = collection.requests.filter(req => !req.folderId);
+        if (!rootRequests[requestIndex]) return;
+        request = rootRequests[requestIndex];
+    }
+    
+    const menuItems = [
+        {
+            icon: '🚀',
+            label: 'Load Request',
+            action: folderId ? 
+                `loadFolderRequestToWorkspace('${collectionId}', '${folderId}', ${requestIndex})` :
+                `loadRequestToWorkspace('${collectionId}', ${requestIndex})`
+        },
+        {
+            icon: '📄',
+            label: 'Duplicate Request',
+            action: `window.CollectionManager.duplicateRequest('${collectionId}', ${requestIndex}, '${folderId || ''}')`
+        },
+        {
+            icon: '✏️',
+            label: 'Edit Request',
+            action: folderId ?
+                `window.CollectionManager.editFolderRequest('${collectionId}', '${folderId}', ${requestIndex})` :
+                `editRequest('${collectionId}', ${requestIndex})`
+        },
+        { separator: true },
+        {
+            icon: '🗑️',
+            label: 'Delete Request',
+            action: `window.CollectionManager.deleteRequest('${collectionId}', ${requestIndex}, '${folderId || ''}')`,
+            danger: true
+        }
+    ];
+    
+    if (window.UI && window.UI.showContextMenu) {
+        window.UI.showContextMenu(event, menuItems);
+    }
+}
+
+// Duplicate a request
+duplicateRequest(collectionId, requestIndex, folderId = null) {
+    const collection = this.getCollection(collectionId);
+    if (!collection) return;
+    
+    let originalRequest;
+    let targetList;
+    
+    if (folderId) {
+        const folder = this.getFolder(collectionId, folderId);
+        if (!folder || !folder.requests[requestIndex]) return;
+        originalRequest = folder.requests[requestIndex];
+        targetList = folder.requests;
+    } else {
+        const rootRequests = collection.requests.filter(req => !req.folderId);
+        if (!rootRequests[requestIndex]) return;
+        originalRequest = rootRequests[requestIndex];
+        targetList = collection.requests;
+    }
+    
+    const duplicatedRequest = {
+        ...this.deepClone(originalRequest),
+        id: this.generateId('req'),
+        name: `${originalRequest.name} (Copy)`,
+        createdAt: new Date().toISOString()
+    };
+    
+    // Add duplicate after the original
+    const insertIndex = requestIndex + 1;
+    if (folderId) {
+        targetList.splice(insertIndex, 0, duplicatedRequest);
+    } else {
+        // For root requests, find the actual index in the full collection
+        const actualIndex = collection.requests.findIndex(req => req.id === originalRequest.id);
+        collection.requests.splice(actualIndex + 1, 0, duplicatedRequest);
+    }
+    
+    collection.updatedAt = new Date().toISOString();
+    this.saveCollections();
+    
+    // Refresh the requests list
+    this.updateRequestsList(collectionId);
+    
+    this.showNotification('Request Duplicated', `"${duplicatedRequest.name}" created successfully`);
+}
+
+// Edit a request in a folder
+editFolderRequest(collectionId, folderId, requestIndex) {
+    const folder = this.getFolder(collectionId, folderId);
+    if (!folder || !folder.requests[requestIndex]) return;
+    
+    const request = folder.requests[requestIndex];
+    this.editRequestModal(collectionId, request, (newName, newDescription) => {
+        // Save callback for folder request
+        request.name = newName;
+        request.description = newDescription;
+        folder.requests[requestIndex] = request;
+        const collection = this.getCollection(collectionId);
+        if (collection) {
+            collection.updatedAt = new Date().toISOString();
+        }
+        this.saveCollections();
+        this.updateRequestsList(collectionId);
+    });
+}
+
+// Generic edit request modal
+editRequestModal(collectionId, request, saveCallback) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Request</h3>
+                <button class="close" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            
+            <form onsubmit="event.preventDefault(); window.CollectionManager.handleGenericEditRequest(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="editRequestName">Request Name *</label>
+                        <input type="text" id="editRequestName" required value="${this.escapeHtml(request.name)}" maxlength="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editRequestDescription">Description</label>
+                        <textarea id="editRequestDescription" rows="3" maxlength="500">${this.escapeHtml(request.description || '')}</textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update Request</button>
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Store the callback for later use
+    modal._saveCallback = saveCallback;
+    
+    // Focus the name input
+    const nameInput = modal.querySelector('#editRequestName');
+    if (nameInput) {
+        setTimeout(() => {
+            nameInput.focus();
+            nameInput.select();
+        }, 100);
+    }
+}
+
+// Handle generic edit request form submission
+handleGenericEditRequest(event) {
+    event.preventDefault();
+    
+    const modal = event.target.closest('.modal');
+    const nameInput = document.getElementById('editRequestName');
+    const descriptionInput = document.getElementById('editRequestDescription');
+    
+    const newName = nameInput ? nameInput.value.trim() : '';
+    const newDescription = descriptionInput ? descriptionInput.value.trim() : '';
+    
+    if (!newName) {
+        alert('Please enter a request name');
+        return;
+    }
+    
+    // Update the request object using the callback
+    if (modal._saveCallback) {
+        modal._saveCallback(newName, newDescription);
+    }
+    
+    // Close modal
+    modal.remove();
+    
+    this.showNotification('Request Updated', 'Request details updated');
+}
     // Utility methods
     escapeHtml(text) {
         if (!text) return '';

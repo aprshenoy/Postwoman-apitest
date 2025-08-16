@@ -18,19 +18,13 @@
                 <h1>PostWoman</h1>
                 <span class="version">v1.0.0</span>
             </div>
-            <div class="header-controls">
-                <div class="environment-selector">
-                    <select id="currentEnvironment" class="environment-dropdown" title="Current Environment">
-                        <option value="">Select Environment</option>
-                    </select>
-                </div>
-                <button class="header-btn" onclick="showNotifications()" title="Notifications">
-                    🔔
-                </button>
-                <button class="header-btn" onclick="showSettings()" title="Settings">
-                    ⚙️
-                </button>
-            </div>
+<div class="header-controls">
+    <div class="environment-selector">
+        <select id="currentEnvironment" class="environment-dropdown" title="Current Environment">
+            <option value="">Select Environment</option>
+        </select>
+    </div>
+</div>
         </header>
 
         <!-- Main Content -->
@@ -81,169 +75,169 @@
 
             <!-- Content Area -->
             <main class="content-area">
-                <!-- Workspace Section -->
-                <section id="workspace" class="content-section active">
-                    <div class="workspace-header">
-                        <h2>API Request Workspace</h2>
-<div class="workspace-actions">
-    <button class="btn btn-secondary" onclick="createNewRequest()">🆕 New Request</button>
-    <button class="btn btn-secondary" onclick="saveCurrentRequest()">💾 Save Request</button>
-    <button class="btn btn-secondary" onclick="toggleCurlSection()">🔧 Show cURL</button>
-</div>
+<!-- Workspace Section -->
+<section id="workspace" class="content-section active">
+    <div class="workspace-header">
+        <h2>API Request Workspace</h2>
+        <div class="workspace-actions">
+            <button class="btn btn-secondary" onclick="createNewRequest()">🆕 New Request</button>
+            <button class="btn btn-secondary" onclick="saveCurrentRequest()">💾 Save Request</button>
+            <button class="btn btn-secondary" onclick="toggleCurlSection()">🔧 Show cURL</button>
+        </div>
+    </div>
+
+    <!-- Request Builder -->
+    <div class="request-builder compact">
+        <!-- Request Name Input -->
+        <div class="request-name-section">
+            <input type="text" id="requestName" class="request-name-input" placeholder="Untitled Request">
+        </div>
+
+        <div class="request-line">
+            <select id="method" class="method-select" onchange="updateCurlCommand()">
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="PATCH">PATCH</option>
+                <option value="DELETE">DELETE</option>
+                <option value="HEAD">HEAD</option>
+                <option value="OPTIONS">OPTIONS</option>
+            </select>
+            <input type="text" id="url" class="url-input" placeholder="Enter request URL (use {{variables}})" oninput="updateCurlCommand()">
+            <button id="sendBtn" class="send-button" onclick="sendRequest()">Send Request</button>
+        </div>
+
+        <!-- Request Tabs -->
+        <div class="request-tabs">
+            <button class="tab-btn active" data-tab="params" onclick="switchTab('params')">Parameters</button>
+            <button class="tab-btn" data-tab="headers" onclick="switchTab('headers')">Headers</button>
+            <button class="tab-btn" data-tab="auth" onclick="switchTab('auth')">Authorization</button>
+            <button class="tab-btn" data-tab="body" onclick="switchTab('body')">Body</button>
+            <button class="tab-btn" data-tab="cookies" onclick="switchTab('cookies')">Cookies</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content compact">
+            <!-- Parameters Tab -->
+            <div id="params" class="tab-pane active">
+                <div class="section-header compact">
+                    <h3>Query Parameters</h3>
+                    <button class="btn-add" onclick="addParam()">+ Add Parameter</button>
+                </div>
+                <div id="paramsContainer" class="key-value-container">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+
+            <!-- Headers Tab -->
+            <div id="headers" class="tab-pane">
+                <div class="section-header compact">
+                    <h3>Request Headers</h3>
+                    <button class="btn-add" onclick="addHeader()">+ Add Header</button>
+                </div>
+                <div id="headersContainer" class="key-value-container">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+
+            <!-- Authorization Tab -->
+            <div id="auth" class="tab-pane">
+                <div class="section-header compact">
+                    <h3>Authorization</h3>
+                    <select id="authType" onchange="toggleAuthFields()">
+                        <option value="none">No Auth</option>
+                        <option value="bearer">Bearer Token</option>
+                        <option value="basic">Basic Auth</option>
+                        <option value="apikey">API Key</option>
+                    </select>
+                </div>
+                <div class="auth-content">
+                    <div id="bearerAuth" class="auth-fields" style="display: none;">
+                        <label for="bearerToken">Bearer Token:</label>
+                        <input type="password" id="bearerToken" placeholder="Enter bearer token (use {{variables}})" oninput="updateCurlCommand()">
                     </div>
+                    <div id="basicAuth" class="auth-fields" style="display: none;">
+                        <label for="basicUsername">Username:</label>
+                        <input type="text" id="basicUsername" placeholder="Enter username (use {{variables}})" oninput="updateCurlCommand()">
+                        <label for="basicPassword">Password:</label>
+                        <input type="password" id="basicPassword" placeholder="Enter password (use {{variables}})" oninput="updateCurlCommand()">
+                    </div>
+                    <div id="apikeyAuth" class="auth-fields" style="display: none;">
+                        <label for="apikeyKey">Key:</label>
+                        <input type="text" id="apikeyKey" placeholder="API Key name" oninput="updateCurlCommand()">
+                        <label for="apikeyValue">Value:</label>
+                        <input type="password" id="apikeyValue" placeholder="API Key value (use {{variables}})" oninput="updateCurlCommand()">
+                        <label for="apikeyLocation">Add to:</label>
+                        <select id="apikeyLocation" onchange="updateCurlCommand()">
+                            <option value="header">Header</option>
+                            <option value="query">Query Parameter</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-                    <!-- Request Builder -->
-                    <div class="request-builder">
-                        <!-- Request Name Input -->
-                        <div class="request-name-section" style="margin-bottom: 16px;">
-                            <input type="text" id="requestName" class="request-name-input" placeholder="Untitled Request" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 16px; font-weight: 600;">
+            <!-- Body Tab -->
+            <div id="body" class="tab-pane">
+                <div class="section-header compact">
+                    <h3>Request Body</h3>
+                    <select id="bodyType" onchange="toggleBodyFields()">
+                        <option value="none">No Body</option>
+                        <option value="json">JSON</option>
+                        <option value="form">Form Data</option>
+                        <option value="raw">Raw Text</option>
+                    </select>
+                </div>
+                <div class="body-content">
+                    <div id="jsonBody" class="body-fields" style="display: none;">
+                        <textarea id="jsonInput" placeholder='{"key": "value"}' rows="8" oninput="updateCurlCommand()"></textarea>
+                        <button class="btn-format" onclick="formatJSON()">Format JSON</button>
+                    </div>
+                    <div id="formBody" class="body-fields" style="display: none;">
+                        <div class="section-header compact">
+                            <button class="btn-add" onclick="addFormData()">+ Add Field</button>
                         </div>
-
-                        <div class="request-line">
-                            <select id="method" class="method-select" onchange="updateCurlCommand()">
-                                <option value="GET">GET</option>
-                                <option value="POST">POST</option>
-                                <option value="PUT">PUT</option>
-                                <option value="PATCH">PATCH</option>
-                                <option value="DELETE">DELETE</option>
-                                <option value="HEAD">HEAD</option>
-                                <option value="OPTIONS">OPTIONS</option>
-                            </select>
-                            <input type="text" id="url" class="url-input" placeholder="Enter request URL (use {{variables}})" oninput="updateCurlCommand()">
-                            <button id="sendBtn" class="send-button" onclick="sendRequest()">Send Request</button>
-                        </div>
-
-                        <!-- Request Tabs -->
-                        <div class="request-tabs">
-                            <button class="tab-btn active" data-tab="params" onclick="switchTab('params')">Parameters</button>
-                            <button class="tab-btn" data-tab="headers" onclick="switchTab('headers')">Headers</button>
-                            <button class="tab-btn" data-tab="auth" onclick="switchTab('auth')">Authorization</button>
-                            <button class="tab-btn" data-tab="body" onclick="switchTab('body')">Body</button>
-                            <button class="tab-btn" data-tab="cookies" onclick="switchTab('cookies')">Cookies</button>
-                        </div>
-
-                        <!-- Tab Content -->
-                        <div class="tab-content">
-                            <!-- Parameters Tab -->
-                            <div id="params" class="tab-pane active">
-                                <div class="section-header">
-                                    <h3>Query Parameters</h3>
-                                    <button class="btn-add" onclick="addParam()">+ Add Parameter</button>
-                                </div>
-                                <div id="paramsContainer" class="key-value-container">
-                                    <!-- Dynamic content -->
-                                </div>
-                            </div>
-
-                            <!-- Headers Tab -->
-                            <div id="headers" class="tab-pane">
-                                <div class="section-header">
-                                    <h3>Request Headers</h3>
-                                    <button class="btn-add" onclick="addHeader()">+ Add Header</button>
-                                </div>
-                                <div id="headersContainer" class="key-value-container">
-                                    <!-- Dynamic content -->
-                                </div>
-                            </div>
-
-                            <!-- Authorization Tab -->
-                            <div id="auth" class="tab-pane">
-                                <div class="section-header">
-                                    <h3>Authorization</h3>
-                                    <select id="authType" onchange="toggleAuthFields()">
-                                        <option value="none">No Auth</option>
-                                        <option value="bearer">Bearer Token</option>
-                                        <option value="basic">Basic Auth</option>
-                                        <option value="apikey">API Key</option>
-                                    </select>
-                                </div>
-                                <div class="auth-content">
-                                    <div id="bearerAuth" class="auth-fields" style="display: none;">
-                                        <label for="bearerToken">Bearer Token:</label>
-                                        <input type="password" id="bearerToken" placeholder="Enter bearer token (use {{variables}})" oninput="updateCurlCommand()">
-                                    </div>
-                                    <div id="basicAuth" class="auth-fields" style="display: none;">
-                                        <label for="basicUsername">Username:</label>
-                                        <input type="text" id="basicUsername" placeholder="Enter username (use {{variables}})" oninput="updateCurlCommand()">
-                                        <label for="basicPassword">Password:</label>
-                                        <input type="password" id="basicPassword" placeholder="Enter password (use {{variables}})" oninput="updateCurlCommand()">
-                                    </div>
-                                    <div id="apikeyAuth" class="auth-fields" style="display: none;">
-                                        <label for="apikeyKey">Key:</label>
-                                        <input type="text" id="apikeyKey" placeholder="API Key name" oninput="updateCurlCommand()">
-                                        <label for="apikeyValue">Value:</label>
-                                        <input type="password" id="apikeyValue" placeholder="API Key value (use {{variables}})" oninput="updateCurlCommand()">
-                                        <label for="apikeyLocation">Add to:</label>
-                                        <select id="apikeyLocation" onchange="updateCurlCommand()">
-                                            <option value="header">Header</option>
-                                            <option value="query">Query Parameter</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Body Tab -->
-                            <div id="body" class="tab-pane">
-                                <div class="section-header">
-                                    <h3>Request Body</h3>
-                                    <select id="bodyType" onchange="toggleBodyFields()">
-                                        <option value="none">No Body</option>
-                                        <option value="json">JSON</option>
-                                        <option value="form">Form Data</option>
-                                        <option value="raw">Raw Text</option>
-                                    </select>
-                                </div>
-                                <div class="body-content">
-                                    <div id="jsonBody" class="body-fields" style="display: none;">
-                                        <textarea id="jsonInput" placeholder='{"key": "value"}' rows="10" oninput="updateCurlCommand()"></textarea>
-                                        <button class="btn-format" onclick="formatJSON()">Format JSON</button>
-                                    </div>
-                                    <div id="formBody" class="body-fields" style="display: none;">
-                                        <div class="section-header">
-                                            <button class="btn-add" onclick="addFormData()">+ Add Field</button>
-                                        </div>
-                                        <div id="formDataContainer" class="key-value-container">
-                                            <!-- Dynamic content -->
-                                        </div>
-                                    </div>
-                                    <div id="rawBody" class="body-fields" style="display: none;">
-                                        <textarea id="rawInput" placeholder="Enter raw text data" rows="10" oninput="updateCurlCommand()"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Cookies Tab -->
-                            <div id="cookies" class="tab-pane">
-                                <div class="section-header">
-                                    <h3>Cookies</h3>
-                                    <button class="btn-add" onclick="addCookie()">+ Add Cookie</button>
-                                </div>
-                                <div id="cookiesContainer" class="key-value-container">
-                                    <!-- Dynamic content -->
-                                </div>
-                            </div>
+                        <div id="formDataContainer" class="key-value-container">
+                            <!-- Dynamic content -->
                         </div>
                     </div>
-
-                    <!-- cURL Section -->
-                    <div id="curlSection" class="curl-section">
-                        <div class="section-header">
-                            <h3>🔧 cURL Command</h3>
-                            <button class="btn-copy" onclick="copyCurl()">Copy</button>
-                        </div>
-                        <pre id="curlCode" class="curl-code"></pre>
+                    <div id="rawBody" class="body-fields" style="display: none;">
+                        <textarea id="rawInput" placeholder="Enter raw text data" rows="8" oninput="updateCurlCommand()"></textarea>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Response Section -->
-                    <div class="response-section">
-                        <h3>Response</h3>
-                        <div id="responseContainer" class="response-container">
-                            <div class="response-placeholder">
-                                <p>Send a request to see the response here</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+            <!-- Cookies Tab -->
+            <div id="cookies" class="tab-pane">
+                <div class="section-header compact">
+                    <h3>Cookies</h3>
+                    <button class="btn-add" onclick="addCookie()">+ Add Cookie</button>
+                </div>
+                <div id="cookiesContainer" class="key-value-container">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- cURL Section -->
+    <div id="curlSection" class="curl-section">
+        <div class="section-header">
+            <h3>🔧 cURL Command</h3>
+            <button class="btn-copy" onclick="copyCurl()">Copy</button>
+        </div>
+        <pre id="curlCode" class="curl-code"></pre>
+    </div>
+
+    <!-- Response Section -->
+    <div class="response-section compact">
+        <h3>Response</h3>
+        <div id="responseContainer" class="response-container">
+            <div class="response-placeholder">
+                <p>Send a request to see the response here</p>
+            </div>
+        </div>
+    </div>
+</section>
 
                 <!-- Collections Section -->
                 <section id="collections" class="content-section">
@@ -1031,21 +1025,28 @@
     });
 
     // ================== REQUESTS SIDEBAR FUNCTIONS ==================
-    window.loadCollectionRequests = () => {
-        try {
+// Fixed loadCollectionRequests to handle missing collection selection
+window.loadCollectionRequests = () => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.loadCollectionRequests === 'function') {
+            // Ensure we have a collection selected before trying to load
             const select = document.getElementById('requestsCollectionSelect');
-            const collectionId = select ? select.value : '';
-            
-            if (window.CollectionManager && typeof window.CollectionManager.updateRequestsList === 'function') {
-                window.CollectionManager.updateRequestsList(collectionId);
-            } else {
-                console.warn('CollectionManager.updateRequestsList not available yet');
+            if (select && (!select.value || select.value === '')) {
+                // Try to auto-select first collection
+                if (window.CollectionManager.ensureCollectionSelected) {
+                    window.CollectionManager.ensureCollectionSelected();
+                }
+                return;
             }
-        } catch (error) {
-            console.error('Error in loadCollectionRequests:', error);
+            
+            window.CollectionManager.loadCollectionRequests();
+        } else {
+            console.warn('CollectionManager.loadCollectionRequests not available yet');
         }
-    };
-
+    } catch (error) {
+        console.error('Error in loadCollectionRequests:', error);
+    }
+};
     window.loadRequestToWorkspace = (collectionId, requestIndex) => {
         try {
             if (window.CollectionManager && typeof window.CollectionManager.loadRequestFromCollection === 'function') {
@@ -1346,6 +1347,152 @@
         }
     }, 3000);
 </script>
+<!-- Enhanced Global Function Aliases for new features -->
+<script>
+console.log('🔧 Setting up enhanced global function aliases...');
 
+// ================== COLLECTION SWITCHING ==================
+window.loadCollectionRequests = () => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.loadCollectionRequests === 'function') {
+            window.CollectionManager.loadCollectionRequests();
+        } else {
+            console.warn('CollectionManager.loadCollectionRequests not available yet');
+        }
+    } catch (error) {
+        console.error('Error in loadCollectionRequests:', error);
+    }
+};
+
+// ================== REQUEST CREATION & DELETION ==================
+window.createNewRequest = () => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.createNewRequest === 'function') {
+            window.CollectionManager.createNewRequest();
+        } else {
+            console.warn('CollectionManager.createNewRequest not available yet');
+        }
+    } catch (error) {
+        console.error('Error in createNewRequest:', error);
+    }
+};
+
+window.deleteRequest = (collectionId, requestIndex, fromFolder = null) => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.deleteRequest === 'function') {
+            window.CollectionManager.deleteRequest(collectionId, requestIndex, fromFolder);
+        } else {
+            console.warn('CollectionManager.deleteRequest not available yet');
+        }
+    } catch (error) {
+        console.error('Error in deleteRequest:', error);
+    }
+};
+
+window.duplicateRequest = (collectionId, requestIndex, folderId = '') => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.duplicateRequest === 'function') {
+            window.CollectionManager.duplicateRequest(collectionId, requestIndex, folderId || null);
+        } else {
+            console.warn('CollectionManager.duplicateRequest not available yet');
+        }
+    } catch (error) {
+        console.error('Error in duplicateRequest:', error);
+    }
+};
+
+// ================== DRAG & DROP SUPPORT ==================
+window.enableDragAndDrop = () => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.enableDragAndDrop === 'function') {
+            window.CollectionManager.enableDragAndDrop();
+        } else {
+            console.warn('CollectionManager.enableDragAndDrop not available yet');
+        }
+    } catch (error) {
+        console.error('Error in enableDragAndDrop:', error);
+    }
+};
+
+console.log('✅ Enhanced global function aliases set up successfully');
+</script>
+
+<!-- ALSO UPDATE these existing functions -->
+<script>
+// Enhanced saveCurrentRequest to check for unsaved changes
+window.saveCurrentRequest = async () => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.saveCurrentRequest === 'function') {
+            await window.CollectionManager.saveCurrentRequest();
+        } else if (window.RequestManager && typeof window.RequestManager.saveCurrentRequest === 'function') {
+            await window.RequestManager.saveCurrentRequest();
+        } else {
+            console.warn('saveCurrentRequest not available yet');
+        }
+    } catch (error) {
+        console.error('Error in saveCurrentRequest:', error);
+    }
+};
+
+// Enhanced loadRequestToWorkspace
+window.loadRequestToWorkspace = (collectionId, requestIndex) => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.loadRequestFromCollection === 'function') {
+            window.CollectionManager.loadRequestFromCollection(collectionId, requestIndex);
+            
+            // Update active state
+            document.querySelectorAll('.request-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and activate the clicked item
+            const clickedItem = document.querySelector(`[onclick*="loadRequestToWorkspace('${collectionId}', ${requestIndex})"]`);
+            if (clickedItem) {
+                clickedItem.classList.add('active');
+            }
+        } else {
+            console.warn('CollectionManager.loadRequestFromCollection not available yet');
+        }
+    } catch (error) {
+        console.error('Error in loadRequestToWorkspace:', error);
+    }
+};
+
+// Enhanced loadFolderRequestToWorkspace
+window.loadFolderRequestToWorkspace = (collectionId, folderId, requestIndex) => {
+    try {
+        if (window.CollectionManager && typeof window.CollectionManager.loadFolderRequestToWorkspace === 'function') {
+            window.CollectionManager.loadFolderRequestToWorkspace(collectionId, folderId, requestIndex);
+            
+            // Update active state
+            document.querySelectorAll('.request-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and activate the clicked item
+            const clickedItem = document.querySelector(`[onclick*="loadFolderRequestToWorkspace('${collectionId}', '${folderId}', ${requestIndex})"]`);
+            if (clickedItem) {
+                clickedItem.classList.add('active');
+            }
+        } else {
+            console.warn('CollectionManager.loadFolderRequestToWorkspace not available yet');
+        }
+    } catch (error) {
+        console.error('Error in loadFolderRequestToWorkspace:', error);
+    }
+};
+</script>
+<!-- Auto-ensure collection selection on load -->
+<script>
+// Ensure collection is selected when app loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait for managers to load, then ensure collection selection
+    setTimeout(() => {
+        if (window.CollectionManager && window.CollectionManager.ensureCollectionSelected) {
+            window.CollectionManager.ensureCollectionSelected();
+        }
+    }, 2000);
+});
+</script>
 </body>
 </html>

@@ -322,10 +322,12 @@ getCurrentRequestData() {
     };
 }
 
-// Method to load a request (including name)
-// Fixed loadRequest method in request-manager.js
+// Enhanced loadRequest method with workspace clearing
 loadRequest(requestData) {
     try {
+        // Clear saved state when loading a new request
+        this.clearSavedState();
+        
         // Load request name
         const requestNameInput = document.getElementById('requestName');
         if (requestNameInput) {
@@ -407,6 +409,9 @@ loadRequest(requestData) {
                 this.updateCurlCommand();
             }
         }, 100);
+        
+        // Mark as saved since we just loaded it
+        this.markAsSaved();
         
         console.log('✅ Request loaded successfully');
         
@@ -698,13 +703,39 @@ escapeHtml(text) {
 }
 
 
+// ================== UNSAVED CHANGES DETECTION ==================
 
+// Check if current request has unsaved changes
+hasUnsavedChanges() {
+    try {
+        const currentData = this.getCurrentRequestData();
+        
+        // If there's no URL, consider it as no meaningful content
+        if (!currentData.url || !currentData.url.trim()) {
+            return false;
+        }
+        
+        // If there's a URL and other content, consider it as having changes
+        // This is a simple implementation - you could make it more sophisticated
+        // by tracking the "last saved state" vs "current state"
+        return true;
+    } catch (error) {
+        console.error('Error checking unsaved changes:', error);
+        return false;
+    }
+}
 
+// Mark request as saved (called after successful save)
+markAsSaved() {
+    this.lastSavedState = this.getCurrentRequestData();
+}
 
+// Clear the saved state (called when starting new request)
+clearSavedState() {
+    this.lastSavedState = null;
+}
 
-
-
-    updateCurlCommand() {
+updateCurlCommand() {
         const curlCode = document.getElementById('curlCode');
         if (!curlCode) return;
         
