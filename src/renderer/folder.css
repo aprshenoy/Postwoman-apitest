@@ -1,0 +1,350 @@
+/* Add these styles to your styles.css for folder functionality */
+
+/* Folder styles */
+.folder-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.folder-item:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-sm);
+}
+
+.folder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.folder-info h6 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.folder-info p {
+    margin: 0.25rem 0 0 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.folder-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.folder-stats {
+    margin-bottom: 0.75rem;
+}
+
+.folder-stats span {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.folder-requests {
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.75rem;
+}
+
+.empty-folder {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text-tertiary);
+    border: 2px dashed var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+}
+
+.empty-folder p {
+    margin: 0;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+/* Collection content sections */
+.collection-content {
+    margin-top: 1rem;
+}
+
+.folders-section,
+.root-requests-section {
+    margin-bottom: 2rem;
+}
+
+.folders-section h5,
+.root-requests-section h5 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.empty-collection {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 2px dashed var(--border-color);
+}
+
+.empty-collection p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* Enhanced request list styling within folders */
+.folder-requests .request-item {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.folder-requests .request-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-hover);
+}
+
+.folder-requests .request-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Folder drag and drop styling (for future enhancement) */
+.folder-item.drag-over {
+    border-color: var(--primary-color);
+    background: rgba(14, 165, 233, 0.05);
+}
+
+.request-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}
+
+/* Nested folder styling */
+.folder-item .folder-item {
+    margin-left: 1rem;
+    border-left: 3px solid var(--primary-color);
+    background: var(--bg-primary);
+}
+
+/* Collection actions styling */
+.collection-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.collection-actions .action-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.collection-actions .action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Request description styling */
+.request-description {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+/* Enhanced sidebar with folder support */
+.requests-sidebar .folder-tree {
+    margin-bottom: 1rem;
+}
+
+.requests-sidebar .folder-node {
+    margin-bottom: 0.25rem;
+}
+
+.requests-sidebar .folder-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem;
+    margin-right: 0.25rem;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.requests-sidebar .folder-toggle:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.requests-sidebar .folder-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.requests-sidebar .folder-name:hover {
+    background: var(--bg-tertiary);
+}
+
+.requests-sidebar .folder-requests {
+    margin-left: 1.5rem;
+    border-left: 1px solid var(--border-color);
+    padding-left: 0.5rem;
+}
+
+/* Modal enhancements for folder creation */
+.modal-content h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Responsive design for folders */
+@media (max-width: 768px) {
+    .folder-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .folder-actions {
+        align-self: flex-end;
+    }
+    
+    .collection-actions {
+        flex-direction: column;
+    }
+    
+    .collection-actions .action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .folder-requests .request-item {
+        padding: 0.5rem;
+    }
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .folder-item {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .folder-item:hover {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .empty-folder {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .folder-requests .request-item {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .folder-requests .request-item:hover {
+    background: var(--bg-primary);
+}
+
+/* Animation for folder creation */
+@keyframes folderSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.folder-item {
+    animation: folderSlideIn 0.3s ease-out;
+}
+
+/* Folder icon animations */
+.folder-toggle {
+    transition: transform 0.2s ease;
+}
+
+.folder-toggle.expanded {
+    transform: rotate(90deg);
+}
+
+/* Collection stats enhancement */
+.collection-meta {
+    background: var(--bg-tertiary);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.collection-meta p {
+    margin: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.collection-meta strong {
+    color: var(--text-primary);
+    min-width: 120px;
+}
+
+/* Request move indicator */
+.request-item.can-move {
+    cursor: move;
+}
+
+.request-item.can-move::before {
+    content: '⋮⋮';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+    font-size: 12px;
+    line-height: 1;
+}
+
+.request-item.can-move {
+    padding-left: 20px;
+    position: relative;
+}

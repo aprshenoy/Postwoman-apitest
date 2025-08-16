@@ -1221,6 +1221,352 @@ class ImportManager {
             supportedFormats: this.supportedFormats.length
         };
     }
+
+    
+// Enhanced import with folder support
+async handleCollectionImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+        const text = await this.readFile(file);
+        const importData = JSON.parse(text);
+        
+        // Check if it's a Postman collection
+        if (this.isPostmanCollection(importData)) {
+            await this.importPostmanCollection(importData);
+        } else if (this.isPostwomanCollection(importData)) {
+            await this.importPostwomanCollection(importData);
+        } else {
+            throw new Error('Unsupported collection format');
+        }
+        
+    } catch (error) {
+        console.error('Import error:', error);
+        alert('Error importing collection: ' + error.message);
+    }
+}
+
+// Check if it's a Postman collection
+isPostmanCollection(data) {
+    return data.info && data.info.schema && data.info.schema.includes('postman');
+}
+
+// Check if it's a PostWoman collection
+isPostwomanCollection(data) {
+    return data.postwoman_export || data.postwoman_collection;
+}
+
+// Import Postman collection with folder support
+async importPostmanCollection(postmanData) {
+    const collectionName = postmanData.info.name || 'Imported Collection';
+    
+    const newCollection = {
+        id: this.generateId('col'),
+        name: collectionName,
+        description: postmanData.info.description || 'Imported from Postman',
+        requests: [],
+        folders: [],
+        variables: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    // Process variables
+    if (postmanData.variable) {
+        postmanData.variable.forEach(variable => {
+            if (variable.key && variable.value !== undefined) {
+                newCollection.variables[variable.key] = variable.value;
+            }
+        });
+    }
+    
+    // Process items (folders and requests)
+    if (postmanData.item) {
+        await this.processPostmanItems(postmanData.item, newCollection);
+    }
+    
+    this.collections.push(newCollection);
+    this.saveCollections();
+    this.updateDisplay();
+    this.updateTargetCollectionSelect();
+    
+    this.showNotification(
+        'Collection Imported', 
+        `"${collectionName}" imported successfully with ${newCollection.folders.length} folders and ${this.getTotalRequestCount(newCollection)} requests`
+    );
+}
+
+// Process Postman items (recursive for nested folders)
+async processPostmanItems(items, collection, parentFolderId = null) {
+    for (const item of items) {
+        if (item.item) {
+            // This is a folder
+            const folder = {
+                id: this.generateId('folder'),
+                name: item.name,
+                description: item.description || '',
+                parentId: parentFolderId,
+                requests: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            collection.folders.push(folder);
+            
+            // Process folder items recursively
+            await this.processPostmanItems(item.item, collection, folder.id);
+            
+        } else if (item.request) {
+            // This is a request
+            const request = await this.convertPostmanRequest(item);
+            request.folderId = parentFolderId;
+            
+            if (parentFolderId) {
+                // Add to folder
+                const folder = collection.folders.find(f => f.id === parentFolderId);
+                if (folder) {
+                    folder.requests.push(request);
+                } else {
+                    collection.requests.push(request); // Fallback
+                }
+            } else {
+                // Add to collection root
+                collection.requests.push(request);
+            }
+        }
+    }
+}
+
+// Convert Postman request to PostWoman format
+async convertPostmanRequest(postmanItem) {
+    const postmanRequest = postmanItem.request;
+    
+    const request = {
+        id: this.generateId('req'),
+        name: postmanItem.name,
+        description: postmanItem.description || '',
+        method: postmanRequest.method || 'GET',
+        url: this.extractPostmanUrl(postmanRequest.url),
+        headers: this.convertPostmanHeaders(postmanRequest.header),
+        params: this.convertPostmanParams(postmanRequest.url),
+        cookies: [], // Postman doesn't export cookies separately
+        auth: this.convertPostmanAuth(postmanRequest.auth),
+        body: this.convertPostmanBody(postmanRequest.body),
+        folderId: null, // Will be set by caller
+        createdAt: new Date().toISOString()
+    };
+    
+    return request;
+}
+
+// Extract URL from Postman format
+extractPostmanUrl(urlData) {
+    if (typeof urlData === 'string') {
+        return urlData;
+    }
+    
+    if (urlData && urlData.raw) {
+        return urlData.raw;
+    }
+    
+    if (urlData && urlData.protocol && urlData.host && urlData.path) {
+        const protocol = Array.isArray(urlData.protocol) ? urlData.protocol.join('') : urlData.protocol;
+        const host = Array.isArray(urlData.host) ? urlData.host.join('.') : urlData.host;
+        const path = Array.isArray(urlData.path) ? urlData.path.join('/') : urlData.path;
+        return `${protocol}://${host}/${path}`;
+    }
+    
+    return '';
+}
+
+// Convert Postman headers
+convertPostmanHeaders(headers) {
+    if (!Array.isArray(headers)) return [];
+    
+    return headers
+        .filter(header => !header.disabled)
+        .map(header => ({
+            key: header.key || '',
+            value: header.value || ''
+        }));
+}
+
+// Convert Postman query parameters
+convertPostmanParams(urlData) {
+    if (!urlData || !urlData.query) return [];
+    
+    return urlData.query
+        .filter(param => !param.disabled)
+        .map(param => ({
+            key: param.key || '',
+            value: param.value || ''
+        }));
+}
+
+// Convert Postman auth
+convertPostmanAuth(auth) {
+    if (!auth) return { type: 'none' };
+    
+    switch (auth.type) {
+        case 'bearer':
+            const bearerToken = auth.bearer?.find(item => item.key === 'token');
+            return {
+                type: 'bearer',
+                token: bearerToken?.value || ''
+            };
+        case 'basic':
+            const username = auth.basic?.find(item => item.key === 'username');
+            const password = auth.basic?.find(item => item.key === 'password');
+            return {
+                type: 'basic',
+                username: username?.value || '',
+                password: password?.value || ''
+            };
+        case 'apikey':
+            const key = auth.apikey?.find(item => item.key === 'key');
+            const value = auth.apikey?.find(item => item.key === 'value');
+            const location = auth.apikey?.find(item => item.key === 'in');
+            return {
+                type: 'apikey',
+                key: key?.value || '',
+                value: value?.value || '',
+                location: location?.value || 'header'
+            };
+        default:
+            return { type: 'none' };
+    }
+}
+
+// Convert Postman body
+convertPostmanBody(body) {
+    if (!body) return { type: 'none' };
+    
+    switch (body.mode) {
+        case 'raw':
+            // Check if it's JSON
+            if (body.options?.raw?.language === 'json') {
+                try {
+                    return {
+                        type: 'json',
+                        data: JSON.parse(body.raw)
+                    };
+                } catch (e) {
+                    return {
+                        type: 'json',
+                        data: body.raw
+                    };
+                }
+            }
+            return {
+                type: 'raw',
+                data: body.raw || ''
+            };
+        case 'urlencoded':
+            const formData = {};
+            if (Array.isArray(body.urlencoded)) {
+                body.urlencoded.forEach(field => {
+                    if (field.key && !field.disabled) {
+                        formData[field.key] = field.value || '';
+                    }
+                });
+            }
+            return {
+                type: 'form',
+                data: formData
+            };
+        case 'formdata':
+            const formDataFields = {};
+            if (Array.isArray(body.formdata)) {
+                body.formdata.forEach(field => {
+                    if (field.key && !field.disabled && field.type !== 'file') {
+                        formDataFields[field.key] = field.value || '';
+                    }
+                });
+            }
+            return {
+                type: 'form',
+                data: formDataFields
+            };
+        default:
+            return { type: 'none' };
+    }
+}
+
+// Import PostWoman collection
+async importPostwomanCollection(postwomanData) {
+    const collections = postwomanData.collections || [postwomanData];
+    
+    for (const collectionData of collections) {
+        // Generate new IDs to avoid conflicts
+        const newCollection = {
+            ...collectionData,
+            id: this.generateId('col'),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Regenerate request IDs
+        if (newCollection.requests) {
+            newCollection.requests.forEach(request => {
+                request.id = this.generateId('req');
+            });
+        }
+        
+        // Regenerate folder IDs
+        if (newCollection.folders) {
+            const folderIdMap = new Map();
+            
+            newCollection.folders.forEach(folder => {
+                const oldId = folder.id;
+                folder.id = this.generateId('folder');
+                folderIdMap.set(oldId, folder.id);
+                
+                // Regenerate request IDs in folders
+                if (folder.requests) {
+                    folder.requests.forEach(request => {
+                        request.id = this.generateId('req');
+                    });
+                }
+            });
+            
+            // Update parent references
+            newCollection.folders.forEach(folder => {
+                if (folder.parentId && folderIdMap.has(folder.parentId)) {
+                    folder.parentId = folderIdMap.get(folder.parentId);
+                }
+            });
+            
+            // Update request folder references
+            newCollection.requests.forEach(request => {
+                if (request.folderId && folderIdMap.has(request.folderId)) {
+                    request.folderId = folderIdMap.get(request.folderId);
+                }
+            });
+        }
+        
+        this.collections.push(newCollection);
+    }
+    
+    this.saveCollections();
+    this.updateDisplay();
+    this.updateTargetCollectionSelect();
+    
+    this.showNotification(
+        'Collection(s) Imported', 
+        `${collections.length} collection(s) imported successfully`
+    );
+}
+
+// Helper method to read file
+async readFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
 }
 
 // Global instance

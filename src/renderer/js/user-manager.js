@@ -11,28 +11,26 @@ class UserManager {
         this.initialize();
     }
 
-    initialize() {
-        try {
-            // Load user data from storage
-            this.loadUserData();
-            
-            // Set up user preferences
-            this.applyPreferences();
-            
-            // Initialize user interface elements
-            this.updateUserInterface();
-            
-            this.initialized = true;
-            console.log('✅ UserManager initialized successfully');
-            
-            // Emit initialization event
-            if (window.Core && typeof window.Core.emit === 'function') {
-                window.Core.emit('user-manager-initialized');
-            }
-        } catch (error) {
-            console.error('❌ UserManager initialization failed:', error);
+initialize() {
+    try {
+        this.loadUserData();
+        this.ensureUserExists(); // Add this line
+        this.setupEventListeners();
+        this.updateDisplay();
+        
+        this.initialized = true;
+        console.log('✅ UserManager initialized successfully');
+        
+        if (window.Core && typeof window.Core.emit === 'function') {
+            window.Core.emit('user-manager-initialized');
         }
+    } catch (error) {
+        console.error('❌ UserManager initialization failed:', error);
+        // Create fallback user
+        this.ensureUserExists();
+        this.initialized = true;
     }
+}
 
     loadUserData() {
         try {
@@ -402,26 +400,67 @@ class UserManager {
     }
 
     // Usage Tracking
-    trackActivity(activity) {
-        if (!this.currentUser) return;
-        
-        this.currentUser.usage.lastActivity = new Date().toISOString();
-        
-        switch (activity) {
-            case 'request_sent':
-                this.currentUser.usage.requestsSent++;
-                break;
-            case 'collection_created':
-                this.currentUser.usage.collectionsCreated++;
-                break;
-            case 'environment_created':
-                this.currentUser.usage.environmentsCreated++;
-                break;
+trackActivity(activityType = 'general') {
+    try {
+        // Ensure user object exists
+        if (!this.currentUser) {
+            this.currentUser = {
+                id: this.generateId('user'),
+                name: 'Anonymous User',
+                createdAt: new Date().toISOString(),
+                lastActivity: new Date().toISOString(),
+                activityCount: 0,
+                preferences: {}
+            };
         }
         
+        // Ensure user object has required properties
+        if (!this.currentUser.hasOwnProperty('lastActivity')) {
+            this.currentUser.lastActivity = new Date().toISOString();
+        }
+        
+        if (!this.currentUser.hasOwnProperty('activityCount')) {
+            this.currentUser.activityCount = 0;
+        }
+        
+        // Update activity
+        this.currentUser.lastActivity = new Date().toISOString();
+        this.currentUser.activityCount = (this.currentUser.activityCount || 0) + 1;
+        
+        // Save user data
+        this.saveUserData();
+        
+        console.log(`📊 Activity tracked: ${activityType}`);
+        
+    } catch (error) {
+        console.warn('Error tracking activity:', error);
+        // Don't let activity tracking break the app
+    }
+}
+
+ensureUserExists() {
+    if (!this.currentUser) {
+        this.currentUser = {
+            id: this.generateId('user'),
+            name: 'Anonymous User',
+            createdAt: new Date().toISOString(),
+            lastActivity: new Date().toISOString(),
+            activityCount: 0,
+            preferences: {
+                theme: 'light',
+                autoSave: true,
+                notifications: true
+            },
+            stats: {
+                requestsSent: 0,
+                collectionsCreated: 0,
+                environmentsCreated: 0
+            }
+        };
         this.saveUserData();
     }
-
+    return this.currentUser;
+}
     // Data Export/Import
     exportUserData() {
         if (!this.currentUser) return;

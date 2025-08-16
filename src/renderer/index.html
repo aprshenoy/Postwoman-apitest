@@ -7,6 +7,7 @@
     <title>PostWoman - API Testing Tool</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="environment-variables.css">
+     <link rel="stylesheet" href="folder.css">
 </head>
 <body>
     <div class="app-container">
@@ -405,757 +406,946 @@
     <script src="js/environment-ui.js"></script>
     <script src="js/app.js"></script>
 
-    <!-- IMPORTANT: Global Manager Setup and Verification -->
-    <script>
-        // Global Manager Setup and Verification
-        (function() {
-            console.log('🔧 Setting up global managers...');
-            
-            // Wait for all managers to be loaded
-            function waitForManagers() {
-                return new Promise((resolve) => {
-                    const checkManagers = () => {
-                        const managersReady = [
-                            'CollectionManager',
-                            'HistoryManager', 
-                            'EnvironmentManager',
-                            'TeamsManager',
-                            'UserManager',
-                            'RequestManager',
-                            'ImportManager',
-                            'UI'
-                        ].every(managerName => {
-                            return window[managerName] && typeof window[managerName] === 'object';
-                        });
-                        
-                        if (managersReady) {
-                            resolve();
-                        } else {
-                            setTimeout(checkManagers, 50);
-                        }
-                    };
-                    checkManagers();
-                });
-            }
-            
-            // Set up global manager functions
-            waitForManagers().then(() => {
-                console.log('✅ All managers loaded, setting up global access...');
-                
-                // Verify each manager and its key methods
-                const managers = {
-                    CollectionManager: window.CollectionManager,
-                    HistoryManager: window.HistoryManager,
-                    EnvironmentManager: window.EnvironmentManager, 
-                    TeamsManager: window.TeamsManager,
-                    UserManager: window.UserManager,
-                    RequestManager: window.RequestManager,
-                    ImportManager: window.ImportManager,
-                    UI: window.UI
-                };
-                
-                Object.entries(managers).forEach(([name, manager]) => {
-                    if (!manager) {
-                        console.error(`❌ ${name} not found!`);
-                        return;
-                    }
-                    
-                    // Make sure the manager is globally accessible
-                    window[name] = manager;
-                    
-                    // Log available methods for debugging
-                    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(manager))
-                        .filter(method => typeof manager[method] === 'function' && method !== 'constructor');
-                    
-                    console.log(`✅ ${name} loaded with methods:`, methods.slice(0, 5).join(', '), methods.length > 5 ? '...' : '');
-                });
-                
-                console.log('🎉 All global managers verified and ready!');
-                
-                // Emit ready event
-                if (window.Core) {
-                    window.Core.emit('managers-ready');
-                }
-                
-                // Initialize requests sidebar
-                initializeRequestsSidebar();
-            });
-        })();
-    </script>
+<!-- Complete Global Scripts Section - Replace entire scripts section in index.html -->
 
-    <!-- Complete Global Function Aliases -->
-    <script>
-        // Complete Global Function Aliases - Covers ALL manager methods called from HTML
-        console.log('🔧 Setting up complete global function aliases...');
-
-        // ================== HISTORY SIDEBAR FUNCTIONS ==================
-window.loadHistoryToWorkspace = (index) => {
-    try {
-        if (window.HistoryManager && window.HistoryManager.loadFromHistory) {
-            window.HistoryManager.loadFromHistory(index);
-            
-            // Update active state
-            document.querySelectorAll('.request-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            const clickedItem = document.querySelector(`[onclick="loadHistoryToWorkspace(${index})"]`);
-            if (clickedItem) {
-                clickedItem.classList.add('active');
-            }
-        } else {
-            console.warn('HistoryManager.loadFromHistory not available yet');
-        }
-    } catch (error) {
-        console.error('Error in loadHistoryToWorkspace:', error);
-    }
-};
-
-window.saveHistoryToCollection = (index) => {
-    try {
-        if (window.HistoryManager && window.HistoryManager.saveToCollection) {
-            window.HistoryManager.saveToCollection(index);
-        } else {
-            console.warn('HistoryManager.saveToCollection not available yet');
-        }
-    } catch (error) {
-        console.error('Error in saveHistoryToCollection:', error);
-    }
-};
-
-        // ================== UI METHODS ==================
-        window.showSection = (section) => {
-    try {
-        if (window.UI && typeof window.UI.showSection === 'function') {
-            window.UI.showSection(section);
-        } else {
-            console.warn('UI.showSection not available yet');
-        }
-    } catch (error) {
-        console.error('Error in showSection:', error);
-    }
-};
-
-        window.switchTab = (tab) => {
-            try {
-                if (window.UI && typeof window.UI.showTab === 'function') {
-                    window.UI.showTab(tab);
-                } else {
-                    console.warn('UI.showTab not available yet');
-                }
-            } catch (error) {
-                console.error('Error in switchTab:', error);
-            }
-        };
-
-        window.toggleAuthFields = () => {
-            try {
-                if (window.UI && typeof window.UI.toggleAuthFields === 'function') {
-                    window.UI.toggleAuthFields();
-                } else {
-                    console.warn('UI.toggleAuthFields not available yet');
-                }
-            } catch (error) {
-                console.error('Error in toggleAuthFields:', error);
-            }
-        };
-
-        window.toggleBodyFields = () => {
-            try {
-                if (window.UI && typeof window.UI.toggleBodyFields === 'function') {
-                    window.UI.toggleBodyFields();
-                } else {
-                    console.warn('UI.toggleBodyFields not available yet');
-                }
-            } catch (error) {
-                console.error('Error in toggleBodyFields:', error);
-            }
-        };
-
-        window.formatJSON = () => {
-            try {
-                if (window.UI && typeof window.UI.formatJSON === 'function') {
-                    window.UI.formatJSON();
-                } else {
-                    console.warn('UI.formatJSON not available yet');
-                }
-            } catch (error) {
-                console.error('Error in formatJSON:', error);
-            }
-        };
-
-        // ================== REQUEST MANAGER METHODS ==================
-        window.addParam = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.addParamRow === 'function') {
-                    window.RequestManager.addParamRow();
-                } else {
-                    console.warn('RequestManager.addParamRow not available yet');
-                }
-            } catch (error) {
-                console.error('Error in addParam:', error);
-            }
-        };
-
-        window.addHeader = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.addHeaderRow === 'function') {
-                    window.RequestManager.addHeaderRow();
-                } else {
-                    console.warn('RequestManager.addHeaderRow not available yet');
-                }
-            } catch (error) {
-                console.error('Error in addHeader:', error);
-            }
-        };
-
-        window.addCookie = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.addCookieRow === 'function') {
-                    window.RequestManager.addCookieRow();
-                } else {
-                    console.warn('RequestManager.addCookieRow not available yet');
-                }
-            } catch (error) {
-                console.error('Error in addCookie:', error);
-            }
-        };
-
-        window.addFormData = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.addFormDataRow === 'function') {
-                    window.RequestManager.addFormDataRow();
-                } else {
-                    console.warn('RequestManager.addFormDataRow not available yet');
-                }
-            } catch (error) {
-                console.error('Error in addFormData:', error);
-            }
-        };
-
-        window.sendRequest = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.sendRequest === 'function') {
-                    window.RequestManager.sendRequest();
-                } else {
-                    console.warn('RequestManager.sendRequest not available yet');
-                }
-            } catch (error) {
-                console.error('Error in sendRequest:', error);
-            }
-        };
-
-        window.updateCurlCommand = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.updateCurlCommand === 'function') {
-                    window.RequestManager.updateCurlCommand();
-                } else {
-                    console.warn('RequestManager.updateCurlCommand not available yet');
-                }
-            } catch (error) {
-                console.error('Error in updateCurlCommand:', error);
-            }
-        };
-
-        window.toggleCurlSection = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.toggleCurlSection === 'function') {
-                    window.RequestManager.toggleCurlSection();
-                } else {
-                    console.warn('RequestManager.toggleCurlSection not available yet');
-                }
-            } catch (error) {
-                console.error('Error in toggleCurlSection:', error);
-            }
-        };
-
-        window.copyCurl = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.copyCurl === 'function') {
-                    window.RequestManager.copyCurl();
-                } else {
-                    console.warn('RequestManager.copyCurl not available yet');
-                }
-            } catch (error) {
-                console.error('Error in copyCurl:', error);
-            }
-        };
-
-        window.saveCurrentRequest = () => {
-            try {
-                if (window.RequestManager && typeof window.RequestManager.saveCurrentRequest === 'function') {
-                    window.RequestManager.saveCurrentRequest();
-                } else if (window.CollectionManager && typeof window.CollectionManager.saveCurrentRequest === 'function') {
-                    window.CollectionManager.saveCurrentRequest();
-                } else {
-                    console.warn('saveCurrentRequest not available yet');
-                }
-            } catch (error) {
-                console.error('Error in saveCurrentRequest:', error);
-            }
-        };
-
-        // ================== COLLECTION MANAGER METHODS ==================
-        window.createCollection = () => {
-            try {
-                if (window.CollectionManager && typeof window.CollectionManager.createCollection === 'function') {
-                    window.CollectionManager.createCollection();
-                } else {
-                    console.warn('CollectionManager.createCollection not available yet');
-                }
-            } catch (error) {
-                console.error('Error in createCollection:', error);
-            }
-        };
-
-        window.importPostmanCollection = () => {
-            try {
-                if (window.CollectionManager && typeof window.CollectionManager.importPostmanCollection === 'function') {
-                    window.CollectionManager.importPostmanCollection();
-                } else {
-                    console.warn('CollectionManager.importPostmanCollection not available yet');
-                }
-            } catch (error) {
-                console.error('Error in importPostmanCollection:', error);
-            }
-        };
-
-        window.exportAllCollections = () => {
-            try {
-                if (window.CollectionManager && typeof window.CollectionManager.exportAllCollections === 'function') {
-                    window.CollectionManager.exportAllCollections();
-                } else {
-                    console.warn('CollectionManager.exportAllCollections not available yet');
-                }
-            } catch (error) {
-                console.error('Error in exportAllCollections:', error);
-            }
-        };
-
-        // Collection-specific global functions (called from generated HTML)
-        ['openCollection', 'deleteCollection', 'duplicateCollection', 'renameCollection', 
-         'showCollectionMenu', 'exportCollection', 'addCurrentRequestToCollection', 
-         'removeRequestFromCollection', 'loadRequestFromCollection', 'editRequest',
-         'closeModal', 'closeSaveModal', 'saveToCollection', 'runCollection',
-         'handleCreateCollection', 'handleRenameCollection', 'handleEditRequest', 
-         'handleAddCurrentRequestToCollection'].forEach(methodName => {
-            window[methodName] = (...args) => {
-                try {
-                    if (window.CollectionManager && typeof window.CollectionManager[methodName] === 'function') {
-                        return window.CollectionManager[methodName](...args);
-                    } else {
-                        console.warn(`CollectionManager.${methodName} not available yet`);
-                    }
-                } catch (error) {
-                    console.error(`Error in ${methodName}:`, error);
-                }
-            };
-        });
-
-        // ================== ENVIRONMENT MANAGER METHODS ==================
-        window.createEnvironment = () => {
-            try {
-                if (window.EnvironmentManager && typeof window.EnvironmentManager.createEnvironment === 'function') {
-                    window.EnvironmentManager.createEnvironment();
-                } else {
-                    console.warn('EnvironmentManager.createEnvironment not available yet');
-                }
-            } catch (error) {
-                console.error('Error in createEnvironment:', error);
-            }
-        };
-
-        window.importEnvironments = () => {
-            try {
-                if (window.EnvironmentManager && typeof window.EnvironmentManager.importEnvironments === 'function') {
-                    window.EnvironmentManager.importEnvironments();
-                } else {
-                    console.warn('EnvironmentManager.importEnvironments not available yet');
-                }
-            } catch (error) {
-                console.error('Error in importEnvironments:', error);
-            }
-        };
-
-        window.exportEnvironments = () => {
-            try {
-                if (window.EnvironmentManager && typeof window.EnvironmentManager.exportEnvironments === 'function') {
-                    window.EnvironmentManager.exportEnvironments();
-                } else {
-                    console.warn('EnvironmentManager.exportEnvironments not available yet');
-                }
-            } catch (error) {
-                console.error('Error in exportEnvironments:', error);
-            }
-        };
-
-        window.closeModal = () => {
-            try {
-                if (window.EnvironmentManager && typeof window.EnvironmentManager.closeModal === 'function') {
-                    window.EnvironmentManager.closeModal();
-                } else {
-                    console.warn('EnvironmentManager.closeModal not available yet');
-                }
-            } catch (error) {
-                console.error('Error in closeModal:', error);
-            }
-        };
-
-        window.loadVariables = () => {
-            try {
-                if (window.EnvironmentManager && typeof window.EnvironmentManager.loadVariables === 'function') {
-                    window.EnvironmentManager.loadVariables();
-                } else {
-                    console.warn('EnvironmentManager.loadVariables not available yet');
-                }
-            } catch (error) {
-                console.error('Error in loadVariables:', error);
-            }
-        };
-
-        window.addVariable = () => {
-            try {
-                if (window.EnvironmentManager && typeof window.EnvironmentManager.addVariable === 'function') {
-                    window.EnvironmentManager.addVariable();
-                } else {
-                    console.warn('EnvironmentManager.addVariable not available yet');
-                }
-            } catch (error) {
-                console.error('Error in addVariable:', error);
-            }
-        };
-
-        window.saveEnvironment = () => {
-            try {
-                if (window.EnvironmentManager && typeof window.EnvironmentManager.saveEnvironment === 'function') {
-                    window.EnvironmentManager.saveEnvironment();
-                } else {
-                    console.warn('EnvironmentManager.saveEnvironment not available yet');
-                }
-            } catch (error) {
-                console.error('Error in saveEnvironment:', error);
-            }
-        };
-
-        // Environment-specific global functions (called from generated HTML)
-        ['editEnvironment', 'setActiveEnvironment', 'duplicateEnvironment', 'deleteEnvironment', 
-         'openModal', 'exportEnvironment', 'handleCreateEnvironment', 'handleDuplicateEnvironment'].forEach(methodName => {
-            window[methodName] = (...args) => {
-                try {
-                    if (window.EnvironmentManager && typeof window.EnvironmentManager[methodName] === 'function') {
-                        return window.EnvironmentManager[methodName](...args);
-                    } else {
-                        console.warn(`EnvironmentManager.${methodName} not available yet`);
-                    }
-                } catch (error) {
-                    console.error(`Error in ${methodName}:`, error);
-                }
-            };
-        });
-
-        // ================== HISTORY MANAGER METHODS ==================
-        window.exportHistory = () => {
-            try {
-                if (window.HistoryManager && typeof window.HistoryManager.exportHistory === 'function') {
-                    window.HistoryManager.exportHistory();
-                } else {
-                    console.warn('HistoryManager.exportHistory not available yet');
-                }
-            } catch (error) {
-                console.error('Error in exportHistory:', error);
-            }
-        };
-
-        window.importHistory = () => {
-            try {
-                if (window.HistoryManager && typeof window.HistoryManager.importHistory === 'function') {
-                    window.HistoryManager.importHistory();
-                } else {
-                    console.warn('HistoryManager.importHistory not available yet');
-                }
-            } catch (error) {
-                console.error('Error in importHistory:', error);
-            }
-        };
-
-        window.clearHistory = () => {
-            try {
-                if (window.HistoryManager && typeof window.HistoryManager.clearHistory === 'function') {
-                    window.HistoryManager.clearHistory();
-                } else {
-                    console.warn('HistoryManager.clearHistory not available yet');
-                }
-            } catch (error) {
-                console.error('Error in clearHistory:', error);
-            }
-        };
-
-        // History-specific global functions (called from generated HTML)
-        ['loadFromHistory', 'showDetails', 'saveToCollection', 'removeFromHistory', 
-         'exportHistoryItem', 'searchHistory', 'filterByMethod', 'filterByStatus'].forEach(methodName => {
-            window[methodName] = (...args) => {
-                try {
-                    if (window.HistoryManager && typeof window.HistoryManager[methodName] === 'function') {
-                        return window.HistoryManager[methodName](...args);
-                    } else {
-                        console.warn(`HistoryManager.${methodName} not available yet`);
-                    }
-                } catch (error) {
-                    console.error(`Error in ${methodName}:`, error);
-                }
-            };
-        });
-
-        // ================== TEAMS MANAGER METHODS ==================
-        // Teams-specific global functions (called from generated HTML)
-        ['createTeam', 'joinTeam', 'selectTeam', 'showTeamDetails', 'showTeamMenu', 
-         'inviteMembers', 'manageTeam', 'shareCollection', 'shareEnvironment', 
-         'leaveTeam', 'deleteTeam', 'exportTeam', 'handleCreateTeam', 'handleJoinByLink', 
-         'handleJoinByCode', 'browsePublicTeams'].forEach(methodName => {
-            window[methodName] = (...args) => {
-                try {
-                    if (window.TeamsManager && typeof window.TeamsManager[methodName] === 'function') {
-                        return window.TeamsManager[methodName](...args);
-                    } else {
-                        console.warn(`TeamsManager.${methodName} not available yet`);
-                    }
-                } catch (error) {
-                    console.error(`Error in ${methodName}:`, error);
-                }
-            };
-        });
-
-        // ================== REQUESTS SIDEBAR FUNCTIONS ==================
-        window.loadCollectionRequests = () => {
-            try {
-                const select = document.getElementById('requestsCollectionSelect');
-                const collectionId = select ? select.value : '';
-                updateRequestsList(collectionId);
-            } catch (error) {
-                console.error('Error in loadCollectionRequests:', error);
-            }
-        };
-
-        window.loadRequestToWorkspace = (collectionId, requestIndex) => {
-            try {
-                if (window.CollectionManager && typeof window.CollectionManager.loadRequestFromCollection === 'function') {
-                    window.CollectionManager.loadRequestFromCollection(collectionId, requestIndex);
-                    
-                    // Update active state
-                    document.querySelectorAll('.request-item').forEach(item => {
-                        item.classList.remove('active');
+<!-- IMPORTANT: Global Manager Setup and Verification -->
+<script>
+    // Global Manager Setup and Verification
+    (function() {
+        console.log('🔧 Setting up global managers...');
+        
+        // Wait for all managers to be loaded
+        function waitForManagers() {
+            return new Promise((resolve) => {
+                const checkManagers = () => {
+                    const managersReady = [
+                        'CollectionManager',
+                        'HistoryManager', 
+                        'EnvironmentManager',
+                        'TeamsManager',
+                        'UserManager',
+                        'RequestManager',
+                        'ImportManager',
+                        'UI'
+                    ].every(managerName => {
+                        return window[managerName] && typeof window[managerName] === 'object';
                     });
                     
-                    const clickedItem = document.querySelector(`[onclick="loadRequestToWorkspace('${collectionId}', ${requestIndex})"]`);
-                    if (clickedItem) {
-                        clickedItem.classList.add('active');
-                    }
-                } else {
-                    console.warn('CollectionManager.loadRequestFromCollection not available yet');
-                }
-            } catch (error) {
-                console.error('Error in loadRequestToWorkspace:', error);
-            }
-        };
-
-        window.createNewRequest = () => {
-            try {
-                if (window.UI && typeof window.UI.clearForm === 'function') {
-                    window.UI.clearForm();
-                    
-                    // Set focus to request name
-                    const nameInput = document.getElementById('requestName');
-                    if (nameInput) {
-                        nameInput.focus();
-                    }
-                } else {
-                    console.warn('UI.clearForm not available yet');
-                }
-            } catch (error) {
-                console.error('Error in createNewRequest:', error);
-            }
-        };
-
-        // ================== UTILITY FUNCTIONS ==================
-        // Placeholder functions for header controls
-        window.showNotifications = () => {
-            if (window.UI && window.UI.showNotification) {
-                window.UI.showNotification('Notifications', 'Notification center coming soon!', { type: 'info' });
-            } else {
-                console.log('Show notifications clicked');
-            }
-        };
-
-        window.showSettings = () => {
-            if (window.UI && window.UI.showNotification) {
-                window.UI.showNotification('Settings', 'Settings panel coming soon!', { type: 'info' });
-            } else {
-                console.log('Show settings clicked');
-            }
-        };
-
-        console.log('✅ Complete global function aliases set up successfully');
-        
-        // Final initialization check
-        setTimeout(() => {
-            console.log('🔍 Final initialization status check:');
-            console.log('- Core:', window.Core ? '✅' : '❌');
-            console.log('- UI:', window.UI ? '✅' : '❌');
-            console.log('- CollectionManager:', window.CollectionManager ? '✅' : '❌');
-            console.log('- RequestManager:', window.RequestManager ? '✅' : '❌');
-            console.log('- HistoryManager:', window.HistoryManager ? '✅' : '❌');
-            console.log('- EnvironmentManager:', window.EnvironmentManager ? '✅' : '❌');
-            console.log('- TeamsManager:', window.TeamsManager ? '✅' : '❌');
-            console.log('- UserManager:', window.UserManager ? '✅' : '❌');
-            console.log('- ImportManager:', window.ImportManager ? '✅' : '❌');
-            console.log('- App:', window.app ? '✅' : '❌');
-        }, 3000);
-    </script>
-
-    <!-- Requests Sidebar JavaScript -->
-    <script>
-        // Initialize Requests Sidebar
-// Add this improved function to the index.html script section
-
-// Fixed initialization for requests sidebar
-function initializeRequestsSidebar() {
-    console.log('🔧 Initializing requests sidebar...');
-    
-    // Wait for CollectionManager to be ready
-    const waitForCollectionManager = () => {
-        if (window.CollectionManager && window.CollectionManager.collections) {
-            updateCollectionDropdown();
-            
-            // Listen for collection updates
-            if (window.Core && typeof window.Core.on === 'function') {
-                window.Core.on('collectionsUpdated', updateCollectionDropdown);
-            }
-            
-            // Also listen for direct collection manager events
-            if (window.CollectionManager.saveCollections) {
-                const originalSave = window.CollectionManager.saveCollections;
-                window.CollectionManager.saveCollections = function() {
-                    originalSave.call(this);
-                    updateCollectionDropdown();
-                    
-                    // Update current requests list if a collection is selected
-                    const select = document.getElementById('requestsCollectionSelect');
-                    if (select && select.value) {
-                        updateRequestsList(select.value);
+                    if (managersReady) {
+                        resolve();
+                    } else {
+                        setTimeout(checkManagers, 50);
                     }
                 };
+                checkManagers();
+            });
+        }
+        
+        // Set up global manager functions
+        waitForManagers().then(() => {
+            console.log('✅ All managers loaded, setting up global access...');
+            
+            // Verify each manager and its key methods
+            const managers = {
+                CollectionManager: window.CollectionManager,
+                HistoryManager: window.HistoryManager,
+                EnvironmentManager: window.EnvironmentManager, 
+                TeamsManager: window.TeamsManager,
+                UserManager: window.UserManager,
+                RequestManager: window.RequestManager,
+                ImportManager: window.ImportManager,
+                UI: window.UI
+            };
+            
+            Object.entries(managers).forEach(([name, manager]) => {
+                if (!manager) {
+                    console.error(`❌ ${name} not found!`);
+                    return;
+                }
+                
+                // Make sure the manager is globally accessible
+                window[name] = manager;
+                
+                // Log available methods for debugging
+                const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(manager))
+                    .filter(method => typeof manager[method] === 'function' && method !== 'constructor');
+                
+                console.log(`✅ ${name} loaded with methods:`, methods.slice(0, 5).join(', '), methods.length > 5 ? '...' : '');
+            });
+            
+            console.log('🎉 All global managers verified and ready!');
+            
+            // Emit ready event
+            if (window.Core) {
+                window.Core.emit('managers-ready');
             }
-        } else {
-            // Retry after a short delay
-            setTimeout(waitForCollectionManager, 100);
+            
+            // Initialize requests sidebar
+            initializeRequestsSidebar();
+            
+            // Initialize folder functionality
+            initializeFolderFunctionality();
+        });
+    })();
+</script>
+
+<!-- Complete Global Function Aliases -->
+<script>
+    // Complete Global Function Aliases - Covers ALL manager methods called from HTML
+    console.log('🔧 Setting up complete global function aliases...');
+
+    // ================== UI METHODS ==================
+    window.showSection = (section) => {
+        try {
+            if (window.UI && typeof window.UI.showSection === 'function') {
+                window.UI.showSection(section);
+            } else {
+                console.warn('UI.showSection not available yet');
+            }
+        } catch (error) {
+            console.error('Error in showSection:', error);
         }
     };
-    
-    waitForCollectionManager();
-}
 
-function updateCollectionDropdown() {
-    const select = document.getElementById('requestsCollectionSelect');
-    if (!select || !window.CollectionManager) return;
-    
-    const collections = window.CollectionManager.collections || [];
-    
-    // Store current selection
-    const currentValue = select.value;
-    
-    select.innerHTML = '<option value="">Select Collection</option>';
-    
-    collections.forEach(collection => {
-        const option = document.createElement('option');
-        option.value = collection.id;
-        option.textContent = `${collection.name} (${collection.requests.length})`;
-        select.appendChild(option);
-    });
-    
-    // Restore selection if it still exists
-    if (currentValue && collections.find(c => c.id === currentValue)) {
-        select.value = currentValue;
-        updateRequestsList(currentValue);
-    }
-    
-    console.log(`📁 Updated collection dropdown with ${collections.length} collections`);
-}
-        function updateRequestsList(collectionId) {
-            const container = document.getElementById('requestsList');
-            if (!container || !window.CollectionManager) return;
-            
-            if (!collectionId) {
-                container.innerHTML = `
-                    <div class="empty-requests">
-                        <h4>No Collection Selected</h4>
-                        <p>Choose a collection to view its requests</p>
-                    </div>
-                `;
-                return;
+    window.switchTab = (tab) => {
+        try {
+            if (window.UI && typeof window.UI.showTab === 'function') {
+                window.UI.showTab(tab);
+            } else {
+                console.warn('UI.showTab not available yet');
             }
-            
-            const collection = window.CollectionManager.getCollection(collectionId);
-            if (!collection) return;
-            
-            if (collection.requests.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-requests">
-                        <h4>No Requests</h4>
-                        <p>This collection is empty</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = collection.requests.map((request, index) => `
-                <div class="request-item" onclick="loadRequestToWorkspace('${collectionId}', ${index})">
-                    <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
-                    <div class="request-details">
-                        <div class="request-name">${escapeHtml(request.name || 'Untitled Request')}</div>
-                        <div class="request-url">${escapeHtml(getUrlPath(request.url))}</div>
-                    </div>
-                    <div class="request-actions">
-                        <button class="request-action-btn" onclick="event.stopPropagation(); editRequest('${collectionId}', ${index})" title="Edit">
-                            ✏️
-                        </button>
-                        <button class="request-action-btn" onclick="event.stopPropagation(); removeRequestFromCollection('${collectionId}', ${index})" title="Delete">
-                            🗑️
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+        } catch (error) {
+            console.error('Error in switchTab:', error);
         }
+    };
 
-        function getUrlPath(url) {
+    window.toggleAuthFields = () => {
+        try {
+            if (window.UI && typeof window.UI.toggleAuthFields === 'function') {
+                window.UI.toggleAuthFields();
+            } else {
+                console.warn('UI.toggleAuthFields not available yet');
+            }
+        } catch (error) {
+            console.error('Error in toggleAuthFields:', error);
+        }
+    };
+
+    window.toggleBodyFields = () => {
+        try {
+            if (window.UI && typeof window.UI.toggleBodyFields === 'function') {
+                window.UI.toggleBodyFields();
+            } else {
+                console.warn('UI.toggleBodyFields not available yet');
+            }
+        } catch (error) {
+            console.error('Error in toggleBodyFields:', error);
+        }
+    };
+
+    window.formatJSON = () => {
+        try {
+            if (window.UI && typeof window.UI.formatJSON === 'function') {
+                window.UI.formatJSON();
+            } else {
+                console.warn('UI.formatJSON not available yet');
+            }
+        } catch (error) {
+            console.error('Error in formatJSON:', error);
+        }
+    };
+
+    // ================== REQUEST MANAGER METHODS ==================
+    window.addParam = () => {
+        try {
+            if (window.RequestManager && typeof window.RequestManager.addParamRow === 'function') {
+                window.RequestManager.addParamRow();
+            } else {
+                console.warn('RequestManager.addParamRow not available yet');
+            }
+        } catch (error) {
+            console.error('Error in addParam:', error);
+        }
+    };
+
+    window.addHeader = () => {
+        try {
+            if (window.RequestManager && typeof window.RequestManager.addHeaderRow === 'function') {
+                window.RequestManager.addHeaderRow();
+            } else {
+                console.warn('RequestManager.addHeaderRow not available yet');
+            }
+        } catch (error) {
+            console.error('Error in addHeader:', error);
+        }
+    };
+
+    window.addCookie = () => {
+        try {
+            if (window.RequestManager && typeof window.RequestManager.addCookieRow === 'function') {
+                window.RequestManager.addCookieRow();
+            } else {
+                console.warn('RequestManager.addCookieRow not available yet');
+            }
+        } catch (error) {
+            console.error('Error in addCookie:', error);
+        }
+    };
+
+    window.addFormData = () => {
+        try {
+            if (window.RequestManager && typeof window.RequestManager.addFormDataRow === 'function') {
+                window.RequestManager.addFormDataRow();
+            } else {
+                console.warn('RequestManager.addFormDataRow not available yet');
+            }
+        } catch (error) {
+            console.error('Error in addFormData:', error);
+        }
+    };
+
+    window.sendRequest = () => {
+        try {
+            if (window.RequestManager && typeof window.RequestManager.sendRequest === 'function') {
+                window.RequestManager.sendRequest();
+            } else {
+                console.warn('RequestManager.sendRequest not available yet');
+            }
+        } catch (error) {
+            console.error('Error in sendRequest:', error);
+        }
+    };
+
+    window.updateCurlCommand = () => {
+        try {
+            if (window.RequestManager && typeof window.RequestManager.updateCurlCommand === 'function') {
+                window.RequestManager.updateCurlCommand();
+            } else {
+                console.warn('RequestManager.updateCurlCommand not available yet');
+            }
+        } catch (error) {
+            console.error('Error in updateCurlCommand:', error);
+        }
+    };
+
+    window.toggleCurlSection = () => {
+        try {
+            if (window.RequestManager && typeof window.RequestManager.toggleCurlSection === 'function') {
+                window.RequestManager.toggleCurlSection();
+            } else {
+                console.warn('RequestManager.toggleCurlSection not available yet');
+            }
+        } catch (error) {
+            console.error('Error in toggleCurlSection:', error);
+        }
+    };
+
+    window.copyCurl = () => {
+        try {
+            if (window.RequestManager && typeof window.RequestManager.copyCurl === 'function') {
+                window.RequestManager.copyCurl();
+            } else {
+                console.warn('RequestManager.copyCurl not available yet');
+            }
+        } catch (error) {
+            console.error('Error in copyCurl:', error);
+        }
+    };
+
+    // Enhanced saveCurrentRequest to use smart save
+    window.saveCurrentRequest = () => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.saveCurrentRequest === 'function') {
+                window.CollectionManager.saveCurrentRequest();
+            } else if (window.RequestManager && typeof window.RequestManager.saveCurrentRequest === 'function') {
+                window.RequestManager.saveCurrentRequest();
+            } else {
+                console.warn('saveCurrentRequest not available yet');
+            }
+        } catch (error) {
+            console.error('Error in saveCurrentRequest:', error);
+        }
+    };
+
+    // ================== COLLECTION MANAGER METHODS ==================
+    window.createCollection = () => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.createCollection === 'function') {
+                window.CollectionManager.createCollection();
+            } else {
+                console.warn('CollectionManager.createCollection not available yet');
+            }
+        } catch (error) {
+            console.error('Error in createCollection:', error);
+        }
+    };
+
+    window.importPostmanCollection = () => {
+        try {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (event) => {
+                if (window.CollectionManager && window.CollectionManager.handleCollectionImport) {
+                    window.CollectionManager.handleCollectionImport(event);
+                } else if (window.ImportManager && window.ImportManager.handleCollectionImport) {
+                    window.ImportManager.handleCollectionImport(event);
+                } else {
+                    console.warn('No import handler available');
+                }
+            };
+            input.click();
+        } catch (error) {
+            console.error('Error in importPostmanCollection:', error);
+        }
+    };
+
+    window.exportAllCollections = () => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.exportAllCollections === 'function') {
+                window.CollectionManager.exportAllCollections();
+            } else {
+                console.warn('CollectionManager.exportAllCollections not available yet');
+            }
+        } catch (error) {
+            console.error('Error in exportAllCollections:', error);
+        }
+    };
+
+    // Collection-specific global functions (called from generated HTML)
+    ['openCollection', 'deleteCollection', 'duplicateCollection', 'renameCollection', 
+     'showCollectionMenu', 'exportCollection', 'addCurrentRequestToCollection', 
+     'removeRequestFromCollection', 'loadRequestFromCollection', 'editRequest',
+     'closeModal', 'closeSaveModal', 'saveToCollection', 'runCollection',
+     'handleCreateCollection', 'handleRenameCollection', 'handleEditRequest', 
+     'handleAddCurrentRequestToCollection'].forEach(methodName => {
+        window[methodName] = (...args) => {
             try {
-                return new URL(url).pathname;
-            } catch (e) {
-                return url;
+                if (window.CollectionManager && typeof window.CollectionManager[methodName] === 'function') {
+                    return window.CollectionManager[methodName](...args);
+                } else {
+                    console.warn(`CollectionManager.${methodName} not available yet`);
+                }
+            } catch (error) {
+                console.error(`Error in ${methodName}:`, error);
+            }
+        };
+    });
+
+    // ================== FOLDER FUNCTIONALITY ==================
+
+    // Folder creation and management
+    window.createFolderFromSidebar = () => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.createFolderFromSidebar === 'function') {
+                window.CollectionManager.createFolderFromSidebar();
+            } else {
+                console.warn('CollectionManager.createFolderFromSidebar not available yet');
+            }
+        } catch (error) {
+            console.error('Error in createFolderFromSidebar:', error);
+        }
+    };
+
+    window.showCreateFolderModal = (collectionId) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.showCreateFolderModal === 'function') {
+                window.CollectionManager.showCreateFolderModal(collectionId);
+            } else {
+                console.warn('CollectionManager.showCreateFolderModal not available yet');
+            }
+        } catch (error) {
+            console.error('Error in showCreateFolderModal:', error);
+        }
+    };
+
+    window.handleCreateFolder = (event, collectionId) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.handleCreateFolder === 'function') {
+                return window.CollectionManager.handleCreateFolder(event, collectionId);
+            } else {
+                console.warn('CollectionManager.handleCreateFolder not available yet');
+            }
+        } catch (error) {
+            console.error('Error in handleCreateFolder:', error);
+        }
+    };
+
+    window.editFolder = (collectionId, folderId) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.editFolder === 'function') {
+                window.CollectionManager.editFolder(collectionId, folderId);
+            } else {
+                console.warn('CollectionManager.editFolder not available yet');
+            }
+        } catch (error) {
+            console.error('Error in editFolder:', error);
+        }
+    };
+
+    window.handleEditFolder = (event, collectionId, folderId) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.handleEditFolder === 'function') {
+                return window.CollectionManager.handleEditFolder(event, collectionId, folderId);
+            } else {
+                console.warn('CollectionManager.handleEditFolder not available yet');
+            }
+        } catch (error) {
+            console.error('Error in handleEditFolder:', error);
+        }
+    };
+
+    window.deleteFolder = (collectionId, folderId) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.deleteFolder === 'function') {
+                window.CollectionManager.deleteFolder(collectionId, folderId);
+            } else {
+                console.warn('CollectionManager.deleteFolder not available yet');
+            }
+        } catch (error) {
+            console.error('Error in deleteFolder:', error);
+        }
+    };
+
+    // Collection selection modal functions
+    window.proceedWithSelectedCollection = () => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.proceedWithSelectedCollection === 'function') {
+                window.CollectionManager.proceedWithSelectedCollection();
+            } else {
+                console.warn('CollectionManager.proceedWithSelectedCollection not available yet');
+            }
+        } catch (error) {
+            console.error('Error in proceedWithSelectedCollection:', error);
+        }
+    };
+
+    window.createCollectionThenFolder = () => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.createCollectionThenFolder === 'function') {
+                window.CollectionManager.createCollectionThenFolder();
+            } else {
+                console.warn('CollectionManager.createCollectionThenFolder not available yet');
+            }
+        } catch (error) {
+            console.error('Error in createCollectionThenFolder:', error);
+        }
+    };
+
+    // Sidebar folder functions
+    window.toggleSidebarFolder = (folderId) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.toggleSidebarFolder === 'function') {
+                window.CollectionManager.toggleSidebarFolder(folderId);
+            } else {
+                console.warn('CollectionManager.toggleSidebarFolder not available yet');
+            }
+        } catch (error) {
+            console.error('Error in toggleSidebarFolder:', error);
+        }
+    };
+
+    window.loadFolderRequestToWorkspace = (collectionId, folderId, requestIndex) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.loadFolderRequestToWorkspace === 'function') {
+                window.CollectionManager.loadFolderRequestToWorkspace(collectionId, folderId, requestIndex);
+            } else {
+                console.warn('CollectionManager.loadFolderRequestToWorkspace not available yet');
+            }
+        } catch (error) {
+            console.error('Error in loadFolderRequestToWorkspace:', error);
+        }
+    };
+
+    // ================== ENVIRONMENT MANAGER METHODS ==================
+    window.createEnvironment = () => {
+        try {
+            if (window.EnvironmentManager && typeof window.EnvironmentManager.createEnvironment === 'function') {
+                window.EnvironmentManager.createEnvironment();
+            } else {
+                console.warn('EnvironmentManager.createEnvironment not available yet');
+            }
+        } catch (error) {
+            console.error('Error in createEnvironment:', error);
+        }
+    };
+
+    window.importEnvironments = () => {
+        try {
+            if (window.EnvironmentManager && typeof window.EnvironmentManager.importEnvironments === 'function') {
+                window.EnvironmentManager.importEnvironments();
+            } else {
+                console.warn('EnvironmentManager.importEnvironments not available yet');
+            }
+        } catch (error) {
+            console.error('Error in importEnvironments:', error);
+        }
+    };
+
+    window.exportEnvironments = () => {
+        try {
+            if (window.EnvironmentManager && typeof window.EnvironmentManager.exportEnvironments === 'function') {
+                window.EnvironmentManager.exportEnvironments();
+            } else {
+                console.warn('EnvironmentManager.exportEnvironments not available yet');
+            }
+        } catch (error) {
+            console.error('Error in exportEnvironments:', error);
+        }
+    };
+
+    window.closeModal = () => {
+        try {
+            if (window.EnvironmentManager && typeof window.EnvironmentManager.closeModal === 'function') {
+                window.EnvironmentManager.closeModal();
+            } else {
+                console.warn('EnvironmentManager.closeModal not available yet');
+            }
+        } catch (error) {
+            console.error('Error in closeModal:', error);
+        }
+    };
+
+    window.loadVariables = () => {
+        try {
+            if (window.EnvironmentManager && typeof window.EnvironmentManager.loadVariables === 'function') {
+                window.EnvironmentManager.loadVariables();
+            } else {
+                console.warn('EnvironmentManager.loadVariables not available yet');
+            }
+        } catch (error) {
+            console.error('Error in loadVariables:', error);
+        }
+    };
+
+    window.addVariable = () => {
+        try {
+            if (window.EnvironmentManager && typeof window.EnvironmentManager.addVariable === 'function') {
+                window.EnvironmentManager.addVariable();
+            } else {
+                console.warn('EnvironmentManager.addVariable not available yet');
+            }
+        } catch (error) {
+            console.error('Error in addVariable:', error);
+        }
+    };
+
+    window.saveEnvironment = () => {
+        try {
+            if (window.EnvironmentManager && typeof window.EnvironmentManager.saveEnvironment === 'function') {
+                window.EnvironmentManager.saveEnvironment();
+            } else {
+                console.warn('EnvironmentManager.saveEnvironment not available yet');
+            }
+        } catch (error) {
+            console.error('Error in saveEnvironment:', error);
+        }
+    };
+
+    // Environment-specific global functions (called from generated HTML)
+    ['editEnvironment', 'setActiveEnvironment', 'duplicateEnvironment', 'deleteEnvironment', 
+     'openModal', 'exportEnvironment', 'handleCreateEnvironment', 'handleDuplicateEnvironment'].forEach(methodName => {
+        window[methodName] = (...args) => {
+            try {
+                if (window.EnvironmentManager && typeof window.EnvironmentManager[methodName] === 'function') {
+                    return window.EnvironmentManager[methodName](...args);
+                } else {
+                    console.warn(`EnvironmentManager.${methodName} not available yet`);
+                }
+            } catch (error) {
+                console.error(`Error in ${methodName}:`, error);
+            }
+        };
+    });
+
+    // ================== HISTORY MANAGER METHODS ==================
+    window.exportHistory = () => {
+        try {
+            if (window.HistoryManager && typeof window.HistoryManager.exportHistory === 'function') {
+                window.HistoryManager.exportHistory();
+            } else {
+                console.warn('HistoryManager.exportHistory not available yet');
+            }
+        } catch (error) {
+            console.error('Error in exportHistory:', error);
+        }
+    };
+
+    window.importHistory = () => {
+        try {
+            if (window.HistoryManager && typeof window.HistoryManager.importHistory === 'function') {
+                window.HistoryManager.importHistory();
+            } else {
+                console.warn('HistoryManager.importHistory not available yet');
+            }
+        } catch (error) {
+            console.error('Error in importHistory:', error);
+        }
+    };
+
+    window.clearHistory = () => {
+        try {
+            if (window.HistoryManager && typeof window.HistoryManager.clearHistory === 'function') {
+                window.HistoryManager.clearHistory();
+            } else {
+                console.warn('HistoryManager.clearHistory not available yet');
+            }
+        } catch (error) {
+            console.error('Error in clearHistory:', error);
+        }
+    };
+
+    // History-specific global functions (called from generated HTML)
+    ['loadFromHistory', 'showDetails', 'saveToCollection', 'removeFromHistory', 
+     'exportHistoryItem', 'searchHistory', 'filterByMethod', 'filterByStatus'].forEach(methodName => {
+        window[methodName] = (...args) => {
+            try {
+                if (window.HistoryManager && typeof window.HistoryManager[methodName] === 'function') {
+                    return window.HistoryManager[methodName](...args);
+                } else {
+                    console.warn(`HistoryManager.${methodName} not available yet`);
+                }
+            } catch (error) {
+                console.error(`Error in ${methodName}:`, error);
+            }
+        };
+    });
+
+    // ================== TEAMS MANAGER METHODS ==================
+    // Teams-specific global functions (called from generated HTML)
+    ['createTeam', 'joinTeam', 'selectTeam', 'showTeamDetails', 'showTeamMenu', 
+     'inviteMembers', 'manageTeam', 'shareCollection', 'shareEnvironment', 
+     'leaveTeam', 'deleteTeam', 'exportTeam', 'handleCreateTeam', 'handleJoinByLink', 
+     'handleJoinByCode', 'browsePublicTeams'].forEach(methodName => {
+        window[methodName] = (...args) => {
+            try {
+                if (window.TeamsManager && typeof window.TeamsManager[methodName] === 'function') {
+                    return window.TeamsManager[methodName](...args);
+                } else {
+                    console.warn(`TeamsManager.${methodName} not available yet`);
+                }
+            } catch (error) {
+                console.error(`Error in ${methodName}:`, error);
+            }
+        };
+    });
+
+    // ================== REQUESTS SIDEBAR FUNCTIONS ==================
+    window.loadCollectionRequests = () => {
+        try {
+            const select = document.getElementById('requestsCollectionSelect');
+            const collectionId = select ? select.value : '';
+            
+            if (window.CollectionManager && typeof window.CollectionManager.updateRequestsList === 'function') {
+                window.CollectionManager.updateRequestsList(collectionId);
+            } else {
+                console.warn('CollectionManager.updateRequestsList not available yet');
+            }
+        } catch (error) {
+            console.error('Error in loadCollectionRequests:', error);
+        }
+    };
+
+    window.loadRequestToWorkspace = (collectionId, requestIndex) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.loadRequestFromCollection === 'function') {
+                window.CollectionManager.loadRequestFromCollection(collectionId, requestIndex);
+                
+                // Update active state
+                document.querySelectorAll('.request-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                const clickedItem = document.querySelector(`[onclick="loadRequestToWorkspace('${collectionId}', ${requestIndex})"]`);
+                if (clickedItem) {
+                    clickedItem.classList.add('active');
+                }
+            } else {
+                console.warn('CollectionManager.loadRequestFromCollection not available yet');
+            }
+        } catch (error) {
+            console.error('Error in loadRequestToWorkspace:', error);
+        }
+    };
+
+    window.createNewRequest = () => {
+        try {
+            if (window.UI && typeof window.UI.clearForm === 'function') {
+                window.UI.clearForm();
+                
+                // Set focus to request name
+                const nameInput = document.getElementById('requestName');
+                if (nameInput) {
+                    nameInput.focus();
+                }
+            } else {
+                console.warn('UI.clearForm not available yet');
+            }
+        } catch (error) {
+            console.error('Error in createNewRequest:', error);
+        }
+    };
+
+    // ================== HISTORY SIDEBAR FUNCTIONS ==================
+    window.loadHistoryToWorkspace = (index) => {
+        try {
+            if (window.HistoryManager && window.HistoryManager.loadFromHistory) {
+                window.HistoryManager.loadFromHistory(index);
+                
+                // Update active state
+                document.querySelectorAll('.request-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                const clickedItem = document.querySelector(`[onclick="loadHistoryToWorkspace(${index})"]`);
+                if (clickedItem) {
+                    clickedItem.classList.add('active');
+                }
+            } else {
+                console.warn('HistoryManager.loadFromHistory not available yet');
+            }
+        } catch (error) {
+            console.error('Error in loadHistoryToWorkspace:', error);
+        }
+    };
+
+    window.saveHistoryToCollection = (index) => {
+        try {
+            if (window.HistoryManager && window.HistoryManager.saveToCollection) {
+                window.HistoryManager.saveToCollection(index);
+            } else {
+                console.warn('HistoryManager.saveToCollection not available yet');
+            }
+        } catch (error) {
+            console.error('Error in saveHistoryToCollection:', error);
+        }
+    };
+
+    // ================== UTILITY FUNCTIONS ==================
+    // Placeholder functions for header controls
+    window.showNotifications = () => {
+        if (window.UI && window.UI.showNotification) {
+            window.UI.showNotification('Notifications', 'Notification center coming soon!', { type: 'info' });
+        } else {
+            console.log('Show notifications clicked');
+        }
+    };
+
+    window.showSettings = () => {
+        if (window.UI && window.UI.showNotification) {
+            window.UI.showNotification('Settings', 'Settings panel coming soon!', { type: 'info' });
+        } else {
+            console.log('Show settings clicked');
+        }
+    };
+
+    // Enhanced sidebar functions
+    window.updateSidebarForSection = (sectionName) => {
+        try {
+            if (window.CollectionManager && typeof window.CollectionManager.updateSidebarForSection === 'function') {
+                window.CollectionManager.updateSidebarForSection(sectionName);
+            } else if (window.UI && typeof window.UI.updateSidebarForSection === 'function') {
+                window.UI.updateSidebarForSection(sectionName);
+            } else {
+                console.warn('updateSidebarForSection not available yet');
+            }
+        } catch (error) {
+            console.error('Error in updateSidebarForSection:', error);
+        }
+    };
+
+    // ================== DEBUG FUNCTIONS ==================
+    
+    // Debug function to check folder functionality
+    window.debugFolderFunctionality = () => {
+        console.log('🔍 Debugging folder functionality...');
+        console.log('CollectionManager:', window.CollectionManager);
+        
+        if (window.CollectionManager) {
+            console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.CollectionManager)));
+            console.log('showCreateFolderModal:', typeof window.CollectionManager.showCreateFolderModal);
+            console.log('Collections:', window.CollectionManager.collections?.length || 0);
+        }
+        
+        const selectedCollection = document.getElementById('requestsCollectionSelect')?.value;
+        console.log('Selected collection:', selectedCollection);
+        
+        if (selectedCollection && window.CollectionManager) {
+            const collection = window.CollectionManager.getCollection(selectedCollection);
+            console.log('Collection details:', collection);
+            console.log('Folders in collection:', collection?.folders?.length || 0);
+        }
+    };
+
+    // Test folder creation
+    window.testFolderCreation = () => {
+        console.log('🧪 Testing folder creation...');
+        
+        if (!window.CollectionManager) {
+            console.error('❌ CollectionManager not available');
+            return;
+        }
+        
+        const collections = window.CollectionManager.collections || [];
+        if (collections.length === 0) {
+            console.error('❌ No collections available');
+            return;
+        }
+        
+        const firstCollection = collections[0];
+        console.log('✅ Testing with collection:', firstCollection.name);
+        
+        try {
+            window.CollectionManager.showCreateFolderModal(firstCollection.id);
+            console.log('✅ Modal opened successfully');
+        } catch (error) {
+            console.error('❌ Error opening modal:', error);
+        }
+    };
+
+    console.log('✅ Complete global function aliases set up successfully');
+</script>
+
+<!-- Requests Sidebar JavaScript -->
+<script>
+    // Initialize Requests Sidebar
+    function initializeRequestsSidebar() {
+        console.log('🔧 Initializing requests sidebar...');
+        
+        // Wait for CollectionManager to be ready
+        const waitForCollectionManager = () => {
+            if (window.CollectionManager && window.CollectionManager.collections) {
+                updateCollectionDropdown();
+                
+                // Listen for collection updates
+                if (window.Core && typeof window.Core.on === 'function') {
+                    window.Core.on('collectionsUpdated', updateCollectionDropdown);
+                }
+                
+                // Also listen for direct collection manager events
+                if (window.CollectionManager.saveCollections) {
+                    const originalSave = window.CollectionManager.saveCollections;
+                    window.CollectionManager.saveCollections = function() {
+                        originalSave.call(this);
+                        updateCollectionDropdown();
+                        
+                        // Update current requests list if a collection is selected
+                        const select = document.getElementById('requestsCollectionSelect');
+                        if (select && select.value) {
+                            if (window.CollectionManager.updateRequestsList) {
+                                window.CollectionManager.updateRequestsList(select.value);
+                            }
+                        }
+                    };
+                }
+            } else {
+                // Retry after a short delay
+                setTimeout(waitForCollectionManager, 100);
+            }
+        };
+        
+        waitForCollectionManager();
+    }
+
+    function updateCollectionDropdown() {
+        const select = document.getElementById('requestsCollectionSelect');
+        if (!select || !window.CollectionManager) return;
+        
+        const collections = window.CollectionManager.collections || [];
+        
+        // Store current selection
+        const currentValue = select.value;
+        
+        select.innerHTML = '<option value="">Select Collection</option>';
+        
+        collections.forEach(collection => {
+            const option = document.createElement('option');
+            option.value = collection.id;
+            option.textContent = `${collection.name} (${window.CollectionManager.getTotalRequestCount ? window.CollectionManager.getTotalRequestCount(collection) : collection.requests.length})`;
+            select.appendChild(option);
+        });
+        
+        // Restore selection if it still exists
+        if (currentValue && collections.find(c => c.id === currentValue)) {
+            select.value = currentValue;
+            if (window.CollectionManager.updateRequestsList) {
+                window.CollectionManager.updateRequestsList(currentValue);
             }
         }
+        
+        console.log(`📁 Updated collection dropdown with ${collections.length} collections`);
+    }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+    function getUrlPath(url) {
+        try {
+            return new URL(url).pathname;
+        } catch (e) {
+            return url;
         }
+    }
 
-        // Update requests sidebar when collections change
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+
+<!-- Folder Functionality Initialization -->
+<script>
+    // Initialize folder functionality after everything loads
+    function initializeFolderFunctionality() {
+        console.log('🔧 Initializing folder functionality...');
+        
         setTimeout(() => {
-            if (window.CollectionManager && window.CollectionManager.saveCollections) {
-                const originalSave = window.CollectionManager.saveCollections;
-                window.CollectionManager.saveCollections = function() {
-                    originalSave.call(this);
-                    updateCollectionDropdown();
+            if (window.CollectionManager) {
+                // Ensure all collections have folders array
+                if (window.CollectionManager.collections) {
+                    let updated = false;
+                    window.CollectionManager.collections.forEach(collection => {
+                        if (!collection.folders) {
+                            collection.folders = [];
+                            updated = true;
+                        }
+                    });
                     
-                    // Update current requests list if a collection is selected
-                    const select = document.getElementById('requestsCollectionSelect');
-                    if (select && select.value) {
-                        updateRequestsList(select.value);
+                    if (updated) {
+                        window.CollectionManager.saveCollections();
                     }
-                };
+                }
+                
+                console.log('✅ Folder functionality initialized');
+            } else {
+                console.warn('⚠️ CollectionManager not available for folder initialization');
             }
         }, 1000);
-    </script>
+    }
+</script>
+
+<!-- Final Status Check -->
+<script>
+    // Final initialization check
+    setTimeout(() => {
+        console.log('🔍 Final initialization status check:');
+        console.log('- Core:', window.Core ? '✅' : '❌');
+        console.log('- UI:', window.UI ? '✅' : '❌');
+        console.log('- CollectionManager:', window.CollectionManager ? '✅' : '❌');
+        console.log('- RequestManager:', window.RequestManager ? '✅' : '❌');
+        console.log('- HistoryManager:', window.HistoryManager ? '✅' : '❌');
+        console.log('- EnvironmentManager:', window.EnvironmentManager ? '✅' : '❌');
+        console.log('- TeamsManager:', window.TeamsManager ? '✅' : '❌');
+        console.log('- UserManager:', window.UserManager ? '✅' : '❌');
+        console.log('- ImportManager:', window.ImportManager ? '✅' : '❌');
+        console.log('- App:', window.app ? '✅' : '❌');
+        
+        // Test folder functionality
+        if (window.CollectionManager && window.CollectionManager.collections) {
+            console.log('📁 Collections with folder support:', window.CollectionManager.collections.length);
+            console.log('🧪 Run window.testFolderCreation() to test folder creation');
+            console.log('🔍 Run window.debugFolderFunctionality() for debugging');
+        }
+    }, 3000);
+</script>
+
 </body>
 </html>
