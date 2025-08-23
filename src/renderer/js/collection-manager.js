@@ -2,7 +2,7 @@
 
 class CollectionManager {
     constructor() {
-        this.collections = this.loadCollections();
+           this.collections = this.loadCollections() || []; 
         this.currentCollection = null;
         this.initialized = false;
             this.draggedRequest = null; // For drag & drop functionality
@@ -111,15 +111,23 @@ initialize() {
         }
     }
 
-    loadCollections() {
-        try {
-            const stored = localStorage.getItem('postwoman_collections');
-            return stored ? JSON.parse(stored) : [];
-        } catch (error) {
-            console.error('Error loading collections:', error);
+  loadCollections() {
+    try {
+        const stored = localStorage.getItem('postwoman_collections');
+        const collections = stored ? JSON.parse(stored) : [];
+        
+        // Ensure it's always an array
+        if (!Array.isArray(collections)) {
+            console.warn('Collections data is not an array, resetting...');
             return [];
         }
+        
+        return collections;
+    } catch (error) {
+        console.error('Error loading collections:', error);
+        return [];
     }
+}
 
     generateId(prefix = 'id') {
         try {
@@ -153,14 +161,23 @@ emitCoreEvent(eventName, data) {
     }
 }
 
-    saveCollections() {
-        try {
-            localStorage.setItem('postwoman_collections', JSON.stringify(this.collections));
-            this.emitCoreEvent('collectionsUpdated', this.collections);
-        } catch (error) {
-            console.error('Error saving collections:', error);
-        }
+// Update existing method to track imports
+saveCollections() {
+    try {
+        localStorage.setItem('postwoman_collections', JSON.stringify(this.collections));
+        this.emitCoreEvent('collectionsUpdated', this.collections);
+        
+        // Emit specific event for imports
+        this.emitCoreEvent('collections-saved', { 
+            count: this.collections.length,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Error saving collections:', error);
+        this.showNotification('Error', 'Failed to save collections', { type: 'error' });
     }
+}
 
     createCollection() {
     // Create modal for collection creation
@@ -342,9 +359,6 @@ handleRenameCollection(event, collectionId) {
         return this.collections.find(col => col.id === collectionId);
     }
 
-// Fix for CollectionManager updateDisplay method
-// Replace the updateDisplay method in your collection-manager.js file
-
 updateDisplay() {
     const container = document.getElementById('collectionsContainer');
     if (!container) return;
@@ -362,28 +376,34 @@ updateDisplay() {
         return;
     }
     
-    container.innerHTML = this.collections.map(collection => `
-        <div class="collection-card" onclick="openCollection('${collection.id}')">
-            <div class="collection-header">
-                <h3 class="collection-title">${this.escapeHtml(collection.name)}</h3>
-                <div class="collection-menu">
-                    <button class="collection-menu-btn" onclick="event.stopPropagation(); showCollectionMenu('${collection.id}', event)">
-                        ⋮
-                    </button>
+    container.innerHTML = this.collections.map(collection => {
+        const totalRequests = this.getTotalRequestCount(collection);
+        const folderCount = collection.folders ? collection.folders.length : 0;
+        
+        return `
+            <div class="collection-card" onclick="openCollection('${collection.id}')">
+                <div class="collection-header">
+                    <h3 class="collection-title">${this.escapeHtml(collection.name)}</h3>
+                    <div class="collection-menu">
+                        <button class="collection-menu-btn" onclick="event.stopPropagation(); showCollectionMenu('${collection.id}', event)">
+                            ⋮
+                        </button>
+                    </div>
+                </div>
+                <div class="collection-info">
+                    ${collection.description ? this.escapeHtml(collection.description) : 'No description'}
+                </div>
+                <div class="collection-stats">
+                    <span>📄 ${totalRequests} requests</span>
+                    <span>📁 ${folderCount} folders</span>
+                    <span>📅 ${this.formatDate(collection.updatedAt)}</span>
+                </div>
+                <div class="collection-methods">
+                    ${this.getMethodCounts(collection)}
                 </div>
             </div>
-            <div class="collection-info">
-                ${collection.description ? this.escapeHtml(collection.description) : 'No description'}
-            </div>
-            <div class="collection-stats">
-                <span>📄 ${collection.requests.length} requests</span>
-                <span>📅 ${this.formatDate(collection.updatedAt)}</span>
-            </div>
-            <div class="collection-methods">
-                ${this.getMethodCounts(collection.requests)}
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Also fix the showCollectionMenu method to use global functions
@@ -436,20 +456,56 @@ showCollectionMenu(collectionId, event) {
 }
 
 
-
-    getMethodCounts(requests) {
-        const methods = requests.reduce((acc, req) => {
-            acc[req.method] = (acc[req.method] || 0) + 1;
-            return acc;
-        }, {});
-
-        return Object.entries(methods).map(([method, count]) => 
-            `<span class="method-count method-${method.toLowerCase()}">${method} (${count})</span>`
-        ).join('');
+getMethodCounts(collection) {
+    const methods = {};
+    
+    // Count methods from root requests
+    if (Array.isArray(collection.requests)) {
+        collection.requests.forEach(req => {
+            if (req.method) {
+                methods[req.method] = (methods[req.method] || 0) + 1;
+            }
+        });
     }
-// Additional methods that need prompt() fixes for CollectionManager
+    
+    // Count methods from folder requests
+    if (Array.isArray(collection.folders)) {
+        collection.folders.forEach(folder => {
+            if (Array.isArray(folder.requests)) {
+                folder.requests.forEach(req => {
+                    if (req.method) {
+                        methods[req.method] = (methods[req.method] || 0) + 1;
+                    }
+                });
+            }
+        });
+    }
 
-// Replace editRequest method in CollectionManager
+    return Object.entries(methods).map(([method, count]) => 
+        `<span class="method-count method-${method.toLowerCase()}">${method} (${count})</span>`
+    ).join('');
+}
+
+// Add this method to debug collection structure
+debugCollectionStructure(collection) {
+    console.log('🔍 Collection Structure Debug:');
+    console.log('Collection:', collection.name);
+    console.log('Root requests:', collection.requests?.length || 0);
+    console.log('Folders:', collection.folders?.length || 0);
+    
+    if (collection.folders) {
+        collection.folders.forEach(folder => {
+            console.log(`  Folder "${folder.name}":`, folder.requests?.length || 0, 'requests');
+        });
+    }
+    
+    const totalCount = this.getTotalRequestCount(collection);
+    console.log('Total calculated requests:', totalCount);
+    
+    return totalCount;
+}
+
+
 editRequest(collectionId, requestIndex) {
     const collection = this.getCollection(collectionId);
     if (!collection || !collection.requests[requestIndex]) return;
@@ -1830,19 +1886,30 @@ refreshSidebarIfNeeded(collectionId) {
     }
 }
 
-// Get total request count including folders
+
+// Update existing method to handle all cases properly
 getTotalRequestCount(collection) {
-    let count = collection.requests.filter(req => !req.folderId).length;
+    if (!collection) return 0;
     
-    if (collection.folders) {
+    let count = 0;
+    
+    // Count root requests (not in folders)
+    if (Array.isArray(collection.requests)) {
+        const rootRequests = collection.requests.filter(req => !req.folderId);
+        count += rootRequests.length;
+    }
+    
+    // Count requests in folders
+    if (Array.isArray(collection.folders)) {
         collection.folders.forEach(folder => {
-            count += (folder.requests || []).length;
+            if (Array.isArray(folder.requests)) {
+                count += folder.requests.length;
+            }
         });
     }
     
     return count;
 }
-
 // Enhanced collection view with folders
 renderCollectionDetails(collection) {
     const folders = collection.folders || [];
@@ -2703,6 +2770,7 @@ moveRequestToFolder(fromCollectionId, fromIndex, fromFolderId, toCollectionId, t
 // ================== COLLECTION SELECTION FIXES ==================
 
 // Ensure a collection is always selected
+// Update existing method for better import support
 ensureCollectionSelected() {
     const requestsSelect = document.getElementById('requestsCollectionSelect');
     if (!requestsSelect) return;
@@ -2716,11 +2784,56 @@ ensureCollectionSelected() {
         requestsSelect.value = firstCollection.id;
         this.updateRequestsList(firstCollection.id);
         
+        // Emit selection event
+        this.emitCoreEvent('collection-auto-selected', { 
+            collectionId: firstCollection.id,
+            collectionName: firstCollection.name 
+        });
+        
         console.log(`Auto-selected collection: ${firstCollection.name}`);
     }
 }
 
+// Handle multiple imported collections
+handleImportedCollections(importedCollections) {
+    const results = [];
+    let successCount = 0;
+    
+    if (!Array.isArray(importedCollections)) {
+        importedCollections = [importedCollections];
+    }
+    
+    importedCollections.forEach((collection, index) => {
+        const result = this.addImportedCollection(collection);
+        results.push(result);
+        
+        if (result.success) {
+            successCount++;
+        }
+    });
+    
+    // Show summary notification
+    if (successCount > 0) {
+        this.showNotification(
+            'Import Complete', 
+            `Successfully imported ${successCount} collection(s)`,
+            { type: 'success' }
+        );
+    }
+    
+    if (results.some(r => !r.success)) {
+        const failedCount = results.filter(r => !r.success).length;
+        this.showNotification(
+            'Import Warning', 
+            `${failedCount} collection(s) failed to import`,
+            { type: 'warning' }
+        );
+    }
+    
+    return results;
+}
 // Update collection dropdown for requests sidebar
+// Add this method to support import functionality
 updateCollectionDropdown() {
     const select = document.getElementById('requestsCollectionSelect');
     if (!select) return;
@@ -2730,7 +2843,6 @@ updateCollectionDropdown() {
     // Store current selection
     const currentValue = select.value;
     
-    // Don't include "Select Collection" option - always have one selected
     select.innerHTML = '';
     
     collections.forEach(collection => {
@@ -2752,6 +2864,163 @@ updateCollectionDropdown() {
     console.log(`📁 Updated collection dropdown with ${collections.length} collections`);
 }
 
+// Add validation for imported collections
+validateCollection(collection) {
+    const errors = [];
+    
+    // Check required fields
+    if (!collection.name || typeof collection.name !== 'string') {
+        errors.push('Collection name is required');
+    }
+    
+    if (!collection.id || typeof collection.id !== 'string') {
+        errors.push('Collection ID is required');
+    }
+    
+    // Ensure arrays exist
+    if (!Array.isArray(collection.requests)) {
+        collection.requests = [];
+    }
+    
+    if (!Array.isArray(collection.folders)) {
+        collection.folders = [];
+    }
+    
+    // Ensure variables object exists
+    if (!collection.variables || typeof collection.variables !== 'object') {
+        collection.variables = {};
+    }
+    
+    // Validate requests
+    collection.requests.forEach((request, index) => {
+        if (!request.id) {
+            request.id = this.generateId('req');
+        }
+        if (!request.name) {
+            request.name = `Request ${index + 1}`;
+        }
+        if (!request.method) {
+            request.method = 'GET';
+        }
+        if (!request.url) {
+            request.url = '';
+        }
+        if (!Array.isArray(request.headers)) {
+            request.headers = [];
+        }
+        if (!Array.isArray(request.params)) {
+            request.params = [];
+        }
+        if (!Array.isArray(request.cookies)) {
+            request.cookies = [];
+        }
+        if (!request.auth) {
+            request.auth = { type: 'none' };
+        }
+        if (!request.body) {
+            request.body = { type: 'none' };
+        }
+        if (!request.createdAt) {
+            request.createdAt = new Date().toISOString();
+        }
+    });
+    
+    // Validate folders
+    collection.folders.forEach((folder, index) => {
+        if (!folder.id) {
+            folder.id = this.generateId('folder');
+        }
+        if (!folder.name) {
+            folder.name = `Folder ${index + 1}`;
+        }
+        if (!Array.isArray(folder.requests)) {
+            folder.requests = [];
+        }
+        if (!folder.createdAt) {
+            folder.createdAt = new Date().toISOString();
+        }
+        if (!folder.updatedAt) {
+            folder.updatedAt = new Date().toISOString();
+        }
+        
+        // Validate folder requests
+        folder.requests.forEach((request, reqIndex) => {
+            if (!request.id) {
+                request.id = this.generateId('req');
+            }
+            if (!request.name) {
+                request.name = `Request ${reqIndex + 1}`;
+            }
+            request.folderId = folder.id; // Ensure proper folder association
+        });
+    });
+    
+    // Ensure timestamps
+    if (!collection.createdAt) {
+        collection.createdAt = new Date().toISOString();
+    }
+    if (!collection.updatedAt) {
+        collection.updatedAt = new Date().toISOString();
+    }
+    
+    return { isValid: errors.length === 0, errors, collection };
+}
+
+// Safer method to add imported collections
+addImportedCollection(importedCollection) {
+    try {
+        // Ensure collections array exists
+        if (!this.collections) {
+            this.collections = [];
+        }
+        
+        // Validate the collection
+        const validation = this.validateCollection(importedCollection);
+        
+        if (!validation.isValid) {
+            console.warn('Collection validation issues:', validation.errors);
+            // Continue with corrected collection
+        }
+        
+        const collection = validation.collection;
+        
+        // Check for duplicate names and adjust
+        let finalName = collection.name;
+        let counter = 1;
+        while (this.collections.find(col => col.name === finalName)) {
+            finalName = `${collection.name} (${counter})`;
+            counter++;
+        }
+        collection.name = finalName;
+        
+        // Add to collections
+        this.collections.push(collection);
+        this.saveCollections();
+        this.updateDisplay();
+        
+        // Update dropdowns safely
+        if (this.updateTargetCollectionSelect) {
+            this.updateTargetCollectionSelect();
+        }
+        if (this.updateCollectionDropdown) {
+            this.updateCollectionDropdown();
+        }
+        
+        // Auto-select the imported collection
+        setTimeout(() => {
+            if (this.autoSelectCollection) {
+                this.autoSelectCollection(collection.id);
+            }
+        }, 100);
+        
+        console.log(`✅ Added imported collection: ${collection.name}`);
+        return { success: true, collection };
+        
+    } catch (error) {
+        console.error('Error adding imported collection:', error);
+        return { success: false, error: error.message };
+    }
+}
 // Fixed missing saveCurrentRequest method
 saveCurrentRequest() {
     if (!window.RequestManager || !window.RequestManager.getCurrentRequestData) {

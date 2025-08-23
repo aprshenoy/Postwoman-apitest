@@ -65,29 +65,287 @@ class ImportManager {
         }
     }
 
-    async handleCollectionImport(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        try {
-            const content = await this.readFile(file);
-            const result = await this.importCollection(content, file.name);
-            
+async handleCollectionImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+        // Check if CollectionManager is available
+        if (!window.CollectionManager) {
+            throw new Error('CollectionManager is not available. Please refresh the page and try again.');
+        }
+        
+        const text = await this.readFile(file);
+        const importData = JSON.parse(text);
+        
+        // Check if it's a Postman collection
+        if (this.isPostmanCollection(importData)) {
+            const result = await this.importPostmanCollectionToManager(importData);
             if (result.success) {
                 this.showNotification('Collection Imported', result.message);
-                if (window.CollectionManager && window.CollectionManager.updateDisplay) {
-                    window.CollectionManager.updateDisplay();
-                }
+                this.refreshDisplays();
             } else {
                 alert('Collection import failed: ' + result.error);
             }
-        } catch (error) {
-            console.error('Collection import error:', error);
-            alert('Error importing collection: ' + error.message);
-        } finally {
-            event.target.value = '';
+        } else if (this.isPostwomanCollection(importData)) {
+            const result = await this.importPostwomanCollectionToManager(importData);
+            if (result.success) {
+                this.showNotification('Collection Imported', result.message);
+                this.refreshDisplays();
+            } else {
+                alert('Collection import failed: ' + result.error);
+            }
+        } else {
+            throw new Error('Unsupported collection format. Please ensure you are importing a valid Postman collection or PostWoman export file.');
+        }
+        
+    } catch (error) {
+        console.error('Import error:', error);
+        alert('Error importing collection: ' + error.message);
+    } finally {
+        // Safely reset file input
+        try {
+            if (event && event.target && event.target.value !== undefined) {
+                event.target.value = '';
+            }
+        } catch (resetError) {
+            console.warn('Could not reset file input:', resetError);
         }
     }
+}
+
+async importPostwomanCollectionToManager(postwomanData) {
+    try {
+        // Ensure CollectionManager is available and initialized
+        if (!window.CollectionManager) {
+            throw new Error('CollectionManager not available');
+        }
+        
+        // Ensure collections array exists
+        if (!window.CollectionManager.collections) {
+            window.CollectionManager.collections = [];
+        }
+        
+        const collections = postwomanData.collections || [postwomanData];
+        let importedCount = 0;
+        
+        for (const collectionData of collections) {
+            // Generate new IDs to avoid conflicts
+            const newCollection = {
+                ...collectionData,
+                id: this.generateId('col'),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Regenerate request IDs
+            if (newCollection.requests) {
+                newCollection.requests.forEach(request => {
+                    request.id = this.generateId('req');
+                });
+            }
+            
+            // Regenerate folder IDs
+            if (newCollection.folders) {
+                const folderIdMap = new Map();
+                
+                newCollection.folders.forEach(folder => {
+                    const oldId = folder.id;
+                    folder.id = this.generateId('folder');
+                    folderIdMap.set(oldId, folder.id);
+                    
+                    // Regenerate request IDs in folders
+                    if (folder.requests) {
+                        folder.requests.forEach(request => {
+                            request.id = this.generateId('req');
+                        });
+                    }
+                });
+                
+                // Update parent references
+                newCollection.folders.forEach(folder => {
+                    if (folder.parentId && folderIdMap.has(folder.parentId)) {
+                        folder.parentId = folderIdMap.get(folder.parentId);
+                    }
+                });
+                
+                // Update request folder references
+                if (newCollection.requests) {
+                    newCollection.requests.forEach(request => {
+                        if (request.folderId && folderIdMap.has(request.folderId)) {
+                            request.folderId = folderIdMap.get(request.folderId);
+                        }
+                    });
+                }
+            }
+            
+            // Use the safer method to add collection
+            if (window.CollectionManager.addImportedCollection) {
+                const result = window.CollectionManager.addImportedCollection(newCollection);
+                if (result.success) {
+                    importedCount++;
+                }
+            } else {
+                // Fallback method
+                window.CollectionManager.collections.push(newCollection);
+                importedCount++;
+            }
+        }
+        
+        // Save and refresh displays
+        window.CollectionManager.saveCollections();
+        window.CollectionManager.updateDisplay();
+        if (window.CollectionManager.updateTargetCollectionSelect) {
+            window.CollectionManager.updateTargetCollectionSelect();
+        }
+        
+        return {
+            success: true,
+            message: `${importedCount} collection(s) imported successfully`
+        };
+        
+    } catch (error) {
+        console.error('PostWoman import error:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+async importPostmanCollectionToManager(postmanData) {
+    try {
+        // Ensure CollectionManager is available and initialized
+        if (!window.CollectionManager) {
+            throw new Error('CollectionManager not available');
+        }
+        
+        // Ensure collections array exists
+        if (!window.CollectionManager.collections) {
+            window.CollectionManager.collections = [];
+        }
+        
+        const collectionName = postmanData.info?.name || 'Imported Collection';
+        
+        const newCollection = {
+            id: this.generateId('col'),
+            name: collectionName,
+            description: postmanData.info?.description || 'Imported from Postman',
+            requests: [],
+            folders: [],
+            variables: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Process variables
+        if (postmanData.variable) {
+            postmanData.variable.forEach(variable => {
+                if (variable.key && variable.value !== undefined) {
+                    newCollection.variables[variable.key] = variable.value;
+                }
+            });
+        }
+        
+        // Process items (folders and requests)
+        if (postmanData.item) {
+            this.processPostmanItemsSync(postmanData.item, newCollection);
+        }
+        
+        // Check for duplicate names
+        const existingCollection = window.CollectionManager.collections.find(col => col.name === newCollection.name);
+        if (existingCollection) {
+            newCollection.name += ' (Imported)';
+        }
+        
+        // Use the safer method to add collection
+        if (window.CollectionManager.addImportedCollection) {
+            const result = window.CollectionManager.addImportedCollection(newCollection);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+        } else {
+            // Fallback method
+            window.CollectionManager.collections.push(newCollection);
+            window.CollectionManager.saveCollections();
+            window.CollectionManager.updateDisplay();
+            if (window.CollectionManager.updateTargetCollectionSelect) {
+                window.CollectionManager.updateTargetCollectionSelect();
+            }
+        }
+        
+        return {
+            success: true,
+            message: `"${collectionName}" imported successfully with ${newCollection.folders.length} folders and ${this.getTotalRequestCount(newCollection)} requests`
+        };
+        
+    } catch (error) {
+        console.error('Postman import error:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+getTotalRequestCount(collection) {
+    if (!collection) return 0;
+    
+    let count = 0;
+    
+    // Count root requests (not in folders)
+    if (Array.isArray(collection.requests)) {
+        const rootRequests = collection.requests.filter(req => !req.folderId);
+        count += rootRequests.length;
+        console.log(`Root requests: ${rootRequests.length}`);
+    }
+    
+    // Count requests in folders
+    if (Array.isArray(collection.folders)) {
+        collection.folders.forEach(folder => {
+            if (Array.isArray(folder.requests)) {
+                count += folder.requests.length;
+                console.log(`Folder "${folder.name}": ${folder.requests.length} requests`);
+            }
+        });
+    }
+    
+    console.log(`Total requests in collection "${collection.name}": ${count}`);
+    return count;
+}
+
+isPostmanCollection(data) {
+    return data.info && data.info.schema && data.info.schema.includes('postman');
+}
+
+isPostwomanCollection(data) {
+    return data.postwoman_export || data.postwoman_collection || data.collections;
+}
+
+refreshDisplays() {
+    // Refresh all displays after import
+    if (window.CollectionManager) {
+        if (window.CollectionManager.updateDisplay) {
+            window.CollectionManager.updateDisplay();
+        }
+        if (window.CollectionManager.updateTargetCollectionSelect) {
+            window.CollectionManager.updateTargetCollectionSelect();
+        }
+        if (window.CollectionManager.updateCollectionDropdown) {
+            window.CollectionManager.updateCollectionDropdown();
+        }
+        if (window.CollectionManager.ensureCollectionSelected) {
+            window.CollectionManager.ensureCollectionSelected();
+        }
+    }
+    
+    if (window.EnvironmentManager && window.EnvironmentManager.updateDisplay) {
+        window.EnvironmentManager.updateDisplay();
+        if (window.EnvironmentManager.updateEnvironmentSelect) {
+            window.EnvironmentManager.updateEnvironmentSelect();
+        }
+    }
+}
 
     async readFile(file) {
         return new Promise((resolve, reject) => {
@@ -207,52 +465,72 @@ class ImportManager {
         }
     }
 
-    async importPostmanCollection(postmanCollection) {
-        try {
-            if (!postmanCollection.info || !postmanCollection.item) {
-                return {
-                    success: false,
-                    error: 'Invalid Postman collection format'
-                };
-            }
-
-            const collection = {
-                id: this.generateId('col'),
-                name: postmanCollection.info.name || 'Imported Postman Collection',
-                description: postmanCollection.info.description || 'Imported from Postman',
+processPostmanItemsSync(items, collection, parentFolderId = null) {
+    for (const item of items) {
+        if (item.item) {
+            // This is a folder
+            const folder = {
+                id: this.generateId('folder'),
+                name: item.name,
+                description: item.description || '',
+                parentId: parentFolderId,
                 requests: [],
-                variables: this.extractPostmanVariables(postmanCollection),
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
-
-            // Process items (requests and folders)
-            collection.requests = this.processPostmanItems(postmanCollection.item);
-
-            // Check for duplicate collection names
-            if (window.CollectionManager) {
-                const existingCollection = window.CollectionManager.collections.find(col => col.name === collection.name);
-                if (existingCollection) {
-                    collection.name += ' (Imported)';
+            
+            collection.folders.push(folder);
+            
+            // Process folder items recursively
+            this.processPostmanItemsSync(item.item, collection, folder.id);
+            
+        } else if (item.request) {
+            // This is a request
+            const request = this.convertPostmanRequestSync(item);
+            
+            if (parentFolderId) {
+                // Add to folder
+                const folder = collection.folders.find(f => f.id === parentFolderId);
+                if (folder) {
+                    request.folderId = parentFolderId;
+                    folder.requests.push(request);
+                    console.log(`Added request "${request.name}" to folder "${folder.name}"`);
+                } else {
+                    // Fallback to collection root
+                    request.folderId = null;
+                    collection.requests.push(request);
+                    console.log(`Added request "${request.name}" to collection root (folder not found)`);
                 }
-
-                window.CollectionManager.collections.push(collection);
-                window.CollectionManager.saveCollections();
+            } else {
+                // Add to collection root
+                request.folderId = null;
+                collection.requests.push(request);
+                console.log(`Added request "${request.name}" to collection root`);
             }
-
-            return {
-                success: true,
-                message: `"${collection.name}" imported with ${collection.requests.length} requests`
-            };
-
-        } catch (error) {
-            console.error('Postman import error:', error);
-            return {
-                success: false,
-                error: error.message
-            };
         }
     }
+}
+
+convertPostmanRequestSync(postmanItem) {
+    const postmanRequest = postmanItem.request;
+    
+    const request = {
+        id: this.generateId('req'),
+        name: postmanItem.name,
+        description: postmanItem.description || '',
+        method: postmanRequest.method || 'GET',
+        url: this.extractPostmanUrl(postmanRequest.url),
+        headers: this.convertPostmanHeaders(postmanRequest.header),
+        params: this.convertPostmanParams(postmanRequest.url),
+        cookies: [], // Postman doesn't export cookies separately
+        auth: this.convertPostmanAuth(postmanRequest.auth),
+        body: this.convertPostmanBody(postmanRequest.body),
+        folderId: null, // Will be set by caller
+        createdAt: new Date().toISOString()
+    };
+    
+    return request;
+}
 
     processPostmanItems(items, folderPath = '') {
         const requests = [];
@@ -1223,30 +1501,72 @@ class ImportManager {
     }
 
     
-// Enhanced import with folder support
 async handleCollectionImport(event) {
     const file = event.target.files[0];
     if (!file) return;
     
+    // Store reference to input element early to safely reset it later
+    const inputElement = event.target;
+    
     try {
+        // Check if CollectionManager is available
+        if (!window.CollectionManager) {
+            throw new Error('CollectionManager is not available. Please refresh the page and try again.');
+        }
+        
         const text = await this.readFile(file);
         const importData = JSON.parse(text);
         
         // Check if it's a Postman collection
         if (this.isPostmanCollection(importData)) {
-            await this.importPostmanCollection(importData);
+            const result = await this.importPostmanCollectionToManager(importData);
+            if (result.success) {
+                this.showNotification('Collection Imported', result.message);
+                this.refreshDisplays();
+            } else {
+                alert('Collection import failed: ' + result.error);
+            }
         } else if (this.isPostwomanCollection(importData)) {
-            await this.importPostwomanCollection(importData);
+            const result = await this.importPostwomanCollectionToManager(importData);
+            if (result.success) {
+                this.showNotification('Collection Imported', result.message);
+                this.refreshDisplays();
+            } else {
+                alert('Collection import failed: ' + result.error);
+            }
         } else {
-            throw new Error('Unsupported collection format');
+            throw new Error('Unsupported collection format. Please ensure you are importing a valid Postman collection or PostWoman export file.');
         }
         
     } catch (error) {
         console.error('Import error:', error);
         alert('Error importing collection: ' + error.message);
+    } finally {
+        // Safely reset file input with comprehensive null checks
+        this.safeResetFileInput(inputElement);
     }
 }
 
+// Add this new method to safely reset file input
+safeResetFileInput(inputElement) {
+    try {
+        // Multiple safety checks
+        if (inputElement && 
+            typeof inputElement === 'object' && 
+            inputElement.nodeType === 1 && // Ensure it's an Element node
+            inputElement.tagName === 'INPUT' &&
+            'value' in inputElement) {
+            
+            inputElement.value = '';
+            console.log('File input reset successfully');
+        } else {
+            console.log('File input element not available for reset (this is normal)');
+        }
+    } catch (resetError) {
+        // This is not critical, just log it
+        console.log('Could not reset file input (this is normal):', resetError.message);
+    }
+}
 // Check if it's a Postman collection
 isPostmanCollection(data) {
     return data.info && data.info.schema && data.info.schema.includes('postman');

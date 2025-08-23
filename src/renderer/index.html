@@ -674,27 +674,65 @@
         }
     };
 
-    window.importPostmanCollection = () => {
-        try {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = (event) => {
-                if (window.CollectionManager && window.CollectionManager.handleCollectionImport) {
-                    window.CollectionManager.handleCollectionImport(event);
-                } else if (window.ImportManager && window.ImportManager.handleCollectionImport) {
-                    window.ImportManager.handleCollectionImport(event);
-                } else {
-                    console.warn('No import handler available');
-                }
-            };
-            input.click();
-        } catch (error) {
-            console.error('Error in importPostmanCollection:', error);
+window.importPostmanCollection = () => {
+    try {
+        // Check if managers are ready
+        if (!window.ImportManager) {
+            alert('Import functionality is not ready yet. Please wait a moment and try again.');
+            return;
         }
-    };
+        
+        if (!window.CollectionManager) {
+            alert('Collection manager is not ready yet. Please wait a moment and try again.');
+            return;
+        }
+        
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.style.display = 'none'; // Hide the input
+        
+        // Handle file selection
+        const handleFileSelect = async (event) => {
+            try {
+                // Remove the input from DOM immediately after getting files
+                if (input.parentNode) {
+                    input.parentNode.removeChild(input);
+                }
+                
+                // Process the import
+                if (window.ImportManager && window.ImportManager.handleCollectionImport) {
+                    await window.ImportManager.handleCollectionImport(event);
+                } else {
+                    throw new Error('ImportManager.handleCollectionImport not available');
+                }
+            } catch (error) {
+                console.error('Import error:', error);
+                alert('Error importing collection: ' + error.message);
+            }
+        };
+        
+        // Add event listener
+        input.addEventListener('change', handleFileSelect, { once: true }); // Use once: true to auto-remove listener
+        
+        // Add to DOM temporarily and trigger click
+        document.body.appendChild(input);
+        input.click();
+        
+        // Clean up if no file was selected (after a delay)
+        setTimeout(() => {
+            if (input.parentNode) {
+                input.parentNode.removeChild(input);
+            }
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error in importPostmanCollection:', error);
+        alert('Error setting up import: ' + error.message);
+    }
+};
 
-    window.exportAllCollections = () => {
+window.exportAllCollections = () => {
         try {
             if (window.CollectionManager && typeof window.CollectionManager.exportAllCollections === 'function') {
                 window.CollectionManager.exportAllCollections();
