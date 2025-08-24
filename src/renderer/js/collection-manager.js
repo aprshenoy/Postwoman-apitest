@@ -1470,24 +1470,25 @@ updateRequestsList(collectionId) {
 </div>
                     <div class="sidebar-folder-requests" id="folder-${folder.id}" style="display: none; margin-left: 1rem; border-left: 2px solid var(--border-color); padding-left: 0.5rem;">
 ${folderRequests.map((request, index) => `
-    <div class="request-item" 
-         draggable="true"
-         data-request-index="${index}"
-         data-folder-id="${folder.id}"
-         onclick="loadFolderRequestToWorkspace('${collectionId}', '${folder.id}', ${index})" 
-         oncontextmenu="window.CollectionManager.showRequestContextMenu(event, '${collectionId}', ${index}, '${folder.id}')"
-         style="margin: 0.25rem 0;">
-        <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
-        <div class="request-details">
+<div class="request-item" 
+     draggable="true"
+     data-request-index="${index}"
+     onclick="loadRequestToWorkspace('${collectionId}', ${index})" 
+     oncontextmenu="window.CollectionManager.showRequestContextMenu(event, '${collectionId}', ${index})"
+     style="margin: 0.25rem 0;">
+    <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
+    <div class="request-details">
+        <div class="request-header">
             <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
-            <div class="request-url" title="${this.escapeHtml(request.url)}">${this.escapeHtml(this.formatUrlForSidebar(request.url))}</div>
         </div>
-        <div class="request-actions">
-            <button class="mini-delete-btn" onclick="event.stopPropagation(); window.CollectionManager.deleteRequest('${collectionId}', ${index}, '${folder.id}')" title="Delete Request">
-                ×
-            </button>
-        </div>
+        <div class="request-url" title="${this.escapeHtml(request.url)}">${this.escapeHtml(this.formatUrlForSidebar(request.url))}</div>
     </div>
+    <div class="request-actions">
+        <button class="mini-delete-btn" onclick="event.stopPropagation(); window.CollectionManager.deleteRequest('${collectionId}', ${index})" title="Delete Request">
+            ×
+        </button>
+    </div>
+</div>
 `).join('')}
                         ${folderRequests.length === 0 ? '<div style="padding: 0.5rem; color: var(--text-tertiary); font-size: 0.75rem; font-style: italic;">Empty folder</div>' : ''}
                     </div>

@@ -24,6 +24,14 @@
             <option value="">Select Environment</option>
         </select>
     </div>
+    <!-- Add this user profile section -->
+    <div class="user-profile">
+        <button class="user-profile-btn" onclick="window.AuthManager && window.AuthManager.showProfileMenu ? window.AuthManager.showProfileMenu(event) : console.log('AuthManager not ready')">
+            <span class="user-avatar">👤</span>
+            <span class="user-name">Demo User</span>
+            <span class="dropdown-arrow">▼</span>
+        </button>
+    </div>
 </div>
         </header>
 
@@ -47,6 +55,9 @@
                     <button class="nav-item" data-section="teams" data-tooltip="Teams" onclick="showSection('teams')">
                         <span class="nav-icon">👥</span>
                     </button>
+                    <button class="nav-item" data-section="load-testing" data-tooltip="Load Testing" onclick="showSection('load-testing')">
+    <span class="nav-icon">🔥</span>
+</button>
                 </nav>
             </aside>
 
@@ -73,41 +84,39 @@
     </div>
 </aside>
 
+
+
             <!-- Content Area -->
             <main class="content-area">
-<!-- Workspace Section -->
 <section id="workspace" class="content-section active">
-    <div class="workspace-header">
-        <h2>API Request Workspace</h2>
-        <div class="workspace-actions">
-            <button class="btn btn-secondary" onclick="createNewRequest()">🆕 New Request</button>
-            <button class="btn btn-secondary" onclick="saveCurrentRequest()">💾 Save Request</button>
-            <button class="btn btn-secondary" onclick="toggleCurlSection()">🔧 Show cURL</button>
-        </div>
-    </div>
+    <div class="workspace-container">
+        <!-- Request Builder -->
+        <div class="request-builder compact">
+            <!-- Request Controls Row -->
+            <div class="request-controls-row">
+                <input type="text" id="requestName" class="request-name-input" placeholder="New Request">
+                <div class="request-actions">
+                    <button class="btn btn-secondary" onclick="createNewRequest()">New</button>
+                    <button class="btn btn-secondary" onclick="saveCurrentRequest()">Save</button>
+                    <button class="btn btn-secondary" onclick="toggleCurlSection()">cURL</button>
+                </div>
+            </div>
 
-    <!-- Request Builder -->
-    <div class="request-builder compact">
-        <!-- Request Name Input -->
-        <div class="request-name-section">
-            <input type="text" id="requestName" class="request-name-input" placeholder="Untitled Request">
-        </div>
+            <!-- Rest of your existing content stays the same -->
+            <div class="request-line">
+                <select id="method" class="method-select" onchange="updateCurlCommand()">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="HEAD">HEAD</option>
+                    <option value="OPTIONS">OPTIONS</option>
+                </select>
+                <input type="text" id="url" class="url-input" placeholder="Enter request URL (use {{variables}})" oninput="updateCurlCommand()">
+                <button id="sendBtn" class="send-button" onclick="sendRequest()">Send Request</button>
+            </div>
 
-        <div class="request-line">
-            <select id="method" class="method-select" onchange="updateCurlCommand()">
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="PATCH">PATCH</option>
-                <option value="DELETE">DELETE</option>
-                <option value="HEAD">HEAD</option>
-                <option value="OPTIONS">OPTIONS</option>
-            </select>
-            <input type="text" id="url" class="url-input" placeholder="Enter request URL (use {{variables}})" oninput="updateCurlCommand()">
-            <button id="sendBtn" class="send-button" onclick="sendRequest()">Send Request</button>
-        </div>
-
-        <!-- Request Tabs -->
         <div class="request-tabs">
             <button class="tab-btn active" data-tab="params" onclick="switchTab('params')">Parameters</button>
             <button class="tab-btn" data-tab="headers" onclick="switchTab('headers')">Headers</button>
@@ -217,23 +226,24 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- cURL Section -->
-    <div id="curlSection" class="curl-section">
-        <div class="section-header">
-            <h3>🔧 cURL Command</h3>
-            <button class="btn-copy" onclick="copyCurl()">Copy</button>
+        
         </div>
-        <pre id="curlCode" class="curl-code"></pre>
-    </div>
+        <!-- cURL Section -->
+        <div id="curlSection" class="curl-section">
+            <div class="section-header">
+                <h3>🔧 cURL Command</h3>
+                <button class="btn-copy" onclick="copyCurl()">Copy</button>
+            </div>
+            <pre id="curlCode" class="curl-code"></pre>
+        </div>
 
-    <!-- Response Section -->
-    <div class="response-section compact">
-        <h3>Response</h3>
-        <div id="responseContainer" class="response-container">
-            <div class="response-placeholder">
-                <p>Send a request to see the response here</p>
+        <!-- Response Section -->
+        <div class="response-section compact">
+            <h3>Response</h3>
+            <div id="responseContainer" class="response-container">
+                <div class="response-placeholder">
+                    <p>Send a request to see the response here</p>
+                </div>
             </div>
         </div>
     </div>
@@ -398,7 +408,11 @@
     <script src="js/import-manager.js"></script>
     <script src="js/user-manager.js"></script>
     <script src="js/environment-ui.js"></script>
+    <script src="js/auth-manager.js"></script>
+    <script src="js/load-testing-manager.js"></script>
+    <script src="js/resize-manager.js"></script>
     <script src="js/app.js"></script>
+
 
 <!-- Complete Global Scripts Section - Replace entire scripts section in index.html -->
 

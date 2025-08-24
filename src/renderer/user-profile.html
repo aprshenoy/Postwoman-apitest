@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - PostWoman</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="profile-page">
+        <div class="profile-header">
+            <h1>User Profile</h1>
+            <button class="btn btn-secondary" onclick="window.close()">Close</button>
+        </div>
+        
+        <div class="profile-content">
+            <div class="profile-section">
+                <h2>Personal Information</h2>
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="userName">Name:</label>
+                        <input type="text" id="userName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userEmail">Email:</label>
+                        <input type="email" id="userEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userAvatar">Avatar:</label>
+                        <input type="text" id="userAvatar" maxlength="2" placeholder="👤">
+                    </div>
+                </form>
+            </div>
+            
+            <div class="profile-section">
+                <h2>Usage Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number" id="requestsCount">0</span>
+                        <span class="stat-label">Requests Sent</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="collectionsCount">0</span>
+                        <span class="stat-label">Collections</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="environmentsCount">0</span>
+                        <span class="stat-label">Environments</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+                <button class="btn btn-danger" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .profile-page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .profile-section {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-card {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .profile-actions {
+            text-align: center;
+            gap: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</body>
+</html>

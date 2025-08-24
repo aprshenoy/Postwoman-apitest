@@ -255,23 +255,48 @@ showSection(sectionName) {
     // Show/hide requests sidebar based on section
     this.toggleRequestsSidebar(sectionName);
 
-    // Update sidebar content based on section (only if sidebar is visible)
+    // Update sidebar content based on section
     if (sectionName === 'workspace' || sectionName === 'history') {
         this.updateSidebarForSection(sectionName);
     }
 
-    // Always show workspace for history
+    // For history section, also show workspace for the main content
     if (sectionName === 'history') {
         const workspaceSection = document.getElementById('workspace');
         if (workspaceSection) {
             workspaceSection.classList.add('active');
         }
+        
+        // Clear the workspace content when switching to history
+        this.clearWorkspaceForHistory();
     }
 
     // Trigger section-specific initialization
     this.onSectionChange(sectionName);
 
-    console.log(`📄 Switched to section: ${sectionName}`);
+    console.log(`Switched to section: ${sectionName}`);
+}
+
+clearWorkspaceForHistory() {
+    // Clear request form when switching to history mode
+    const requestNameInput = document.getElementById('requestName');
+    const urlInput = document.getElementById('url');
+    const responseContainer = document.getElementById('responseContainer');
+    
+    if (requestNameInput) requestNameInput.value = '';
+    if (urlInput) urlInput.value = '';
+    
+    if (responseContainer) {
+        responseContainer.innerHTML = `
+            <div class="response-placeholder">
+                <p>Select a request from history to load it here</p>
+            </div>
+        `;
+    }
+    
+    // Clear method
+    const methodSelect = document.getElementById('method');
+    if (methodSelect) methodSelect.value = 'GET';
 }
 
 // Toggle requests sidebar visibility based on section
@@ -297,8 +322,6 @@ toggleRequestsSidebar(sectionName) {
     console.log(`📋 Requests sidebar ${showSidebar ? 'shown' : 'hidden'} for section: ${sectionName}`);
 }
 
-// Updated sidebar with improved + button styling
-// Updated sidebar content (only called when sidebar should be visible)
 updateSidebarForSection(sectionName) {
     const sidebar = document.getElementById('requestsSidebar');
     if (!sidebar) return;
@@ -309,23 +332,24 @@ updateSidebarForSection(sectionName) {
     if (!requestsHeader || !requestsList) return;
 
     if (sectionName === 'history') {
-        // Update sidebar for history
         requestsHeader.innerHTML = `
             <div class="requests-header-content">
-                <h3>History</h3>
+                <h3>Request History</h3>
+                <button class="header-btn collection-add-btn" onclick="clearHistory()" title="Clear History">
+                    Clear All
+                </button>
             </div>
         `;
         
-        // Load history items
+        // Load history items into sidebar immediately
         this.loadHistoryToSidebar();
         
     } else if (sectionName === 'workspace') {
-        // Default to requests view for workspace
         requestsHeader.innerHTML = `
             <div class="requests-header-content">
                 <h3>Requests</h3>
                 <button class="header-btn collection-add-btn" onclick="createCollection()" title="New Collection">
-                    ➕
+                    +
                 </button>
             </div>
             <div class="collection-selector">
@@ -335,7 +359,6 @@ updateSidebarForSection(sectionName) {
             </div>
         `;
         
-        // Re-initialize collection dropdown and ensure selection
         if (window.CollectionManager && window.CollectionManager.ensureCollectionSelected) {
             setTimeout(() => {
                 window.CollectionManager.ensureCollectionSelected();
@@ -351,7 +374,6 @@ updateSidebarForSection(sectionName) {
     }
 }
 
-// Fixed loadHistoryToSidebar method
 loadHistoryToSidebar() {
     const requestsList = document.getElementById('requestsList');
     if (!requestsList || !window.HistoryManager) return;
@@ -368,48 +390,73 @@ loadHistoryToSidebar() {
         return;
     }
     
-requestsList.innerHTML = history.slice(0, 50).map((item, index) => {
-    const statusClass = this.getStatusClass(item.response.status);
-    
-    // Generate a meaningful name from the request
-    let requestName = 'Untitled Request';
-    if (item.request.url) {
-        try {
-            const url = new URL(item.request.url);
-            const path = url.pathname;
-            if (path && path !== '/') {
-                requestName = `${item.request.method} ${path}`;
-            } else {
-                requestName = `${item.request.method} ${url.hostname}`;
+    requestsList.innerHTML = history.slice(0, 50).map((item, index) => {
+        const statusClass = this.getStatusClass(item.response.status);
+        
+        // Generate URL display without method prefix
+        let urlDisplay = 'No URL';
+        if (item.request.url) {
+            try {
+                const url = new URL(item.request.url);
+                urlDisplay = url.hostname + url.pathname;
+                if (urlDisplay.length > 35) {
+                    urlDisplay = urlDisplay.substring(0, 32) + '...';
+                }
+            } catch (e) {
+                urlDisplay = item.request.url.length > 35 
+                    ? item.request.url.substring(0, 32) + '...'
+                    : item.request.url;
             }
-        } catch (e) {
-            // If URL parsing fails, use the raw URL
-            const urlPath = item.request.url.length > 30 
-                ? item.request.url.substring(0, 27) + '...'
-                : item.request.url;
-            requestName = `${item.request.method} ${urlPath}`;
         }
-    }
-    
-    return `
-        <div class="request-item history-item" onclick="loadHistoryToWorkspace(${index})">
-            <div class="request-method method-${item.request.method.toLowerCase()}">${item.request.method}</div>
-            <div class="request-details">
-                <div class="request-name" title="${this.escapeHtml(item.request.url)}">${this.escapeHtml(requestName)}</div>
-                <div class="request-url">${this.formatRelativeTime(item.timestamp)}</div>
-                <div class="request-status">
-                    <span class="status-badge status-${statusClass}">${item.response.status}</span>
-                    <span class="duration">${item.response.duration}ms</span>
+        
+        return `
+            <div class="request-item history-item" onclick="loadHistoryToWorkspace(${index})">
+                <div class="request-method method-${item.request.method.toLowerCase()}">${item.request.method}</div>
+                <div class="request-details">
+                    <div class="request-header">
+                        <div class="request-name" title="${this.escapeHtml(item.request.url)}">${this.escapeHtml(urlDisplay)}</div>
+                        <div class="request-time">${this.formatRelativeTime(item.timestamp)}</div>
+                    </div>
+                    <div class="request-status">
+                        <span class="status-badge status-${statusClass}">${item.response.status}</span>
+                        <span class="duration">${item.response.duration}ms</span>
+                    </div>
+                </div>
+                <div class="request-actions">
+                    <button class="request-delete-btn" onclick="event.stopPropagation(); window.HistoryManager.removeFromHistory(${index})" title="Remove from History">
+                        ×
+                    </button>
                 </div>
             </div>
-            <div class="request-actions">
-                <button class="request-delete-btn" onclick="event.stopPropagation(); window.HistoryManager.removeFromHistory(${index})" title="Remove from History">
-                    ×
-                </button>
-            </div>
-        </div>
-    `;
-}).join('');
+        `;
+    }).join('');
+}
+
+loadHistoryToWorkspace(index) {
+    if (!window.HistoryManager || !window.HistoryManager.history) return;
+    
+    const item = window.HistoryManager.history[index];
+    if (!item) return;
+    
+    // Load the request data without changing sections
+    if (window.RequestManager && window.RequestManager.loadRequest) {
+        window.RequestManager.loadRequest(item.request);
+    }
+    
+    // Update active state in sidebar
+    document.querySelectorAll('.request-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    const clickedItem = document.querySelector(`[onclick="loadHistoryToWorkspace(${index})"]`);
+    if (clickedItem) {
+        clickedItem.classList.add('active');
+    }
+    
+    // Show notification without changing sections
+    if (window.UI && window.UI.showNotification) {
+        window.UI.showNotification('History Loaded', `Loaded ${item.request.method} request from history`);
+    }
 }
 
 // Helper method to format URLs for history display
@@ -484,30 +531,29 @@ formatRelativeTime(timestamp) {
         }
     }
 
-    onSectionChange(sectionName) {
-        switch (sectionName) {
-            case 'collections':
-                if (window.CollectionManager && window.CollectionManager.updateDisplay) {
-                    window.CollectionManager.updateDisplay();
-                }
-                break;
-            case 'history':
-                if (window.HistoryManager && window.HistoryManager.updateDisplay) {
-                    window.HistoryManager.updateDisplay();
-                }
-                break;
-            case 'environments':
-                if (window.EnvironmentManager && window.EnvironmentManager.updateDisplay) {
-                    window.EnvironmentManager.updateDisplay();
-                }
-                break;
-            case 'teams':
-                if (window.TeamsManager && window.TeamsManager.updateDisplay) {
-                    window.TeamsManager.updateDisplay();
-                }
-                break;
-        }
+onSectionChange(sectionName) {
+    switch (sectionName) {
+        case 'collections':
+            if (window.CollectionManager && window.CollectionManager.updateDisplay) {
+                window.CollectionManager.updateDisplay();
+            }
+            break;
+        case 'history':
+            // Don't load history in main content - it's now in sidebar
+            // The main workspace area stays ready for loading history items
+            break;
+        case 'environments':
+            if (window.EnvironmentManager && window.EnvironmentManager.updateDisplay) {
+                window.EnvironmentManager.updateDisplay();
+            }
+            break;
+        case 'teams':
+            if (window.TeamsManager && window.TeamsManager.updateDisplay) {
+                window.TeamsManager.updateDisplay();
+            }
+            break;
     }
+}
 
     // Tab Management
     showTab(tabName) {
@@ -568,6 +614,29 @@ formatRelativeTime(timestamp) {
         }
     }
 
+    createNewRequest() {
+    // Clear the workspace
+    if (window.UI && window.UI.clearForm) {
+        window.UI.clearForm();
+    }
+    
+    // Set focus to request name input and ensure cursor is visible
+    const nameInput = document.getElementById('requestName');
+    if (nameInput) {
+        setTimeout(() => {
+            nameInput.focus();
+            nameInput.style.caretColor = 'var(--text-primary)';
+            nameInput.style.cursor = 'text';
+        }, 100);
+    }
+    
+    // Switch to workspace if not already there
+    if (window.UI && window.UI.showSection) {
+        window.UI.showSection('workspace');
+    }
+    
+    this.showNotification('New Request', 'Started creating a new request');
+}
     // Body Fields Management
     toggleBodyFields() {
         const bodyType = document.getElementById('bodyType')?.value;

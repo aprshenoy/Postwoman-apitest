@@ -516,50 +516,66 @@ loadBody(bodyData) {
 }
 
 // Helper methods to get current data
-getHeaders() {
-    const headers = [];
-    const container = document.getElementById('headersContainer');
-    if (container) {
-        container.querySelectorAll('.key-value-pair').forEach(pair => {
-            const key = pair.querySelector('.header-key')?.value?.trim();
-            const value = pair.querySelector('.header-value')?.value?.trim();
-            if (key && value) {
-                headers.push({ key, value });
-            }
-        });
-    }
-    return headers;
-}
 
 getParams() {
     const params = [];
     const container = document.getElementById('paramsContainer');
     if (container) {
-        container.querySelectorAll('.key-value-pair').forEach(pair => {
-            const key = pair.querySelector('.param-key')?.value?.trim();
-            const value = pair.querySelector('.param-value')?.value?.trim();
-            if (key && value) {
-                params.push({ key, value });
+        // Handle both old and new table structure
+        const inputs = container.querySelectorAll('.param-key');
+        inputs.forEach((keyInput, index) => {
+            const valueInput = container.querySelectorAll('.param-value')[index];
+            if (keyInput && valueInput) {
+                const key = keyInput.value?.trim();
+                const value = valueInput.value?.trim();
+                if (key && value) {
+                    params.push({ key, value });
+                }
             }
         });
     }
     return params;
 }
 
+getHeaders() {
+    const headers = [];
+    const container = document.getElementById('headersContainer');
+    if (container) {
+        const inputs = container.querySelectorAll('.header-key');
+        inputs.forEach((keyInput, index) => {
+            const valueInput = container.querySelectorAll('.header-value')[index];
+            if (keyInput && valueInput) {
+                const key = keyInput.value?.trim();
+                const value = valueInput.value?.trim();
+                if (key && value) {
+                    headers.push({ key, value });
+                }
+            }
+        });
+    }
+    return headers;
+}
+
 getCookies() {
     const cookies = [];
     const container = document.getElementById('cookiesContainer');
     if (container) {
-        container.querySelectorAll('.key-value-pair').forEach(pair => {
-            const key = pair.querySelector('.cookie-key')?.value?.trim();
-            const value = pair.querySelector('.cookie-value')?.value?.trim();
-            if (key && value) {
-                cookies.push({ key, value });
+        const inputs = container.querySelectorAll('.cookie-key');
+        inputs.forEach((keyInput, index) => {
+            const valueInput = container.querySelectorAll('.cookie-value')[index];
+            if (keyInput && valueInput) {
+                const key = keyInput.value?.trim();
+                const value = valueInput.value?.trim();
+                if (key && value) {
+                    cookies.push({ key, value });
+                }
             }
         });
     }
     return cookies;
 }
+
+
 
 getAuth() {
     const authTypeSelect = document.getElementById('authType');
@@ -642,56 +658,217 @@ addParamRow(key = '', value = '') {
     const container = document.getElementById('paramsContainer');
     if (!container) return;
     
-    const row = document.createElement('div');
-    row.className = 'key-value-pair';
+    let table = container.querySelector('.key-value-table');
+    if (!table) {
+        container.innerHTML = `
+            <table class="key-value-table">
+                <thead>
+                    <tr>
+                        <th>Parameter Name</th>
+                        <th>Parameter Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        `;
+        table = container.querySelector('.key-value-table');
+    }
+    
+    const tbody = table.querySelector('tbody');
+    const row = document.createElement('tr');
     row.innerHTML = `
-        <input type="text" class="param-key" placeholder="Parameter name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()">
-        <input type="text" class="param-value" placeholder="Parameter value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()">
-        <button class="remove-btn" onclick="this.parentElement.remove(); updateCurlCommand();">×</button>
+        <td><input type="text" class="param-key" placeholder="Enter parameter name" value="${this.escapeHtml(key)}"></td>
+        <td><input type="text" class="param-value" placeholder="Enter parameter value" value="${this.escapeHtml(value)}"></td>
+        <td><button class="remove-btn" onclick="this.closest('tr').remove(); updateCurlCommand();" title="Remove">×</button></td>
     `;
-    container.appendChild(row);
+    tbody.appendChild(row);
+    
+    // Add event listeners to the new inputs
+    const keyInput = row.querySelector('.param-key');
+    const valueInput = row.querySelector('.param-value');
+    
+    if (keyInput) {
+        keyInput.addEventListener('input', () => {
+            if (window.RequestManager && window.RequestManager.updateCurlCommand) {
+                window.RequestManager.updateCurlCommand();
+            }
+        });
+    }
+    
+    if (valueInput) {
+        valueInput.addEventListener('input', () => {
+            if (window.RequestManager && window.RequestManager.updateCurlCommand) {
+                window.RequestManager.updateCurlCommand();
+            }
+        });
+    }
 }
 
 addHeaderRow(key = '', value = '') {
     const container = document.getElementById('headersContainer');
     if (!container) return;
     
-    const row = document.createElement('div');
-    row.className = 'key-value-pair';
+    let table = container.querySelector('.key-value-table');
+    if (!table) {
+        container.innerHTML = `
+            <table class="key-value-table">
+                <thead>
+                    <tr>
+                        <th>Header Name</th>
+                        <th>Header Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        `;
+        table = container.querySelector('.key-value-table');
+    }
+    
+    const tbody = table.querySelector('tbody');
+    const row = document.createElement('tr');
     row.innerHTML = `
-        <input type="text" class="header-key" placeholder="Header name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()">
-        <input type="text" class="header-value" placeholder="Header value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()">
-        <button class="remove-btn" onclick="this.parentElement.remove(); updateCurlCommand();">×</button>
+        <td><input type="text" class="header-key" placeholder="Enter header name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()"></td>
+        <td><input type="text" class="header-value" placeholder="Enter header value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()"></td>
+        <td><button class="remove-btn" onclick="this.closest('tr').remove(); updateCurlCommand();" title="Remove">×</button></td>
     `;
-    container.appendChild(row);
+    tbody.appendChild(row);
 }
 
 addCookieRow(key = '', value = '') {
     const container = document.getElementById('cookiesContainer');
     if (!container) return;
     
-    const row = document.createElement('div');
-    row.className = 'key-value-pair';
+    let table = container.querySelector('.key-value-table');
+    if (!table) {
+        container.innerHTML = `
+            <table class="key-value-table">
+                <thead>
+                    <tr>
+                        <th>Cookie Name</th>
+                        <th>Cookie Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        `;
+        table = container.querySelector('.key-value-table');
+    }
+    
+    const tbody = table.querySelector('tbody');
+    const row = document.createElement('tr');
     row.innerHTML = `
-        <input type="text" class="cookie-key" placeholder="Cookie name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()">
-        <input type="text" class="cookie-value" placeholder="Cookie value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()">
-        <button class="remove-btn" onclick="this.parentElement.remove(); updateCurlCommand();">×</button>
+        <td><input type="text" class="cookie-key" placeholder="Enter cookie name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()"></td>
+        <td><input type="text" class="cookie-value" placeholder="Enter cookie value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()"></td>
+        <td><button class="remove-btn" onclick="this.closest('tr').remove(); updateCurlCommand();" title="Remove">×</button></td>
     `;
-    container.appendChild(row);
+    tbody.appendChild(row);
 }
 
+updateCurlCommand() {
+    const curlCode = document.getElementById('curlCode');
+    if (!curlCode) return;
+    
+    try {
+        const requestData = this.getCurrentRequestData();
+        const processedData = this.processRequestData(requestData);
+        
+        let curlCommand = `curl -X ${processedData.method}`;
+        
+        // Add headers
+        processedData.headers.forEach(header => {
+            if (header.key && header.value) {
+                curlCommand += ` \\\n  -H "${header.key}: ${header.value}"`;
+            }
+        });
+        
+        // Add cookies
+        if (processedData.cookies.length > 0) {
+            const cookieString = processedData.cookies
+                .filter(cookie => cookie.key && cookie.value)
+                .map(cookie => `${cookie.key}=${cookie.value}`)
+                .join('; ');
+            if (cookieString) {
+                curlCommand += ` \\\n  -H "Cookie: ${cookieString}"`;
+            }
+        }
+        
+        // Add body
+        if (processedData.body && processedData.body.type !== 'none') {
+            const bodyContent = this.getBodyContent(processedData.body);
+            if (bodyContent) {
+                curlCommand += ` \\\n  -d '${bodyContent}'`;
+            }
+        }
+        
+        // Build URL with parameters
+        let finalUrl = processedData.url || '';
+        if (processedData.params && processedData.params.length > 0) {
+            const paramString = processedData.params
+                .filter(param => param.key && param.value)
+                .map(param => `${encodeURIComponent(param.key)}=${encodeURIComponent(param.value)}`)
+                .join('&');
+            if (paramString) {
+                finalUrl += (finalUrl.includes('?') ? '&' : '?') + paramString;
+            }
+        }
+        
+        curlCommand += ` \\\n  "${finalUrl}"`;
+        
+        curlCode.textContent = curlCommand;
+        
+        // Also update the URL input to show parameters
+        this.updateUrlWithParams(finalUrl);
+        
+    } catch (error) {
+        console.error('Error updating cURL command:', error);
+    }
+}
+
+// Add this new method to show parameters in URL
+updateUrlWithParams(finalUrl) {
+    const urlInput = document.getElementById('url');
+    if (urlInput && finalUrl) {
+        // Only update if the base URL hasn't changed
+        const baseUrl = urlInput.value.split('?')[0];
+        if (finalUrl.startsWith(baseUrl)) {
+            // Temporarily show the full URL with params (optional)
+            // urlInput.style.color = '#666';
+            // setTimeout(() => { urlInput.style.color = ''; }, 2000);
+        }
+    }
+}
 addFormDataRow(key = '', value = '') {
     const container = document.getElementById('formDataContainer');
     if (!container) return;
     
-    const row = document.createElement('div');
-    row.className = 'key-value-pair';
+    let table = container.querySelector('.key-value-table');
+    if (!table) {
+        container.innerHTML = `
+            <table class="key-value-table">
+                <thead>
+                    <tr>
+                        <th>Field Name</th>
+                        <th>Field Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        `;
+        table = container.querySelector('.key-value-table');
+    }
+    
+    const tbody = table.querySelector('tbody');
+    const row = document.createElement('tr');
     row.innerHTML = `
-        <input type="text" class="form-key" placeholder="Field name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()">
-        <input type="text" class="form-value" placeholder="Field value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()">
-        <button class="remove-btn" onclick="this.parentElement.remove(); updateCurlCommand();">×</button>
+        <td><input type="text" class="form-key" placeholder="Enter field name" value="${this.escapeHtml(key)}" oninput="updateCurlCommand()"></td>
+        <td><input type="text" class="form-value" placeholder="Enter field value" value="${this.escapeHtml(value)}" oninput="updateCurlCommand()"></td>
+        <td><button class="remove-btn" onclick="this.closest('tr').remove(); updateCurlCommand();" title="Remove">×</button></td>
     `;
-    container.appendChild(row);
+    tbody.appendChild(row);
 }
 
 // Utility method

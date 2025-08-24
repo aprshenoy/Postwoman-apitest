@@ -313,21 +313,21 @@ renderRequestDetails(item) {
         return url.slice(0, maxLength - 3) + '...';
     }
 
-    loadFromHistory(index) {
-        const item = this.history[index];
-        if (!item) return;
-        
-        if (window.RequestManager && window.RequestManager.loadRequest) {
-            window.RequestManager.loadRequest(item.request);
-        }
-        
-        // Switch to workspace
-        if (window.UI && window.UI.showSection) {
-            window.UI.showSection('workspace');
-        }
-        
-        this.showNotification('History Loaded', `Loaded ${item.request.method} request from history`);
+loadFromHistory(index) {
+    const item = this.history[index];
+    if (!item) return;
+    
+    if (window.RequestManager && window.RequestManager.loadRequest) {
+        window.RequestManager.loadRequest(item.request);
     }
+    
+    // Don't switch to workspace section - stay in current section
+    // if (window.UI && window.UI.showSection) {
+    //     window.UI.showSection('workspace');
+    // }
+    
+    this.showNotification('History Loaded', `${item.request.method} request loaded from history`);
+}
 
     showDetails(index) {
         const item = this.history[index];
