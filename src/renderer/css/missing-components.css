@@ -1,0 +1,263 @@
+/* History Items */
+.history-item .request-details {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.history-item .request-name {
+    font-size: 12px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+    max-width: 180px;
+}
+
+.history-item .request-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.history-item .duration {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+/* Environment badges */
+.badge-development {
+    background-color: var(--info-color);
+    color: var(--text-inverse);
+}
+
+.badge-staging {
+    background-color: var(--warning-color);
+    color: var(--text-inverse);
+}
+
+.badge-production {
+    background-color: var(--error-color);
+    color: var(--text-inverse);
+}
+
+/* Collection components */
+.collection-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.collection-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.collection-menu-btn {
+    background: none;
+    border: none;
+    padding: var(--spacing-xs);
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 1.2rem;
+}
+
+.collection-menu-btn:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.collection-info {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.collection-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-md);
+}
+
+.collection-methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.method-count {
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.625rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+/* Teams styling */
+.teams-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+}
+
+.teams-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.connection-status {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.connection-status.online {
+    background-color: var(--success-color);
+    color: var(--text-inverse);
+}
+
+.connection-status.offline {
+    background-color: var(--error-color);
+    color: var(--text-inverse);
+}
+
+.team-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.team-avatar {
+    font-size: 1.5rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-lg);
+}
+
+.team-info {
+    flex: 1;
+}
+
+.team-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    margin-bottom: var(--spacing-xs);
+}
+
+.team-description {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.team-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.stat-icon {
+    font-size: 1rem;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.team-members {
+    margin-bottom: var(--spacing-md);
+}
+
+.members-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.member-avatar {
+    width: 24px;
+    height: 24px;
+    background-color: var(--primary-color);
+    color: var(--text-inverse);
+    border-radius: 50%;
+    font-size: 0.625rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.member-count {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.team-role {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.role-badge {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.role-owner {
+    background-color: var(--warning-color);
+    color: var(--text-inverse);
+}
+
+.role-admin {
+    background-color: var(--info-color);
+    color: var(--text-inverse);
+}
+
+.role-member {
+    background-color: var(--text-tertiary);
+    color: var(--text-inverse);
+}
+
+/* Error states */
+.error-body {
+    background-color: #fef2f2;
+    color: var(--error-color);
+    border-color: #fecaca;
+}

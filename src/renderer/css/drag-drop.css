@@ -1,0 +1,57 @@
+/* Drag & Drop */
+.request-item[draggable="true"] {
+  cursor: move;
+  position: relative;
+}
+
+.request-item.dragging {
+  opacity: 0.6;
+  transform: rotate(3deg) scale(1.02);
+  z-index: 1000;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--primary-color);
+}
+
+.request-item.drag-over {
+  border: 2px dashed var(--primary-color);
+  background: rgba(14, 165, 233, 0.1);
+  animation: dragPulse 0.6s ease-in-out infinite;
+}
+
+.sidebar-folder-header.drag-over {
+  background: rgba(14, 165, 233, 0.2);
+  border: 2px dashed var(--primary-color);
+  animation: dragPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes dragPulse {
+  0% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+  }
+  50% { 
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(14, 165, 233, 0.1);
+  }
+  100% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+  }
+}
+
+.request-item[draggable="true"]::before {
+  content: '⋮⋮';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.request-item[draggable="true"]:hover::before {
+  opacity: 1;
+}

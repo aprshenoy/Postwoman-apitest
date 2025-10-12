@@ -1,0 +1,61 @@
+/* Resize Handles */
+.resize-handle {
+  background: transparent;
+  position: relative;
+  z-index: 100;
+}
+
+.horizontal-resize {
+  height: 6px;
+  width: 100%;
+  cursor: row-resize;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.horizontal-resize:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.vertical-resize {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  border-right: 1px solid var(--border-color);
+}
+
+.vertical-resize:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.resize-handle-right {
+  right: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+.resize-handle-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: row-resize;
+}
+
+#requestsSidebar {
+  position: relative;
+  min-width: 200px;
+  max-width: 500px;
+}
+
+.request-builder {
+  position: relative;
+  min-height: 200px;
+}

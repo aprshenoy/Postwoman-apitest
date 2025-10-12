@@ -1,0 +1,53 @@
+/* Print styles */
+@media print {
+    .sidebar,
+    .requests-sidebar,
+    .app-header,
+    .modal,
+    .workspace-actions {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin: 0;
+    }
+    
+    .content-area {
+        margin: 0;
+        padding: 20px;
+    }
+    
+    .request-builder {
+        break-inside: avoid;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #000000;
+        --text-primary: #000000;
+        --bg-primary: #ffffff;
+    }
+    
+    [data-theme="dark"] {
+        --border-color: #ffffff;
+        --text-primary: #ffffff;
+        --bg-primary: #000000;
+    }
+    
+    .has-env-vars {
+        border-left-width: 4px;
+        font-weight: 900;
+    }
+    
+    .env-var-tooltip-item.undefined .var-name {
+        color: #dc2626;
+        font-weight: 900;
+    }
+    
+    .env-var-tooltip-item.defined .var-name {
+        color: #059669;
+        font-weight: 900;
+    }
+}

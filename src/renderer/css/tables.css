@@ -1,0 +1,195 @@
+/* Key-Value Table Enhancements */
+.key-value-container {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-primary);
+    margin-bottom: var(--spacing-md);
+}
+
+.key-value-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.key-value-table thead {
+    background: var(--bg-tertiary);
+}
+
+.key-value-table th {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+}
+
+.key-value-table th:last-child {
+    border-right: none;
+    text-align: center;
+    width: 60px;
+}
+
+.key-value-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s;
+}
+
+.key-value-table tbody tr:hover {
+    background: rgba(14, 165, 233, 0.05);
+}
+
+.key-value-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.key-value-table td {
+    padding: 0;
+    border-right: 1px solid var(--border-color);
+}
+
+.key-value-table td:last-child {
+    border-right: none;
+    text-align: center;
+    width: 60px;
+}
+
+.key-value-table input {
+    width: 100%;
+    border: none;
+    padding: 10px 12px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    cursor: text;
+    caret-color: var(--text-primary);
+}
+
+.key-value-table input:focus {
+    background: var(--bg-secondary);
+}
+
+.key-value-table .remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 8px;
+    font-size: 16px;
+    width: 100%;
+    height: 100%;
+    transition: all 0.2s;
+}
+
+.key-value-table .remove-btn:hover {
+    background: var(--error-color);
+    color: white;
+}
+
+/* Section Headers */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.section-header.compact {
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.section-header h3,
+.section-header.compact h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.btn-add {
+    background: var(--success-color);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-add:hover {
+    background: #047857;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(5, 150, 105, 0.3);
+}
+
+/* Auth and Body Specific Styles */
+.auth-content {
+    margin-top: var(--spacing-md);
+}
+
+.auth-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.auth-fields label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.body-content {
+    margin-top: var(--spacing-md);
+}
+
+.body-fields textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    resize: vertical;
+    min-height: 80px;
+    cursor: text;
+    caret-color: var(--text-primary);
+}
+
+.body-fields textarea:focus {
+    outline: none;
+    border-color: var(--border-focus);
+}
+
+.btn-format {
+    margin-top: var(--spacing-sm);
+    background-color: var(--info-color);
+    color: var(--text-inverse);
+    border: none;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.75rem;
+}

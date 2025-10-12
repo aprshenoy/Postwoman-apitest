@@ -1,0 +1,202 @@
+/* Response Section */
+.response-section {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    height: 45vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.response-container {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 8px;
+}
+
+.response-placeholder {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--text-tertiary);
+}
+
+.response-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.response-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.response-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.response-tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+}
+
+.response-tab-btn {
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    margin-bottom: -2px;
+}
+
+.response-tab-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+}
+
+.response-tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background-color: var(--bg-primary);
+    font-weight: 600;
+}
+
+.response-tab-content {
+    min-height: 200px;
+}
+
+.response-tab-pane {
+    display: none;
+}
+
+.response-tab-pane.active {
+    display: block;
+}
+
+.response-body {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.headers-list {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.header-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.header-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.header-key {
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 150px;
+    font-size: 12px;
+}
+
+.header-value {
+    color: var(--text-secondary);
+    word-break: break-all;
+    font-size: 12px;
+    font-family: var(--font-mono);
+}
+
+/* Status badges */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-200 { background: var(--success-color); color: white; }
+.status-300 { background: var(--info-color); color: white; }
+.status-400 { background: var(--warning-color); color: white; }
+.status-500 { background: var(--error-color); color: white; }
+.status-unknown { background: var(--text-tertiary); color: white; }
+
+/* Method badges */
+.method-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    min-width: 35px;
+    text-align: center;
+}
+
+.method-get { background: #10b981; color: white; }
+.method-post { background: #3b82f6; color: white; }
+.method-put { background: #f59e0b; color: white; }
+.method-patch { background: #8b5cf6; color: white; }
+.method-delete { background: #ef4444; color: white; }
+.method-head { background: #6b7280; color: white; }
+.method-options { background: #8b5cf6; color: white; }
+
+/* Raw button */
+.raw-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    font-size: 12px;
+    font-weight: 500;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.raw-btn:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
