@@ -1241,11 +1241,6 @@ processRequestData(requestData) {
 
     // Enhanced displayResponse with tabs layout
 displayResponse(response) {
-        // Use new ResponseDisplayManager
-        if (window.ResponseDisplayManager) {
-            window.ResponseDisplayManager.displayResponse(response);
-            return;
-        }
     const responseContainer = document.getElementById('responseContainer');
     if (!responseContainer) return;
     
@@ -1365,17 +1360,6 @@ copyRawResponse() {
 }
 
 displayError(error) {
-        // Use new ResponseDisplayManager for errors
-        if (window.ResponseDisplayManager) {
-            window.ResponseDisplayManager.displayResponse({
-                status: 0,
-                statusText: 'Error',
-                data: { error: error.message },
-                headers: {},
-                rawData: error.stack
-            });
-            return;
-        }
         const responseContainer = document.getElementById('responseContainer');
         if (!responseContainer) return;
         
