@@ -1,4 +1,4 @@
-﻿# PostWoman Desktop
+# PosterBoy Desktop
 
 Professional API Testing Tool for Windows.
 

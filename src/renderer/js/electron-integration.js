@@ -100,7 +100,7 @@ class ElectronIntegration {
         // Also persist in Electron store if available
         if (this.isElectron && this.electronAPI.setStorageItem) {
             try {
-                await this.electronAPI.setStorageItem(`postwoman_${key}`, JSON.stringify(value));
+                await this.electronAPI.setStorageItem(`posterboy_${key}`, JSON.stringify(value));
             } catch (error) {
                 console.warn('Failed to persist to Electron store:', error);
             }
@@ -113,7 +113,7 @@ class ElectronIntegration {
         
         if (value === null && this.isElectron && this.electronAPI.getStorageItem) {
             try {
-                const electronValue = await this.electronAPI.getStorageItem(`postwoman_${key}`);
+                const electronValue = await this.electronAPI.getStorageItem(`posterboy_${key}`);
                 if (electronValue !== null) {
                     value = JSON.parse(electronValue);
                     // Sync back to Core storage

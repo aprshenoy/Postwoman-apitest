@@ -1,4 +1,4 @@
-// Core Module - Foundation for PostWoman Application (Fixed Version)
+// Core Module - Foundation for PosterBoy Application (Fixed Version)
 class Core {
     constructor() {
         this.version = '1.0.0';
@@ -101,7 +101,7 @@ class Core {
         try {
             // Load from localStorage if available
             if (typeof localStorage !== 'undefined') {
-                const stored = localStorage.getItem('postwoman_storage');
+                const stored = localStorage.getItem('posterboy_storage');
                 if (stored) {
                     this.storage.local = JSON.parse(stored);
                 }
@@ -129,7 +129,7 @@ class Core {
             
             // Save to localStorage if available
             if (typeof localStorage !== 'undefined') {
-                localStorage.setItem('postwoman_storage', JSON.stringify(this.storage.local));
+                localStorage.setItem('posterboy_storage', JSON.stringify(this.storage.local));
             }
             
             this.emit('storageChanged', { key, value });
@@ -144,7 +144,7 @@ class Core {
             
             // Update localStorage
             if (typeof localStorage !== 'undefined') {
-                localStorage.setItem('postwoman_storage', JSON.stringify(this.storage.local));
+                localStorage.setItem('posterboy_storage', JSON.stringify(this.storage.local));
             }
             
             this.emit('storageChanged', { key, value: undefined });
@@ -158,7 +158,7 @@ class Core {
             this.storage.local = {};
             
             if (typeof localStorage !== 'undefined') {
-                localStorage.removeItem('postwoman_storage');
+                localStorage.removeItem('posterboy_storage');
             }
             
             this.emit('storageCleared');
@@ -551,7 +551,7 @@ class Core {
                 
                 // Save to localStorage
                 if (typeof localStorage !== 'undefined') {
-                    localStorage.setItem('postwoman_storage', JSON.stringify(this.storage.local));
+                    localStorage.setItem('posterboy_storage', JSON.stringify(this.storage.local));
                 }
             }
 

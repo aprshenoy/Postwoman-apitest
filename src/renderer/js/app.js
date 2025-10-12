@@ -1,5 +1,5 @@
-// PostWoman Application Main Entry Point (Fixed Version)
-class PostWomanApp {
+// PosterBoy Application Main Entry Point (Fixed Version)
+class PosterBoyApp {
     constructor() {
         this.version = '1.0.0';
         this.modules = new Map();
@@ -19,7 +19,7 @@ class PostWomanApp {
             { name: 'importManager', instance: () => window.ImportManager }
         ];
         
-        console.log('🌊 Initializing PostWoman v' + this.version);
+        console.log('🌊 Initializing PosterBoy v' + this.version);
         
         // Start initialization process
         this.initialize();
@@ -68,7 +68,7 @@ class PostWomanApp {
             this.initializeDefaultState();
             
             this.isInitialized = true;
-            console.log('✅ PostWoman initialized successfully');
+            console.log('✅ PosterBoy initialized successfully');
             
             // Emit initialization complete event
             if (window.Core) {
@@ -77,7 +77,7 @@ class PostWomanApp {
             
             return true;
         } catch (error) {
-            console.error('Failed to initialize PostWoman:', error);
+            console.error('Failed to initialize PosterBoy:', error);
             this.handleInitializationError(error);
             throw error;
         }
@@ -504,7 +504,7 @@ class PostWomanApp {
             <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: Arial, sans-serif;">
                 <div style="text-align: center; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                     <div style="font-size: 3rem; margin-bottom: 1rem;">🌊</div>
-                    <h1>PostWoman</h1>
+                    <h1>PosterBoy</h1>
                     <h2 style="color: #e74c3c;">Initialization Error</h2>
                     <p style="color: #666; margin-bottom: 1rem;">Failed to initialize the application properly.</p>
                     <p style="background: #f8f9fa; padding: 0.5rem; border-radius: 4px; font-family: monospace; font-size: 0.9rem; color: #e74c3c;">${error.message}</p>
@@ -558,7 +558,7 @@ class PostWomanApp {
 
     // Debug methods
     showDebugInfo() {
-        console.log('🐛 PostWoman Debug Information:');
+        console.log('🐛 PosterBoy Debug Information:');
         console.log('App Instance:', this);
         console.log('Modules:', Array.from(this.modules.keys()));
         console.log('Health Check:', this.healthCheck());
@@ -582,17 +582,17 @@ let app;
 // Function to start the application
 function initializeApplication() {
     try {
-        app = new PostWomanApp();
+        app = new PosterBoyApp();
         
         // Make app globally available
         if (typeof window !== 'undefined') {
-            window.PostWomanApp = app;
+            window.PosterBoyApp = app;
             window.app = app;
         }
         
         return app;
     } catch (error) {
-        console.error('Failed to create PostWoman application:', error);
+        console.error('Failed to create PosterBoy application:', error);
         throw error;
     }
 }
@@ -611,17 +611,17 @@ if (typeof window !== 'undefined') {
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { PostWomanApp, initializeApplication };
+    module.exports = { PosterBoyApp, initializeApplication };
 }
 
 if (typeof exports !== 'undefined') {
-    exports.PostWomanApp = PostWomanApp;
+    exports.PosterBoyApp = PosterBoyApp;
     exports.initializeApplication = initializeApplication;
 }
 
 // Global debug helpers
 if (typeof window !== 'undefined') {
-    window.debugPostWoman = () => {
+    window.debugPosterBoy = () => {
         if (window.app) {
             window.app.showDebugInfo();
         } else {
@@ -629,7 +629,7 @@ if (typeof window !== 'undefined') {
         }
     };
     
-    window.restartPostWoman = () => {
+    window.restartPosterBoy = () => {
         if (window.app) {
             window.app.restart();
         } else {

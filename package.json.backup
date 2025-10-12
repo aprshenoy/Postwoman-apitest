@@ -1,11 +1,11 @@
-﻿{
-  "name": "postwoman",
+{
+  "name": "posterboy",
   "version": "1.0.0",
   "description": "A powerful API testing tool - Postman alternative",
   "main": "src/main/main.js",
-  "author": "PostWoman Team",
+  "author": "PosterBoy Team",
   "license": "MIT",
-  "homepage": "https://github.com/yourusername/postwoman",
+  "homepage": "https://github.com/yourusername/posterboy",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
@@ -36,9 +36,9 @@
     "electron-updater": "^6.1.4"
   },
   "build": {
-    "appId": "com.postwoman.app",
-    "productName": "PostWoman",
-    "copyright": "Copyright © 2024 PostWoman Team",
+    "appId": "com.posterboy.app",
+    "productName": "PosterBoy",
+    "copyright": "Copyright © 2024 posterboy Team",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -70,7 +70,7 @@
           "arch": ["x64"]
         }
       ],
-      "publisherName": "PostWoman Team"
+      "publisherName": "posterboy Team"
     },
     "linux": {
       "target": [
@@ -90,7 +90,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "PostWoman"
+      "shortcutName": "posterboy"
     }
   }
 }

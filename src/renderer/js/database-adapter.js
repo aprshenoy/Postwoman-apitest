@@ -137,12 +137,12 @@ class DatabaseAdapter {
     localStorageCreate(table, record) {
         const records = this.localStorageRead(table) || [];
         records.push(record);
-        localStorage.setItem(`postwoman_${table}`, JSON.stringify(records));
+        localStorage.setItem(`posterboy_${table}`, JSON.stringify(records));
         return record;
     }
 
     localStorageRead(table, id = null) {
-        const data = localStorage.getItem(`postwoman_${table}`);
+        const data = localStorage.getItem(`posterboy_${table}`);
         const records = data ? JSON.parse(data) : [];
         
         if (id) {
@@ -157,7 +157,7 @@ class DatabaseAdapter {
         
         if (index !== -1) {
             records[index] = { ...records[index], ...data };
-            localStorage.setItem(`postwoman_${table}`, JSON.stringify(records));
+            localStorage.setItem(`posterboy_${table}`, JSON.stringify(records));
             return records[index];
         }
         return null;
@@ -166,7 +166,7 @@ class DatabaseAdapter {
     localStorageDelete(table, id) {
         const records = this.localStorageRead(table) || [];
         const filteredRecords = records.filter(record => record.id !== id);
-        localStorage.setItem(`postwoman_${table}`, JSON.stringify(filteredRecords));
+        localStorage.setItem(`posterboy_${table}`, JSON.stringify(filteredRecords));
         return true;
     }
 
@@ -393,7 +393,7 @@ class DatabaseAdapter {
         });
         
         // Save sync queue to localStorage
-        localStorage.setItem('postwoman_sync_queue', JSON.stringify(this.syncQueue));
+        localStorage.setItem('posterboy_sync_queue', JSON.stringify(this.syncQueue));
     }
 
     async processSyncQueue() {
@@ -425,12 +425,12 @@ class DatabaseAdapter {
         }
 
         // Update sync queue in localStorage
-        localStorage.setItem('postwoman_sync_queue', JSON.stringify(this.syncQueue));
+        localStorage.setItem('posterboy_sync_queue', JSON.stringify(this.syncQueue));
     }
 
     // Load sync queue from localStorage on initialization
     loadSyncQueue() {
-        const stored = localStorage.getItem('postwoman_sync_queue');
+        const stored = localStorage.getItem('posterboy_sync_queue');
         if (stored) {
             try {
                 this.syncQueue = JSON.parse(stored);

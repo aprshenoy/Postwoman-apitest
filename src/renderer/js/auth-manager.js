@@ -16,7 +16,7 @@ class AuthManager {
     }
 
     loadUserSession() {
-        const session = localStorage.getItem('postwoman_session');
+        const session = localStorage.getItem('posterboy_session');
         if (session) {
             this.currentUser = JSON.parse(session);
             this.isAuthenticated = true;
@@ -29,7 +29,7 @@ class AuthManager {
         this.currentUser = {
             id: 'demo_' + Date.now(),
             name: 'Demo User',
-            email: 'demo@postwoman.com',
+            email: 'demo@PosterBoy.com',
             avatar: '👤',
             plan: 'Free',
             isDemo: true
@@ -39,7 +39,7 @@ class AuthManager {
     }
 
     saveSession() {
-        localStorage.setItem('postwoman_session', JSON.stringify(this.currentUser));
+        localStorage.setItem('posterboy_session', JSON.stringify(this.currentUser));
     }
 
 createUserProfileUI() {
@@ -138,7 +138,7 @@ logout() {
     if (confirm('Are you sure you want to logout?')) {
         this.isAuthenticated = false;
         this.currentUser = null;
-        localStorage.removeItem('postwoman_session');
+        localStorage.removeItem('posterboy_session');
         this.createUserProfileUI();
         
         if (window.UI) {
@@ -286,7 +286,7 @@ savePreferences() {
     
     // Save preferences to localStorage
     const preferences = { theme, autoSave, notifications, timeout };
-    localStorage.setItem('postwoman_preferences', JSON.stringify(preferences));
+    localStorage.setItem('posterboy_preferences', JSON.stringify(preferences));
     
     // Apply theme
     document.documentElement.setAttribute('data-theme', theme);
@@ -305,7 +305,7 @@ savePreferences() {
 
     logout() {
         if (confirm('Are you sure you want to logout?')) {
-            localStorage.removeItem('postwoman_session');
+            localStorage.removeItem('posterboy_session');
             location.reload();
         }
     }

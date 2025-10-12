@@ -31,7 +31,7 @@ class TeamsManager {
 
     loadTeams() {
         try {
-            const stored = localStorage.getItem('postwoman_teams');
+            const stored = localStorage.getItem('posterboy_teams');
             return stored ? JSON.parse(stored) : [];
         } catch (error) {
             console.error('Error loading teams:', error);
@@ -41,7 +41,7 @@ class TeamsManager {
 
     saveTeams() {
         try {
-            localStorage.setItem('postwoman_teams', JSON.stringify(this.teams));
+            localStorage.setItem('posterboy_teams', JSON.stringify(this.teams));
             if (window.Core && typeof window.Core.emit === 'function') {
                 window.Core.emit('teamsUpdated', this.teams);
             }
@@ -359,7 +359,7 @@ createJoinTeamModal() {
                     <form onsubmit="handleJoinByLink(event)">
                         <div class="form-group">
                             <label for="inviteLink">Invitation Link</label>
-                            <input type="url" id="inviteLink" placeholder="https://postwoman.app/invite/..." required>
+                            <input type="url" id="inviteLink" placeholder="https://PosterBoy.app/invite/..." required>
                         </div>
                         <button type="submit" class="action-btn">Join Team</button>
                     </form>
@@ -679,7 +679,7 @@ createJoinTeamModal() {
         if (!team) return;
 
         const exportData = {
-            postwoman_team_export: true,
+            PosterBoy_team_export: true,
             version: '1.0.0',
             team: team,
             exported_at: new Date().toISOString()

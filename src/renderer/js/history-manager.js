@@ -34,7 +34,7 @@ class HistoryManager {
 
     loadHistory() {
         try {
-            const stored = localStorage.getItem('postwoman_history');
+            const stored = localStorage.getItem('posterboy_history');
             return stored ? JSON.parse(stored) : [];
         } catch (error) {
             console.error('Error loading history:', error);
@@ -44,7 +44,7 @@ class HistoryManager {
 
     saveHistory() {
         try {
-            localStorage.setItem('postwoman_history', JSON.stringify(this.history));
+            localStorage.setItem('posterboy_history', JSON.stringify(this.history));
             if (window.Core && typeof window.Core.emit === 'function') {
                 window.Core.emit('historyUpdated', this.history);
             }
@@ -427,13 +427,13 @@ loadFromHistory(index) {
         }
         
         const exportData = {
-            postwoman_history: true,
+            posterboy_history: true,
             version: '1.0.0',
             history: this.history,
             exported_at: new Date().toISOString()
         };
         
-        this.downloadFile(exportData, `postwoman_history_${new Date().toISOString().split('T')[0]}.json`);
+        this.downloadFile(exportData, `posterboy_history_${new Date().toISOString().split('T')[0]}.json`);
         this.showNotification('History Exported', 'Request history exported successfully');
     }
 
@@ -442,7 +442,7 @@ loadFromHistory(index) {
         if (!item) return;
         
         const exportData = {
-            postwoman_history_item: true,
+            posterboy_history_item: true,
             version: '1.0.0',
             item: item,
             exported_at: new Date().toISOString()
@@ -471,7 +471,7 @@ loadFromHistory(index) {
             
             let imported = 0;
             
-            if (importData.postwoman_history && importData.history) {
+            if (importData.posterboy_history && importData.history) {
                 // Full history export
                 importData.history.forEach(item => {
                     if (this.isValidHistoryItem(item)) {
@@ -479,7 +479,7 @@ loadFromHistory(index) {
                         imported++;
                     }
                 });
-            } else if (importData.postwoman_history_item && importData.item) {
+            } else if (importData.posterboy_history_item && importData.item) {
                 // Single history item
                 if (this.isValidHistoryItem(importData.item)) {
                     this.history.unshift(importData.item);

@@ -35,7 +35,7 @@ initialize() {
     loadUserData() {
         try {
             // Load user from localStorage
-            const userData = localStorage.getItem('postwoman_user');
+            const userData = localStorage.getItem('posterboy_user');
             if (userData) {
                 this.currentUser = JSON.parse(userData);
                 this.isAuthenticated = true;
@@ -53,7 +53,7 @@ initialize() {
         this.currentUser = {
             id: this.generateUserId(),
             name: 'Local User',
-            email: 'user@postwoman.local',
+            email: 'user@posterboy.local',
             avatar: '👤',
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
@@ -82,7 +82,7 @@ initialize() {
 
     saveUserData() {
         try {
-            localStorage.setItem('postwoman_user', JSON.stringify(this.currentUser));
+            localStorage.setItem('posterboy_user', JSON.stringify(this.currentUser));
         } catch (error) {
             console.error('Error saving user data:', error);
         }
@@ -90,7 +90,7 @@ initialize() {
 
     loadPreferences() {
         try {
-            const stored = localStorage.getItem('postwoman_preferences');
+            const stored = localStorage.getItem('posterboy_preferences');
             return stored ? JSON.parse(stored) : {};
         } catch (error) {
             console.error('Error loading preferences:', error);
@@ -100,7 +100,7 @@ initialize() {
 
     savePreferences() {
         try {
-            localStorage.setItem('postwoman_preferences', JSON.stringify(this.preferences));
+            localStorage.setItem('posterboy_preferences', JSON.stringify(this.preferences));
         } catch (error) {
             console.error('Error saving preferences:', error);
         }
@@ -466,13 +466,13 @@ ensureUserExists() {
         if (!this.currentUser) return;
         
         const exportData = {
-            postwoman_user_export: true,
+            PosterBoy_user_export: true,
             version: '1.0.0',
             user: this.currentUser,
             exported_at: new Date().toISOString()
         };
         
-        this.downloadFile(exportData, `postwoman_user_${this.currentUser.name.replace(/[^a-z0-9]/gi, '_')}.json`);
+        this.downloadFile(exportData, `posterboy_user_${this.currentUser.name.replace(/[^a-z0-9]/gi, '_')}.json`);
         this.showNotification('User Data Exported', 'User data exported successfully', { type: 'success' });
     }
 
@@ -492,7 +492,7 @@ ensureUserExists() {
             const text = await this.readFile(file);
             const importData = JSON.parse(text);
             
-            if (!importData.postwoman_user_export || !importData.user) {
+            if (!importData.PosterBoy_user_export || !importData.user) {
                 throw new Error('Invalid user data file format');
             }
             
@@ -518,8 +518,8 @@ ensureUserExists() {
         }
         
         // Clear user data from storage
-        localStorage.removeItem('postwoman_user');
-        localStorage.removeItem('postwoman_preferences');
+        localStorage.removeItem('posterboy_user');
+        localStorage.removeItem('posterboy_preferences');
         
         // Create new default user
         this.createDefaultUser();

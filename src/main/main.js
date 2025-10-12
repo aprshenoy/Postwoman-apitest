@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, Menu, dialog, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -109,7 +109,7 @@ function createWindow() {
         <body>
             <div class="error-container">
                 <div class="error-icon">🌊</div>
-                <h1>PostWoman</h1>
+                <h1>PosterBoy</h1>
                 <h2>Renderer files not found</h2>
                 <p>The application could not find the renderer/index.html file.</p>
                 <p>Please ensure your project structure is correct:</p>
@@ -340,12 +340,12 @@ function createMenu() {
       label: 'Help',
       submenu: [
         {
-          label: 'About PostWoman',
+          label: 'About PosterBoy',
           click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About PostWoman',
-              message: 'PostWoman',
+              title: 'About PosterBoy',
+              message: 'PosterBoy',
               detail: `Version: ${app.getVersion()}\nElectron: ${process.versions.electron}\nNode: ${process.versions.node}\n\nA powerful API testing tool for developers.`,
               buttons: ['OK']
             });
@@ -361,13 +361,13 @@ function createMenu() {
         {
           label: 'Learn More',
           click: () => {
-            shell.openExternal('https://github.com/yourusername/postwoman');
+            shell.openExternal('https://github.com/yourusername/posterboy');
           }
         },
         {
           label: 'Report Issue',
           click: () => {
-            shell.openExternal('https://github.com/yourusername/postwoman/issues');
+            shell.openExternal('https://github.com/yourusername/posterboy/issues');
           }
         }
       ]

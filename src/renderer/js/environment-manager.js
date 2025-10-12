@@ -70,7 +70,7 @@ class EnvironmentManager {
 
     loadEnvironments() {
         try {
-            const stored = localStorage.getItem('postwoman_environments');
+            const stored = localStorage.getItem('posterboy_environments');
             return stored ? JSON.parse(stored) : {};
         } catch (error) {
             console.error('Error loading environments:', error);
@@ -80,7 +80,7 @@ class EnvironmentManager {
 
     saveEnvironments() {
         try {
-            localStorage.setItem('postwoman_environments', JSON.stringify(this.environments));
+            localStorage.setItem('posterboy_environments', JSON.stringify(this.environments));
             if (window.Core && typeof window.Core.emit === 'function') {
                 window.Core.emit('environmentsUpdated', this.environments);
             }
@@ -510,7 +510,7 @@ updateDisplay() {
             
             // Handle different import formats
             if (importData.environments) {
-                // PostWoman format
+                // PosterBoy format
                 Object.assign(this.environments, importData.environments);
             } else if (importData.name && importData.values) {
                 // Postman environment format
@@ -542,13 +542,13 @@ updateDisplay() {
 
     exportEnvironments() {
         const exportData = {
-            postwoman_environments: true,
+            posterboy_environments: true,
             version: '1.0.0',
             environments: this.environments,
             exported_at: new Date().toISOString()
         };
         
-        this.downloadFile(exportData, `postwoman_environments_${new Date().toISOString().split('T')[0]}.json`);
+        this.downloadFile(exportData, `posterboy_environments_${new Date().toISOString().split('T')[0]}.json`);
         this.showNotification('Environments Exported', 'All environments exported successfully');
     }
 

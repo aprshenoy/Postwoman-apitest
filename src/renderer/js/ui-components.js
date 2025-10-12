@@ -963,11 +963,11 @@ showContextMenu(event, menuItems) {
     // Theme Management
     setTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('postwoman_theme', theme);
+        localStorage.setItem('posterboy_theme', theme);
     }
 
     getTheme() {
-        return localStorage.getItem('postwoman_theme') || 'light';
+        return localStorage.getItem('posterboy_theme') || 'light';
     }
 
     toggleTheme() {

@@ -113,7 +113,7 @@ initialize() {
 
   loadCollections() {
     try {
-        const stored = localStorage.getItem('postwoman_collections');
+        const stored = localStorage.getItem('posterboy_collections');
         const collections = stored ? JSON.parse(stored) : [];
         
         // Ensure it's always an array
@@ -164,7 +164,7 @@ emitCoreEvent(eventName, data) {
 // Update existing method to track imports
 saveCollections() {
     try {
-        localStorage.setItem('postwoman_collections', JSON.stringify(this.collections));
+        localStorage.setItem('posterboy_collections', JSON.stringify(this.collections));
         this.emitCoreEvent('collectionsUpdated', this.collections);
         
         // Emit specific event for imports
@@ -2309,13 +2309,13 @@ buildPostmanAuth(auth) {
         }
         
         const exportData = {
-            postwoman_export: true,
+            posterboy_export: true,
             version: '1.0.0',
             collections: this.collections,
             exported_at: new Date().toISOString()
         };
         
-        this.downloadFile(exportData, `postwoman_collections_${new Date().toISOString().split('T')[0]}.json`);
+        this.downloadFile(exportData, `posterboy_collections_${new Date().toISOString().split('T')[0]}.json`);
         this.showNotification('Collections Exported', 'All collections exported successfully');
     }
 

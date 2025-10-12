@@ -7,7 +7,7 @@ class ImportManager {
             'postman_environment',
             'insomnia_export',
             'openapi_spec',
-            'postwoman_export',
+            'posterboy_export',
             'curl_commands',
             'har_file'
         ];
@@ -87,8 +87,8 @@ async handleCollectionImport(event) {
             } else {
                 alert('Collection import failed: ' + result.error);
             }
-        } else if (this.isPostwomanCollection(importData)) {
-            const result = await this.importPostwomanCollectionToManager(importData);
+        } else if (this.isPosterboyCollection(importData)) {
+            const result = await this.importPosterboyCollectionToManager(importData);
             if (result.success) {
                 this.showNotification('Collection Imported', result.message);
                 this.refreshDisplays();
@@ -96,7 +96,7 @@ async handleCollectionImport(event) {
                 alert('Collection import failed: ' + result.error);
             }
         } else {
-            throw new Error('Unsupported collection format. Please ensure you are importing a valid Postman collection or PostWoman export file.');
+            throw new Error('Unsupported collection format. Please ensure you are importing a valid Postman collection or PosterBoy export file.');
         }
         
     } catch (error) {
@@ -114,7 +114,7 @@ async handleCollectionImport(event) {
     }
 }
 
-async importPostwomanCollectionToManager(postwomanData) {
+async importPosterboyCollectionToManager(posterboyData) {
     try {
         // Ensure CollectionManager is available and initialized
         if (!window.CollectionManager) {
@@ -126,7 +126,7 @@ async importPostwomanCollectionToManager(postwomanData) {
             window.CollectionManager.collections = [];
         }
         
-        const collections = postwomanData.collections || [postwomanData];
+        const collections = posterboyData.collections || [posterboyData];
         let importedCount = 0;
         
         for (const collectionData of collections) {
@@ -205,7 +205,7 @@ async importPostwomanCollectionToManager(postwomanData) {
         };
         
     } catch (error) {
-        console.error('PostWoman import error:', error);
+        console.error('PosterBoy import error:', error);
         return {
             success: false,
             error: error.message
@@ -318,8 +318,8 @@ isPostmanCollection(data) {
     return data.info && data.info.schema && data.info.schema.includes('postman');
 }
 
-isPostwomanCollection(data) {
-    return data.postwoman_export || data.postwoman_collection || data.collections;
+isPosterboyCollection(data) {
+    return data.posterboy_export || data.posterboy_collection || data.collections;
 }
 
 refreshDisplays() {
@@ -374,8 +374,8 @@ refreshDisplays() {
                 case 'openapi_spec':
                     return await this.importOpenAPISpec(data);
                 
-                case 'postwoman_export':
-                    return await this.importPostwomanExport(data);
+                case 'posterboy_export':
+                    return await this.importPosterboyExport(data);
                 
                 case 'har_file':
                     return await this.importHarFile(data);
@@ -383,7 +383,7 @@ refreshDisplays() {
                 default:
                     return {
                         success: false,
-                        error: 'Unsupported file format. Please import a valid Postman collection, environment, or PostWoman export file.'
+                        error: 'Unsupported file format. Please import a valid Postman collection, environment, or PosterBoy export file.'
                     };
             }
         } catch (error) {
@@ -420,9 +420,9 @@ refreshDisplays() {
             return 'openapi_spec';
         }
         
-        // PostWoman Export
-        if (data.postwoman_export || data.postwoman_collection || data.postwoman_environments) {
-            return 'postwoman_export';
+        // PosterBoy Export
+        if (data.posterboy_export || data.posterboy_collection || data.posterboy_environments) {
+            return 'posterboy_export';
         }
         
         // HAR File
@@ -455,8 +455,8 @@ refreshDisplays() {
         
         if (format === 'postman_collection') {
             return await this.importPostmanCollection(data);
-        } else if (format === 'postwoman_export') {
-            return await this.importPostwomanExport(data);
+        } else if (format === 'posterboy_export') {
+            return await this.importPosterboyExport(data);
         } else {
             return {
                 success: false,
@@ -1121,13 +1121,13 @@ convertPostmanRequestSync(postmanItem) {
         }
     }
 
-    async importPostwomanExport(postwomanData) {
+    async importPosterboyExport(posterboyData) {
         try {
             let imported = 0;
 
             // Import collections
-            if (postwomanData.collections && Array.isArray(postwomanData.collections) && window.CollectionManager) {
-                postwomanData.collections.forEach(collection => {
+            if (posterboyData.collections && Array.isArray(posterboyData.collections) && window.CollectionManager) {
+                posterboyData.collections.forEach(collection => {
                     // Check for duplicates
                     const existing = window.CollectionManager.collections.find(col => col.name === collection.name);
                     if (existing) {
@@ -1144,24 +1144,24 @@ convertPostmanRequestSync(postmanItem) {
             }
 
             // Import environments
-            if (postwomanData.environments && window.EnvironmentManager) {
-                Object.assign(window.EnvironmentManager.environments, postwomanData.environments);
+            if (posterboyData.environments && window.EnvironmentManager) {
+                Object.assign(window.EnvironmentManager.environments, posterboyData.environments);
                 window.EnvironmentManager.saveEnvironments();
             }
 
             // Import single collection
-            if (postwomanData.info && postwomanData.item) {
-                const result = await this.importPostmanCollection(postwomanData);
+            if (posterboyData.info && posterboyData.item) {
+                const result = await this.importPostmanCollection(posterboyData);
                 return result;
             }
 
             return {
                 success: true,
-                message: `PostWoman data imported: ${imported} collections and environments`
+                message: `PosterBoy data imported: ${imported} collections and environments`
             };
 
         } catch (error) {
-            console.error('PostWoman import error:', error);
+            console.error('PosterBoy import error:', error);
             return {
                 success: false,
                 error: error.message
@@ -1448,9 +1448,9 @@ convertPostmanRequestSync(postmanItem) {
                 extension: '.json',
                 description: 'OpenAPI/Swagger specification'
             },
-            'PostWoman Export': {
+            'PosterBoy Export': {
                 extension: '.json',
-                description: 'PostWoman export files'
+                description: 'PosterBoy export files'
             },
             'cURL Commands': {
                 extension: '.txt',
@@ -1526,8 +1526,8 @@ async handleCollectionImport(event) {
             } else {
                 alert('Collection import failed: ' + result.error);
             }
-        } else if (this.isPostwomanCollection(importData)) {
-            const result = await this.importPostwomanCollectionToManager(importData);
+        } else if (this.isPosterboyCollection(importData)) {
+            const result = await this.importPosterboyCollectionToManager(importData);
             if (result.success) {
                 this.showNotification('Collection Imported', result.message);
                 this.refreshDisplays();
@@ -1535,7 +1535,7 @@ async handleCollectionImport(event) {
                 alert('Collection import failed: ' + result.error);
             }
         } else {
-            throw new Error('Unsupported collection format. Please ensure you are importing a valid Postman collection or PostWoman export file.');
+            throw new Error('Unsupported collection format. Please ensure you are importing a valid Postman collection or PosterBoy export file.');
         }
         
     } catch (error) {
@@ -1572,9 +1572,9 @@ isPostmanCollection(data) {
     return data.info && data.info.schema && data.info.schema.includes('postman');
 }
 
-// Check if it's a PostWoman collection
-isPostwomanCollection(data) {
-    return data.postwoman_export || data.postwoman_collection;
+// Check if it's a PosterBoy collection
+isPosterboyCollection(data) {
+    return data.posterboy_export || data.posterboy_collection;
 }
 
 // Import Postman collection with folder support
@@ -1658,7 +1658,7 @@ async processPostmanItems(items, collection, parentFolderId = null) {
     }
 }
 
-// Convert Postman request to PostWoman format
+// Convert Postman request to PosterBoy format
 async convertPostmanRequest(postmanItem) {
     const postmanRequest = postmanItem.request;
     
@@ -1813,9 +1813,9 @@ convertPostmanBody(body) {
     }
 }
 
-// Import PostWoman collection
-async importPostwomanCollection(postwomanData) {
-    const collections = postwomanData.collections || [postwomanData];
+// Import PosterBoy collection
+async importPosterBoyCollection(posterboyData) {
+    const collections = posterboyData.collections || [posterboyData];
     
     for (const collectionData of collections) {
         // Generate new IDs to avoid conflicts
