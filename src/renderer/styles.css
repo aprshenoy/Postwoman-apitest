@@ -4373,4 +4373,415 @@ body.modal-open textarea:focus {
 .response-container {
     flex: 1;
     overflow-y: auto;
+}/* 
+ * PosterBoy UI Improvements
+ * - Remove custom scrollbars
+ * - Better request/response layout
+ * - Less congestion, more breathing room
+ */
+
+/* ============================================
+   1. SCROLLBAR FIX - Use Browser Default
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* ============================================
+   2. WORKSPACE LAYOUT - Split View
+   ============================================ */
+
+/* Make workspace use flexbox for better control */
+.workspace-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px); /* Adjust based on header height */
+  overflow: hidden;
+}
+
+/* Request Builder - Fixed Height */
+.request-builder {
+  flex: 0 0 auto;
+  max-height: 45vh; /* Takes up 45% of viewport height */
+  overflow-y: auto;
+  padding: 20px;
+  background: #1e293b;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+/* Response Section - Takes remaining space */
+.response-section {
+  flex: 1;
+  min-height: 0; /* Important for flexbox scrolling */
+  overflow-y: auto;
+  padding: 20px;
+  background: #1e293b;
+  border-radius: 12px;
+}
+
+/* When no response, hide the section */
+.response-section:empty::after {
+  content: 'Send a request to see the response here';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* ============================================
+   3. REDUCE CONGESTION - Better Spacing
+   ============================================ */
+
+/* More breathing room in request builder */
+.request-controls-row {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+}
+
+.request-line {
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+/* Tab content spacing */
+.tab-content {
+  padding: 16px 0;
+  min-height: auto; /* Remove fixed min-height */
+}
+
+/* Parameters table - less cramped */
+.key-value-table {
+  margin-top: 12px;
+}
+
+.key-value-table td {
+  padding: 10px 12px;
+}
+
+.key-value-table input {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* ============================================
+   4. REQUEST TABS - Cleaner Look
+   ============================================ */
+
+.request-tabs {
+  gap: 8px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
+/* ============================================
+   5. RESPONSE HEADER - More Compact
+   ============================================ */
+
+.response-header {
+  padding: 12px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.response-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ============================================
+   6. ALTERNATIVE LAYOUT - Collapsible Request
+   ============================================ */
+
+/* Add this class to request-builder when you want it collapsible */
+.request-builder.collapsed {
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.request-builder.collapsed .request-controls-row {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border: none;
+}
+
+.request-builder.collapsed .request-line,
+.request-builder.collapsed .request-tabs,
+.request-builder.collapsed .tab-content {
+  display: none;
+}
+
+/* Toggle button for collapsing */
+.collapse-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.collapse-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+/* ============================================
+   7. SIDE-BY-SIDE LAYOUT (Alternative)
+   ============================================ */
+
+/* Add .split-view class to workspace-container for horizontal split */
+.workspace-container.split-view {
+  flex-direction: row;
+  gap: 16px;
+}
+
+.workspace-container.split-view .request-builder {
+  flex: 0 0 50%;
+  max-height: none;
+  height: 100%;
+}
+
+.workspace-container.split-view .response-section {
+  flex: 0 0 50%;
+  height: 100%;
+}
+
+/* ============================================
+   8. RESIZABLE DIVIDER (Optional)
+   ============================================ */
+
+.resize-handle {
+  width: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: row-resize;
+  transition: background 0.2s;
+  flex: 0 0 4px;
+}
+
+.resize-handle:hover {
+  background: #0ea5e9;
+}
+
+.workspace-container.split-view .resize-handle {
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+/* ============================================
+   9. EMPTY STATE - Better Design
+   ============================================ */
+
+.empty-requests {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.empty-requests h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.empty-requests p {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ============================================
+   10. COMPACT MODE - For Smaller Screens
+   ============================================ */
+
+@media (max-height: 800px) {
+  .request-builder {
+    max-height: 40vh;
+  }
+  
+  .request-controls-row {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+  }
+  
+  .request-line {
+    margin-bottom: 12px;
+  }
+  
+  .tab-content {
+    padding: 12px 0;
+  }
+}
+
+/* ============================================
+   11. SMOOTH TRANSITIONS
+   ============================================ */
+
+.request-builder,
+.response-section {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================
+   12. FOCUS IMPROVEMENTS
+   ============================================ */
+
+.request-name-input,
+.url-input,
+.key-value-table input {
+  transition: all 0.2s;
+}
+
+.request-name-input:focus,
+.url-input:focus,
+.key-value-table input:focus {
+  outline: none;
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+/* ============================================
+   13. RESPONSE TABS - Compact
+   ============================================ */
+
+.response-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+.response-tab-btn {
+  padding: 8px 16px;
+  font-size: 12px;
+  border: none;
+  background: none;
+  color: #94a3b8;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.response-tab-btn:hover {
+  color: #e2e8f0;
+}
+
+.response-tab-btn.active {
+  color: #0ea5e9;
+  border-bottom-color: #0ea5e9;
+}
+
+/* ============================================
+   14. LOADING STATE
+   ============================================ */
+
+.response-section.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #0ea5e9;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   15. BETTER BUTTON SPACING
+   ============================================ */
+
+.request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.request-actions .btn {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+/* ============================================
+   16. PARAMETER TABLE - CLEANER
+   ============================================ */
+
+.key-value-table thead th {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 8px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* ============================================
+   17. SEND BUTTON - MORE PROMINENT
+   ============================================ */
+
+.send-button {
+  min-width: 120px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+}
+
+/* ============================================
+   18. ADD PARAMETER BUTTON - BETTER POSITION
+   ============================================ */
+
+.add-param-btn {
+  margin-top: 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.add-param-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+
