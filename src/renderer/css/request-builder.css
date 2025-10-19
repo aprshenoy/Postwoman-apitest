@@ -111,7 +111,7 @@
 }
 
 .tab-content {
-  min-height: 150px;
+  min-height: 250px;
   max-height: 25vh;
   overflow-y: auto;
 }

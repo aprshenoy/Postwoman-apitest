@@ -111,22 +111,29 @@ initialize() {
         }
     }
 
-  loadCollections() {
-    try {
-        const stored = localStorage.getItem('posterboy_collections');
-        const collections = stored ? JSON.parse(stored) : [];
-        
-        // Ensure it's always an array
-        if (!Array.isArray(collections)) {
-            console.warn('Collections data is not an array, resetting...');
-            return [];
+async loadCollections() {
+    // Check if user is authenticated
+    if (window.AuthService && window.AuthService.isAuthenticated()) {
+        // Load from Supabase
+        const result = await window.CollectionService.getMyCollections();
+        if (result.success) {
+            this.collections = result.collections;
+            // Also save to localStorage as backup
+            localStorage.setItem('posterboy_collections', JSON.stringify(this.collections));
+        } else {
+            console.error('Failed to load collections from server:', result.error);
+            // Fallback to localStorage
+            const stored = localStorage.getItem('posterboy_collections');
+            this.collections = stored ? JSON.parse(stored) : [];
         }
-        
-        return collections;
-    } catch (error) {
-        console.error('Error loading collections:', error);
-        return [];
+    } else {
+        // Not authenticated, load from localStorage only
+        const stored = localStorage.getItem('posterboy_collections');
+        this.collections = stored ? JSON.parse(stored) : [];
     }
+    
+    // Render UI
+    this.renderCollections();
 }
 
     generateId(prefix = 'id') {
@@ -162,20 +169,16 @@ emitCoreEvent(eventName, data) {
 }
 
 // Update existing method to track imports
-saveCollections() {
-    try {
-        localStorage.setItem('posterboy_collections', JSON.stringify(this.collections));
-        this.emitCoreEvent('collectionsUpdated', this.collections);
-        
-        // Emit specific event for imports
-        this.emitCoreEvent('collections-saved', { 
-            count: this.collections.length,
-            timestamp: new Date().toISOString()
-        });
-        
-    } catch (error) {
-        console.error('Error saving collections:', error);
-        this.showNotification('Error', 'Failed to save collections', { type: 'error' });
+async saveCollection(collection) {
+    // Save to localStorage (immediate)
+    localStorage.setItem('posterboy_collections', JSON.stringify(this.collections));
+    
+    // If authenticated, also save to Supabase
+    if (window.AuthService && window.AuthService.isAuthenticated()) {
+        if (window.SyncService) {
+            // Queue for auto-save (debounced)
+            window.SyncService.queueAutoSave('collection', collection.id || 'new', collection);
+        }
     }
 }
 

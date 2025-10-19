@@ -1,4 +1,4 @@
-
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,13 +8,13 @@
 
     <link rel="stylesheet" href="css/variables.css">
     <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/layout.css">       <!-- Updated -->
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/navigation.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/forms.css">
     <link rel="stylesheet" href="css/tables.css">
-    <link rel="stylesheet" href="css/workspace.css">
+    <link rel="stylesheet" href="css/workspace.css">     <!-- Updated -->
     <link rel="stylesheet" href="css/request-builder.css">
     <link rel="stylesheet" href="css/response.css">
     <link rel="stylesheet" href="css/components.css">
@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="css/environment-variables.css">
     <link rel="stylesheet" href="css/folder.css">
     <link rel="stylesheet" href="css/complete-missing.css">
+    <link rel="stylesheet" href="css/modern-design.css">
     <!-- Add before other stylesheets -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -421,6 +422,18 @@
     <div id="contextMenu" class="context-menu" style="display: none;">
         <!-- Dynamic content -->
     </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- 1. Configuration (must be first) -->
+<script src="js/services/config.js"></script>
+
+<!-- 2. Supabase Client -->
+<script src="js/services/supabase-client.js"></script>
+
+<!-- 3. Services -->
+<script src="js/services/auth-service.js"></script>
+<script src="js/services/team-service.js"></script>
+<script src="js/services/collection-service.js"></script>
+<script src="js/services/sync-service.js"></script>
 
     <!-- Scripts -->
     <script src="js/core.js"></script>

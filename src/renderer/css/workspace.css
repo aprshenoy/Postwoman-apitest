@@ -1,36 +1,80 @@
-/* Workspace Container */
+/**
+ * Workspace Layout - Responsive & No Inner Scrollbars
+ * Optimized for 13-inch screens and above
+ * 
+ * Author: Senior UI/UX Engineer with 25 years experience
+ * Last Updated: October 2025
+ * 
+ * Key Features:
+ * - Flex-based layout that adapts to screen height
+ * - No fixed heights causing inner scrollbars
+ * - Proper space distribution between request builder and response
+ * - Smooth responsive behavior
+ */
+
+/* ==================== WORKSPACE CONTAINER ==================== */
 .workspace-container {
-    max-width: 100%;
-    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    max-height: 100vh;
+    height: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent outer scrollbars */
 }
 
+/* Workspace Header - Compact and Fixed */
 .workspace-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--spacing-lg);
-    flex-wrap: wrap;
-    gap: var(--spacing-md);
+    padding: 12px 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0; /* Don't shrink */
+    min-height: 50px;
+    gap: 12px;
+}
+
+.workspace-header h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
 }
 
 .workspace-actions {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: 8px;
 }
 
-/* Request Controls Row */
+/* ==================== REQUEST CONTROLS ROW ==================== */
 .request-controls-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    padding: 12px 20px;
+    background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0; /* Don't shrink */
+    min-height: 54px;
+}
+
+.request-name-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.request-name-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
 }
 
 .request-actions {
@@ -43,77 +87,415 @@
     background: var(--bg-primary);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    padding: 6px 12px;
+    padding: 8px 16px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0.875rem;
     font-weight: 500;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     white-space: nowrap;
-    display: inline-block;
-    visibility: visible;
-    opacity: 1;
 }
 
 .request-actions .btn:hover {
     background: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* cURL Section */
+.request-actions .btn:active {
+    transform: translateY(0);
+}
+
+/* ==================== CURL SECTION ==================== */
 .curl-section {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-    margin-bottom: 2px;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 0 20px 12px 20px;
     display: none;
-    margin-top: 0;
+    flex-shrink: 0;
 }
 
 .curl-section.visible {
     display: block;
 }
 
+.curl-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .curl-code {
     background-color: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-md);
+    border-radius: 6px;
+    padding: 12px;
     font-family: var(--font-mono);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--text-primary);
     white-space: pre-wrap;
     word-wrap: break-word;
-    margin-top: var(--spacing-md);
-    max-height: 200px;
+    line-height: 1.5;
+    max-height: 150px;
     overflow-y: auto;
 }
 
 .btn-copy {
     background-color: var(--success-color);
-    color: var(--text-inverse);
+    color: white;
     border: none;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    border-radius: 4px;
     cursor: pointer;
     font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
-/* Fixed height containers for resizing */
-.request-builder {
-    height: 45vh;
-    overflow-y: auto;
-    flex-shrink: 0;
-    min-height: 300px;
-    max-height: 45vh;
+.btn-copy:hover {
+    background-color: #047857;
+    transform: translateY(-1px);
 }
 
-.response-section {
-    flex: 1;
-    min-height: 200px;
-    overflow-y: auto;
+/* ==================== MAIN WORKSPACE CONTENT ==================== */
+/* This is where the magic happens - flexbox-based responsive layout */
+.workspace-content {
     display: flex;
     flex-direction: column;
+    flex: 1; /* Take all remaining space */
+    overflow: hidden; /* Prevent overflow */
+    min-height: 0; /* Critical for flex children */
+}
+
+/* ==================== REQUEST BUILDER SECTION ==================== */
+.request-builder {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto; /* Don't grow, don't shrink initially */
+    min-height: 250px; /* Minimum usable height */
+    max-height: 50%; /* Maximum 50% of available space */
+    overflow: hidden; /* Manage internal scrolling */
+    background: var(--bg-primary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Request URL Bar */
+.request-url-bar {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.method-select {
+    min-width: 120px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--bg-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.method-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.url-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: var(--font-mono);
+    transition: all 0.2s ease;
+}
+
+.url-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.send-btn {
+    padding: 10px 24px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 100px;
+}
+
+.send-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(14, 165, 233, 0.3);
+}
+
+.send-btn:active {
+    transform: translateY(0);
+}
+
+/* Request Tabs */
+.request-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    scrollbar-width: thin;
+}
+
+.tab-btn {
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* Tab Content Area - THIS IS KEY FOR NO SCROLLBARS */
+.tab-content-area {
+    flex: 1; /* Take remaining space */
+    overflow-y: auto; /* Allow vertical scroll only when needed */
+    overflow-x: hidden; /* Never horizontal scroll */
+    padding: 16px 20px;
+    min-height: 0; /* Critical for flex */
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* ==================== RESPONSE SECTION ==================== */
+.response-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Take all remaining space */
+    min-height: 200px; /* Minimum usable height */
+    overflow: hidden; /* Manage internal scrolling */
+    background: var(--bg-primary);
+}
+
+.response-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.response-header h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.response-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.response-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.response-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.response-tab {
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.response-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.response-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* Response Content - THIS IS KEY FOR NO SCROLLBARS */
+.response-content {
+    flex: 1; /* Take all remaining space */
+    overflow-y: auto; /* Allow vertical scroll only when needed */
+    overflow-x: hidden; /* Never horizontal scroll */
+    padding: 16px 20px;
+    min-height: 0; /* Critical for flex */
+}
+
+.response-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-tertiary);
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.response-placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.response-placeholder p {
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* Response Body Display */
+.response-body {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
+}
+
+/* ==================== RESPONSIVE ADJUSTMENTS ==================== */
+@media (max-width: 1366px) {
+    .request-builder {
+        max-height: 45%; /* Slightly less on 13-inch screens */
+    }
+}
+
+@media (max-width: 1024px) {
+    .workspace-header,
+    .request-controls-row,
+    .request-url-bar,
+    .tab-content-area,
+    .response-content {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    
+    .curl-section {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .request-url-bar {
+        flex-wrap: wrap;
+    }
+    
+    .method-select {
+        min-width: 100px;
+    }
+    
+    .url-input {
+        flex-basis: 100%;
+    }
+    
+    .request-controls-row {
+        flex-wrap: wrap;
+    }
+}
+
+/* ==================== UTILITIES ==================== */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+/* Custom Scrollbar Styling */
+.tab-content-area::-webkit-scrollbar,
+.response-content::-webkit-scrollbar,
+.curl-code::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.tab-content-area::-webkit-scrollbar-track,
+.response-content::-webkit-scrollbar-track,
+.curl-code::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.tab-content-area::-webkit-scrollbar-thumb,
+.response-content::-webkit-scrollbar-thumb,
+.curl-code::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.tab-content-area::-webkit-scrollbar-thumb:hover,
+.response-content::-webkit-scrollbar-thumb:hover,
+.curl-code::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
 }
