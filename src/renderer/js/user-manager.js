@@ -32,6 +32,346 @@ initialize() {
     }
 }
 
+
+
+setupEventListeners() {
+    console.log('👤 Setting up UserManager event listeners...');
+    
+    // Listen for auth state changes from AuthService
+    if (window.Core) {
+        window.Core.on('auth:stateChanged', (user) => {
+            this.handleAuthStateChange(user);
+        });
+        
+        window.Core.on('user:updated', () => {
+            this.loadUserData();
+            this.updateDisplay();
+        });
+        
+        window.Core.on('auth:signedIn', (user) => {
+            console.log('✅ User signed in event received');
+            this.handleAuthStateChange(user);
+        });
+        
+        window.Core.on('auth:signedOut', () => {
+            console.log('👋 User signed out event received');
+            this.handleAuthStateChange(null);
+        });
+    }
+
+    // Profile update button
+    const updateProfileBtn = document.getElementById('updateProfileBtn');
+    if (updateProfileBtn) {
+        updateProfileBtn.addEventListener('click', () => {
+            this.updateProfile();
+        });
+    }
+
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            this.logout();
+        });
+    }
+
+    // Settings save button
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    if (saveSettingsBtn) {
+        saveSettingsBtn.addEventListener('click', () => {
+            this.saveSettings();
+        });
+    }
+    
+    console.log('✅ UserManager event listeners setup complete');
+}
+
+
+
+async handleAuthStateChange(user) {
+    console.log('🔐 Auth state changed in UserManager:', user ? user.email : 'logged out');
+    
+    if (user) {
+        // User logged in
+        this.currentUser = {
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.name || user.user_metadata?.full_name || user.email,
+            avatar: user.user_metadata?.avatar_url || null,
+            preferences: this.currentUser?.preferences || {
+                theme: 'light',
+                autoSave: true,
+                notifications: true,
+                requestTimeout: 30000,
+                maxRedirects: 5
+            },
+            settings: this.currentUser?.settings || {
+                defaultMethod: 'GET',
+                validateSSL: true,
+                followRedirects: true
+            },
+            createdAt: user.created_at,
+            lastSignInAt: user.last_sign_in_at,
+            isGuest: false
+        };
+        
+        await this.saveUserData();
+        console.log('✅ User logged in:', this.currentUser.email);
+        
+        // Emit login event
+        if (window.Core && typeof window.Core.emit === 'function') {
+            window.Core.emit('user:loggedIn', this.currentUser);
+        }
+    } else {
+        // User logged out
+        this.currentUser = this.createDefaultUser();
+        await this.saveUserData();
+        console.log('👋 User logged out, switched to guest');
+        
+        // Emit logout event
+        if (window.Core && typeof window.Core.emit === 'function') {
+            window.Core.emit('user:loggedOut');
+        }
+    }
+    
+    this.updateDisplay();
+}
+
+
+// 3. ADD: saveSettings method
+// ADD this method if missing:
+
+async saveSettings() {
+    if (!this.currentUser) {
+        console.error('❌ No user to save settings for');
+        return false;
+    }
+    
+    const preferences = {};
+    const settings = {};
+    
+    // Get values from form elements if they exist
+    const themeSelect = document.getElementById('themeSelect');
+    const autoSaveCheckbox = document.getElementById('autoSaveCheckbox');
+    const notificationsCheckbox = document.getElementById('notificationsCheckbox');
+    const timeoutInput = document.getElementById('requestTimeoutInput');
+    const maxRedirectsInput = document.getElementById('maxRedirectsInput');
+    const validateSSLCheckbox = document.getElementById('validateSSLCheckbox');
+    const followRedirectsCheckbox = document.getElementById('followRedirectsCheckbox');
+
+    if (themeSelect) preferences.theme = themeSelect.value;
+    if (autoSaveCheckbox) preferences.autoSave = autoSaveCheckbox.checked;
+    if (notificationsCheckbox) preferences.notifications = notificationsCheckbox.checked;
+    if (timeoutInput) preferences.requestTimeout = parseInt(timeoutInput.value) || 30000;
+    if (maxRedirectsInput) preferences.maxRedirects = parseInt(maxRedirectsInput.value) || 5;
+    if (validateSSLCheckbox) settings.validateSSL = validateSSLCheckbox.checked;
+    if (followRedirectsCheckbox) settings.followRedirects = followRedirectsCheckbox.checked;
+
+    // Update user data
+    this.currentUser.preferences = {
+        ...this.currentUser.preferences,
+        ...preferences
+    };
+    
+    this.currentUser.settings = {
+        ...this.currentUser.settings,
+        ...settings
+    };
+    
+    await this.saveUserData();
+    
+    // Apply preferences
+    this.applyPreferences();
+    
+    console.log('✅ Settings saved successfully');
+    
+    // Show notification
+    if (window.Core && typeof window.Core.showNotification === 'function') {
+        window.Core.showNotification('Settings Saved', 'Your settings have been saved successfully', { type: 'success' });
+    }
+    
+    return true;
+}
+
+
+// 4. ADD: applyPreferences method
+// ADD this method if missing:
+
+applyPreferences() {
+    if (!this.currentUser || !this.currentUser.preferences) {
+        return;
+    }
+
+    const { theme } = this.currentUser.preferences;
+
+    // Apply theme
+    if (theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        if (document.body) {
+            document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
+        }
+        console.log(`🎨 Applied theme: ${theme}`);
+    }
+
+    // Other preference applications can be added here
+}
+
+
+// 5. FIX: updateDisplay method
+// REPLACE or enhance your updateDisplay method:
+
+updateDisplay() {
+    console.log('🔄 Updating UserManager display...');
+    
+    if (!this.currentUser) {
+        console.warn('⚠️ No current user to display');
+        return;
+    }
+    
+    // Update user info in header
+    const userNameElement = document.getElementById('userName');
+    const userEmailElement = document.getElementById('userEmail');
+    const userAvatarElement = document.getElementById('userAvatar');
+
+    if (userNameElement) {
+        userNameElement.textContent = this.currentUser.name || 'Guest';
+    }
+
+    if (userEmailElement) {
+        userEmailElement.textContent = this.currentUser.email || '';
+    }
+
+    if (userAvatarElement) {
+        if (this.currentUser.avatar) {
+            userAvatarElement.src = this.currentUser.avatar;
+            userAvatarElement.alt = this.currentUser.name;
+        } else {
+            // Generate default avatar with initial
+            const initial = this.currentUser.name?.charAt(0).toUpperCase() || 'G';
+            userAvatarElement.src = this.generateAvatarDataURL(initial);
+            userAvatarElement.alt = this.currentUser.name || 'Guest';
+        }
+    }
+
+    // Update profile form if exists
+    const profileNameInput = document.getElementById('profileName');
+    const profileEmailInput = document.getElementById('profileEmail');
+
+    if (profileNameInput) {
+        profileNameInput.value = this.currentUser.name || '';
+    }
+
+    if (profileEmailInput) {
+        profileEmailInput.value = this.currentUser.email || '';
+    }
+
+    // Update settings form if exists
+    if (this.currentUser.preferences) {
+        const themeSelect = document.getElementById('themeSelect');
+        const autoSaveCheckbox = document.getElementById('autoSaveCheckbox');
+        const notificationsCheckbox = document.getElementById('notificationsCheckbox');
+        const timeoutInput = document.getElementById('requestTimeoutInput');
+        const maxRedirectsInput = document.getElementById('maxRedirectsInput');
+
+        if (themeSelect) themeSelect.value = this.currentUser.preferences.theme || 'light';
+        if (autoSaveCheckbox) autoSaveCheckbox.checked = this.currentUser.preferences.autoSave !== false;
+        if (notificationsCheckbox) notificationsCheckbox.checked = this.currentUser.preferences.notifications !== false;
+        if (timeoutInput) timeoutInput.value = this.currentUser.preferences.requestTimeout || 30000;
+        if (maxRedirectsInput) maxRedirectsInput.value = this.currentUser.preferences.maxRedirects || 5;
+    }
+
+    if (this.currentUser.settings) {
+        const validateSSLCheckbox = document.getElementById('validateSSLCheckbox');
+        const followRedirectsCheckbox = document.getElementById('followRedirectsCheckbox');
+
+        if (validateSSLCheckbox) validateSSLCheckbox.checked = this.currentUser.settings.validateSSL !== false;
+        if (followRedirectsCheckbox) followRedirectsCheckbox.checked = this.currentUser.settings.followRedirects !== false;
+    }
+
+    // Show/hide guest vs authenticated UI elements
+    const guestElements = document.querySelectorAll('.guest-only');
+    const authElements = document.querySelectorAll('.auth-only');
+
+    guestElements.forEach(el => {
+        el.style.display = this.isLoggedIn() ? 'none' : 'block';
+    });
+
+    authElements.forEach(el => {
+        el.style.display = this.isLoggedIn() ? 'block' : 'none';
+    });
+
+    // Update user badge/status
+    const userBadge = document.getElementById('userBadge');
+    if (userBadge) {
+        if (this.isLoggedIn()) {
+            userBadge.textContent = '🟢 Online';
+            userBadge.className = 'user-badge online';
+        } else {
+            userBadge.textContent = '👤 Guest';
+            userBadge.className = 'user-badge guest';
+        }
+    }
+
+    // Apply current preferences
+    this.applyPreferences();
+    
+    console.log('✅ UserManager display updated');
+}
+
+
+// 6. ADD: generateAvatarDataURL helper
+// ADD this helper method:
+
+generateAvatarDataURL(initial) {
+    // Create a simple SVG avatar with the user's initial
+    const svg = `
+        <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="50" fill="#4B75FF"/>
+            <text x="50" y="50" font-family="Arial" font-size="48" 
+                  fill="white" text-anchor="middle" dy=".3em" font-weight="bold">
+                ${initial}
+            </text>
+        </svg>
+    `;
+    
+    return 'data:image/svg+xml;base64,' + btoa(svg);
+}
+
+async logout() {
+    console.log('👋 Logging out user...');
+    
+    // Sign out from AuthService if available
+    if (window.authService && typeof window.authService.signOut === 'function') {
+        try {
+            await window.authService.signOut();
+            console.log('✅ Signed out from AuthService');
+        } catch (error) {
+            console.error('❌ Error signing out from AuthService:', error);
+        }
+    }
+
+    // Reset to guest user
+    this.currentUser = this.createDefaultUser();
+    await this.saveUserData();
+    
+    console.log('👋 User logged out successfully');
+    
+    // Emit event
+    if (window.Core && typeof window.Core.emit === 'function') {
+        window.Core.emit('user:loggedOut');
+    }
+
+    this.updateDisplay();
+
+    // Show notification
+    if (window.Core && typeof window.Core.showNotification === 'function') {
+        window.Core.showNotification('Logged Out', 'You have been logged out successfully', { type: 'info' });
+    }
+}
+
+
+
+
     loadUserData() {
         try {
             // Load user from localStorage

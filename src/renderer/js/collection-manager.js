@@ -1,19 +1,35 @@
 // Collection Manager - Handles collection management and request organization (Fixed Version)
 
 class CollectionManager {
-    constructor() {
-           this.collections = this.loadCollections() || []; 
-        this.currentCollection = null;
-        this.initialized = false;
-            this.draggedRequest = null; // For drag & drop functionality
+constructor() {
+    // Initialize collections as empty array FIRST
+    this.collections = [];
+    this.currentCollection = null;
+    this.initialized = false;
+    
+    // Drag & drop functionality
+    this.draggedRequest = null;
     this.draggedFromCollection = null;
     this.draggedFromFolder = null;
     this.draggedFromIndex = null;
-        console.log('📁 CollectionManager initializing...');
-        
-        // Wait for Core and DOM before initializing
-        this.waitForDOMAndInitialize();
+    
+    console.log('📁 CollectionManager initializing...');
+    
+    // Load collections synchronously from storage
+    const stored = localStorage.getItem('posterboy_collections');
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            this.collections = Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            console.error('Error parsing collections:', error);
+            this.collections = [];
+        }
     }
+    
+    // Wait for Core and DOM before initializing UI
+    this.waitForDOMAndInitialize();
+}
 
     async waitForDOMAndInitialize() {
         try {
@@ -111,30 +127,45 @@ initialize() {
         }
     }
 
-async loadCollections() {
-    // Check if user is authenticated
-    if (window.AuthService && window.AuthService.isAuthenticated()) {
-        // Load from Supabase
-        const result = await window.CollectionService.getMyCollections();
-        if (result.success) {
-            this.collections = result.collections;
-            // Also save to localStorage as backup
-            localStorage.setItem('posterboy_collections', JSON.stringify(this.collections));
-        } else {
-            console.error('Failed to load collections from server:', result.error);
-            // Fallback to localStorage
-            const stored = localStorage.getItem('posterboy_collections');
-            this.collections = stored ? JSON.parse(stored) : [];
-        }
-    } else {
-        // Not authenticated, load from localStorage only
+loadCollections() {
+    try {
+        // Always load from localStorage as primary source
         const stored = localStorage.getItem('posterboy_collections');
-        this.collections = stored ? JSON.parse(stored) : [];
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            this.collections = Array.isArray(parsed) ? parsed : [];
+            console.log(`📁 Loaded ${this.collections.length} collections from localStorage`);
+        } else {
+            this.collections = [];
+        }
+        
+        // If authenticated, also try to sync from Supabase (async, won't block)
+        if (window.authService && 
+            typeof window.authService.isAuthenticated === 'function' && 
+            window.authService.isAuthenticated() && 
+            window.collectionService && 
+            typeof window.collectionService.getMyCollections === 'function') {
+            
+            window.collectionService.getMyCollections().then(result => {
+                if (result.success && Array.isArray(result.collections)) {
+                    this.collections = result.collections;
+                    localStorage.setItem('posterboy_collections', JSON.stringify(this.collections));
+                    this.updateDisplay();
+                    console.log('☁️ Collections synced from cloud');
+                }
+            }).catch(error => {
+                console.warn('Could not sync collections from cloud:', error);
+            });
+        }
+        
+        return this.collections;
+    } catch (error) {
+        console.error('Error loading collections:', error);
+        this.collections = [];
+        return [];
     }
-    
-    // Render UI
-    this.renderCollections();
 }
+
 
     generateId(prefix = 'id') {
         try {
@@ -321,21 +352,52 @@ handleRenameCollection(event, collectionId) {
 }
 
 
-    deleteCollection(collectionId) {
-        const collection = this.getCollection(collectionId);
-        if (!collection) return;
-        
-        if (!confirm(`Are you sure you want to delete "${collection.name}"? This action cannot be undone.`)) {
-            return;
-        }
-        
-        this.collections = this.collections.filter(col => col.id !== collectionId);
-        this.saveCollections();
-        this.updateDisplay();
-        this.updateTargetCollectionSelect();
-        
-        this.showNotification('Collection Deleted', 'Collection deleted successfully');
+async deleteCollection(collectionId) {
+    const collection = this.getCollection(collectionId);
+    
+    if (!collection) {
+        console.error('❌ Collection not found:', collectionId);
+        return false;
     }
+    
+    const requestCount = this.getTotalRequestCount(collection);
+    const confirmMessage = requestCount > 0 
+        ? `Delete "${collection.name}" with ${requestCount} request(s)? This cannot be undone.`
+        : `Delete "${collection.name}"? This action cannot be undone.`;
+    
+    if (!confirm(confirmMessage)) {
+        return false;
+    }
+    
+    // Ensure collections is an array
+    if (!Array.isArray(this.collections)) {
+        console.error('❌ Collections is not an array');
+        this.collections = [];
+        return false;
+    }
+    
+    // Remove the collection
+    this.collections = this.collections.filter(col => col.id !== collectionId);
+    
+    // If we deleted the current collection, switch to another
+    if (this.currentCollection === collectionId) {
+        this.currentCollection = this.collections.length > 0 ? this.collections[0].id : null;
+    }
+    
+    await this.saveCollections();
+    this.updateDisplay();
+    this.updateTargetCollectionSelect();
+    
+    this.showNotification('Collection Deleted', `"${collection.name}" deleted successfully`);
+    
+    // Emit event
+    if (window.Core && typeof window.Core.emit === 'function') {
+        window.Core.emit('collection:deleted', { collectionId });
+    }
+    
+    return true;
+}
+
 
     duplicateCollection(collectionId) {
         const originalCollection = this.getCollection(collectionId);
@@ -358,58 +420,95 @@ handleRenameCollection(event, collectionId) {
     }
 
 
-    getCollection(collectionId) {
-        return this.collections.find(col => col.id === collectionId);
-    }
-
-updateDisplay() {
-    const container = document.getElementById('collectionsContainer');
-    if (!container) return;
-    
-    if (this.collections.length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 3rem; color: #64748b;">
-                <h3>No Collections Yet</h3>
-                <p>Create your first collection to organize your API requests</p>
-                <button class="action-btn" onclick="createCollection()" style="margin-top: 1rem;">
-                    ➕ Create Collection
-                </button>
-            </div>
-        `;
-        return;
+getCollection(collectionId) {
+    // Ensure collections is an array
+    if (!Array.isArray(this.collections)) {
+        console.warn('⚠️ Collections is not an array in getCollection');
+        this.collections = [];
+        return null;
     }
     
-    container.innerHTML = this.collections.map(collection => {
-        const totalRequests = this.getTotalRequestCount(collection);
-        const folderCount = collection.folders ? collection.folders.length : 0;
-        
-        return `
-            <div class="collection-card" onclick="openCollection('${collection.id}')">
-                <div class="collection-header">
-                    <h3 class="collection-title">${this.escapeHtml(collection.name)}</h3>
-                    <div class="collection-menu">
-                        <button class="collection-menu-btn" onclick="event.stopPropagation(); showCollectionMenu('${collection.id}', event)">
-                            ⋮
-                        </button>
-                    </div>
-                </div>
-                <div class="collection-info">
-                    ${collection.description ? this.escapeHtml(collection.description) : 'No description'}
-                </div>
-                <div class="collection-stats">
-                    <span>📄 ${totalRequests} requests</span>
-                    <span>📁 ${folderCount} folders</span>
-                    <span>📅 ${this.formatDate(collection.updatedAt)}</span>
-                </div>
-                <div class="collection-methods">
-                    ${this.getMethodCounts(collection)}
-                </div>
-            </div>
-        `;
-    }).join('');
+    return this.collections.find(col => col.id === collectionId) || null;
 }
 
-// Also fix the showCollectionMenu method to use global functions
+updateDisplay() {
+    try {
+        // CRITICAL: Ensure collections is always an array
+        if (!Array.isArray(this.collections)) {
+            console.warn('⚠️ Collections is not an array in updateDisplay, fixing...');
+            this.collections = [];
+        }
+        
+        const container = document.getElementById('collectionsContainer');
+        if (!container) {
+            console.warn('⚠️ collectionsContainer element not found');
+            return;
+        }
+        
+        if (this.collections.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 3rem; color: #64748b;">
+                    <h3>No Collections Yet</h3>
+                    <p>Create your first collection to organize your API requests</p>
+                    <button class="action-btn" onclick="window.collectionManager.createCollection()" style="margin-top: 1rem;">
+                        ➕ Create Collection
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = this.collections.map(collection => {
+            const totalRequests = this.getTotalRequestCount(collection);
+            const folderCount = collection.folders ? collection.folders.length : 0;
+            
+            return `
+                <div class="collection-card" onclick="window.collectionManager.openCollection('${collection.id}')">
+                    <div class="collection-header">
+                        <h3 class="collection-title">${this.escapeHtml(collection.name)}</h3>
+                        <div class="collection-menu">
+                            <button class="collection-menu-btn" onclick="event.stopPropagation(); window.collectionManager.showCollectionMenu('${collection.id}', event)">
+                                ⋮
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collection-info">
+                        ${collection.description ? 
+                            `<p class="collection-description">${this.escapeHtml(collection.description)}</p>` : 
+                            '<p class="collection-description text-muted">No description</p>'}
+                    </div>
+                    <div class="collection-stats">
+                        <span class="stat-item">
+                            <span class="stat-icon">📄</span>
+                            <span class="stat-value">${totalRequests}</span>
+                            <span class="stat-label">requests</span>
+                        </span>
+                        <span class="stat-item">
+                            <span class="stat-icon">📁</span>
+                            <span class="stat-value">${folderCount}</span>
+                            <span class="stat-label">folders</span>
+                        </span>
+                    </div>
+                    <div class="collection-footer">
+                        <small class="text-muted">Updated ${this.formatDate(collection.updatedAt)}</small>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // Also update the dropdow
+        this.updateCollectionDropdown();
+        
+        console.log('✅ Display updated successfully');
+    } catch (error) {
+        console.error('❌ Error updating display:', error);
+    }
+}
+
+renderCollections() {
+     this.updateDisplay();
+}
+
 showCollectionMenu(collectionId, event) {
     event.stopPropagation();
     
@@ -1368,175 +1467,101 @@ updateSidebarForSection(sectionName) {
     }
 }
 
-// Enhanced loadCollectionRequests with auto-save functionality
-async loadCollectionRequests() {
+loadCollectionRequests() {
     const select = document.getElementById('requestsCollectionSelect');
-    const newCollectionId = select ? select.value : '';
+    const collectionId = select ? select.value : null;
     
-    // Check if we need to save current request before switching
-    if (window.RequestManager && window.RequestManager.hasUnsavedChanges && window.RequestManager.hasUnsavedChanges()) {
-        const shouldSave = await this.promptAutoSave();
-        if (shouldSave) {
-            await this.autoSaveCurrentRequest();
+    if (!collectionId) {
+        const requestsList = document.getElementById('requestsList') || 
+                            document.querySelector('.requests-list');
+        if (requestsList) {
+            requestsList.innerHTML = `
+                <div class="empty-requests">
+                    <h4>No Collection Selected</h4>
+                    <p>Choose a collection to view its requests and folders</p>
+                </div>
+            `;
         }
-    }
-    
-    // Clear workspace when switching collections
-    if (window.UI && window.UI.clearForm) {
-        window.UI.clearForm();
-    }
-    
-    // Update requests list for new collection
-    this.updateRequestsList(newCollectionId);
-    
-    // Emit collection changed event
-    this.emitCoreEvent('collection-changed', { collectionId: newCollectionId });
-}
-
-// Enhanced updateRequestsList with drag & drop and context menu support
-updateRequestsList(collectionId) {
-    const container = document.getElementById('requestsList');
-    if (!container || !collectionId) return;
-    
-    const collection = this.getCollection(collectionId);
-    if (!collection) return;
-    
-    // Initialize folders if they don't exist
-    if (!collection.folders) {
-        collection.folders = [];
-    }
-    
-    const folders = collection.folders;
-    const rootRequests = collection.requests.filter(req => !req.folderId);
-    
-    if (folders.length === 0 && rootRequests.length === 0) {
-        container.innerHTML = `
-            <div class="empty-requests">
-                <h4>Empty Collection</h4>
-                <p>This collection has no requests or folders yet.</p>
-                <button class="collection-action-btn" onclick="window.CollectionManager.createNewRequest()" style="margin-top: 8px; width: 100%;">
-                    ➕ Create New Request
-                </button>
-                <button class="collection-action-btn" onclick="window.CollectionManager.showCreateFolderModal('${collectionId}')" style="margin-top: 4px; width: 100%;">
-                    📂 Create Folder
-                </button>
-            </div>
-        `;
         return;
     }
     
-    let content = '';
+    this.updateRequestsList(collectionId);
+}
+
+updateRequestsList(collectionId) {
+    const collection = this.getCollection(collectionId);
+    const requestsList = document.getElementById('requestsList') || 
+                        document.querySelector('.requests-list');
     
-    // Add collection actions
-    content += `
-        <div class="sidebar-collection-actions" style="margin-bottom: 1rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 6px;">
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <button class="collection-action-btn" onclick="window.CollectionManager.createNewRequest()" style="flex: 1;">
-                    ➕ New
-                </button>
-                <button class="collection-action-btn" onclick="saveCurrentRequest()" style="flex: 1;">
-                    💾 Save
-                </button>
-                <button class="collection-action-btn" onclick="window.CollectionManager.showCreateFolderModal('${collectionId}')" style="flex: 1;">
-                    📂 Folder
-                </button>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
-                ${folders.length} folders • ${this.getTotalRequestCount(collection)} requests
-            </div>
-        </div>
-    `;
+    if (!requestsList) {
+        console.warn('⚠️ requests list element not found');
+        return;
+    }
     
-    // Add folders
+    if (!collection) {
+        requestsList.innerHTML = '<div class="empty-requests">Collection not found</div>';
+        return;
+    }
+    
+    const folders = collection.folders || [];
+    const rootRequests = collection.requests.filter(req => !req.folderId) || [];
+    
+    let html = '';
+    
+    // Render folders
     if (folders.length > 0) {
-        content += `<div class="sidebar-folders">`;
         folders.forEach(folder => {
             const folderRequests = folder.requests || [];
-            content += `
-    <div class="sidebar-folder-header" 
-     data-folder-id="${folder.id}"
-     style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: var(--bg-secondary); border-radius: 4px; cursor: pointer;" 
-     onclick="toggleSidebarFolder('${folder.id}')">
-    <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <span class="folder-toggle" id="toggle-${folder.id}">📁</span>
-        <span style="font-weight: 500; font-size: 0.875rem;">${this.escapeHtml(folder.name)}</span>
-        <span style="font-size: 0.75rem; color: var(--text-tertiary);">(${folderRequests.length})</span>
-    </div>
-    <div class="sidebar-folder-actions" onclick="event.stopPropagation();">
-        <button class="folder-action-btn" onclick="window.CollectionManager.editFolder('${collectionId}', '${folder.id}')" title="Edit Folder">
-            ✏️
-        </button>
-        <button class="folder-delete-btn" onclick="window.CollectionManager.deleteFolder('${collectionId}', '${folder.id}')" title="Delete Folder">
-            ×
-        </button>
-    </div>
-</div>
-                    <div class="sidebar-folder-requests" id="folder-${folder.id}" style="display: none; margin-left: 1rem; border-left: 2px solid var(--border-color); padding-left: 0.5rem;">
-${folderRequests.map((request, index) => `
-<div class="request-item" 
-     draggable="true"
-     data-request-index="${index}"
-     onclick="loadRequestToWorkspace('${collectionId}', ${index})" 
-     oncontextmenu="window.CollectionManager.showRequestContextMenu(event, '${collectionId}', ${index})"
-     style="margin: 0.25rem 0;">
-    <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
-    <div class="request-details">
-        <div class="request-header">
-            <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
-        </div>
-        <div class="request-url" title="${this.escapeHtml(request.url)}">${this.escapeHtml(this.formatUrlForSidebar(request.url))}</div>
-    </div>
-    <div class="request-actions">
-        <button class="mini-delete-btn" onclick="event.stopPropagation(); window.CollectionManager.deleteRequest('${collectionId}', ${index})" title="Delete Request">
-            ×
-        </button>
-    </div>
-</div>
-`).join('')}
-                        ${folderRequests.length === 0 ? '<div style="padding: 0.5rem; color: var(--text-tertiary); font-size: 0.75rem; font-style: italic;">Empty folder</div>' : ''}
+            html += `
+                <div class="sidebar-folder" data-folder-id="${folder.id}">
+                    <div class="sidebar-folder-header" onclick="this.parentElement.classList.toggle('open')">
+                        <span class="folder-icon">📁</span>
+                        <span class="folder-name">${this.escapeHtml(folder.name)}</span>
+                        <span class="folder-count">(${folderRequests.length})</span>
+                    </div>
+                    <div class="sidebar-folder-requests">
+                        ${this.renderSidebarRequests(folderRequests, collectionId, folder.id)}
                     </div>
                 </div>
             `;
         });
-        content += `</div>`;
     }
     
-    // Add root requests
+    // Render root requests
     if (rootRequests.length > 0) {
-        content += `
-            <div class="sidebar-root-requests">
-                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; padding: 0.25rem 0.5rem; background: var(--bg-tertiary); border-radius: 4px;">
-                    📄 Collection Root (${rootRequests.length})
-                </div>
-${rootRequests.map((request, index) => `
-    <div class="request-item" 
-         draggable="true"
-         data-request-index="${index}"
-         onclick="loadRequestToWorkspace('${collectionId}', ${index})" 
-         oncontextmenu="window.CollectionManager.showRequestContextMenu(event, '${collectionId}', ${index})"
-         style="margin: 0.25rem 0;">
-        <div class="request-method method-${request.method.toLowerCase()}">${request.method}</div>
-        <div class="request-details">
-            <div class="request-name">${this.escapeHtml(request.name || 'Untitled Request')}</div>
-            <div class="request-url" title="${this.escapeHtml(request.url)}">${this.escapeHtml(this.formatUrlForSidebar(request.url))}</div>
-        </div>
-        <div class="request-actions">
-            <button class="mini-delete-btn" onclick="event.stopPropagation(); window.CollectionManager.deleteRequest('${collectionId}', ${index})" title="Delete Request">
-                ×
-            </button>
-        </div>
-    </div>
-`).join('')}
+        html += '<div class="sidebar-root-requests">';
+        html += this.renderSidebarRequests(rootRequests, collectionId, null);
+        html += '</div>';
+    }
+    
+    if (html === '') {
+        html = `
+            <div class="empty-requests">
+                <p>No requests in this collection</p>
+                <button onclick="window.collectionManager.showAddRequestModal('${collectionId}')" class="btn-sm">
+                    Add Request
+                </button>
             </div>
         `;
     }
     
-    container.innerHTML = content;
+    requestsList.innerHTML = html;
+}
+
+
+renderSidebarRequests(requests, collectionId, folderId) {
+    if (!requests || requests.length === 0) {
+        return '<div class="empty-folder-requests">No requests</div>';
+    }
     
-    // Enable drag and drop after updating the list
-    setTimeout(() => {
-        this.enableDragAndDrop();
-    }, 100);
+    return requests.map((request, index) => `
+        <div class="sidebar-request" 
+             onclick="window.collectionManager.loadRequestFromCollection('${collectionId}', ${index}, ${folderId ? `'${folderId}'` : 'null'})"
+             title="${this.escapeHtml(request.url)}">
+            <span class="method-badge method-${request.method.toLowerCase()}">${request.method}</span>
+            <span class="request-name">${this.escapeHtml(request.name)}</span>
+        </div>
+    `).join('');
 }
 
 // Helper function to load folder request
@@ -2526,6 +2551,46 @@ deleteRequest(collectionId, requestIndex, fromFolder = null) {
     this.showNotification('Request Deleted', `"${request.name}" has been deleted`);
 }
 
+async saveCollections() {
+    try {
+        // CRITICAL: Ensure collections is an array before saving
+        if (!Array.isArray(this.collections)) {
+            console.error('❌ Collections is not an array, cannot save!');
+            this.collections = [];
+            return;
+        }
+        
+        // Save to localStorage immediately
+        localStorage.setItem('posterboy_collections', JSON.stringify(this.collections));
+        console.log('💾 Collections saved to localStorage');
+        
+        // If authenticated, also save to Supabase
+        if (window.authService && 
+            typeof window.authService.isAuthenticated === 'function' && 
+            window.authService.isAuthenticated()) {
+            
+            if (window.syncService && typeof window.syncService.syncCollections === 'function') {
+                try {
+                    await window.syncService.syncCollections(this.collections);
+                    console.log('☁️ Collections synced to cloud');
+                } catch (error) {
+                    console.warn('⚠️ Could not sync to cloud:', error);
+                    // Don't throw - localStorage save succeeded
+                }
+            }
+        }
+        
+        // Emit save event
+        if (window.Core && typeof window.Core.emit === 'function') {
+            window.Core.emit('collectionsUpdated', this.collections);
+        }
+    } catch (error) {
+        console.error('❌ Error saving collections:', error);
+    }
+}
+
+
+
 // ================== DRAG & DROP FUNCTIONALITY ==================
 
 // Enable drag and drop for request items
@@ -2773,28 +2838,22 @@ moveRequestToFolder(fromCollectionId, fromIndex, fromFolderId, toCollectionId, t
 
 // ================== COLLECTION SELECTION FIXES ==================
 
-// Ensure a collection is always selected
-// Update existing method for better import support
 ensureCollectionSelected() {
-    const requestsSelect = document.getElementById('requestsCollectionSelect');
-    if (!requestsSelect) return;
+    // Ensure collections is an array
+    if (!Array.isArray(this.collections)) {
+        this.collections = [];
+    }
     
-    // Update dropdown first
-    this.updateCollectionDropdown();
+    if (this.collections.length === 0) {
+        console.log('ℹ️ No collections available to select');
+        return;
+    }
     
-    // If no collection is selected and we have collections, select the first one
-    if ((!requestsSelect.value || requestsSelect.value === '') && this.collections.length > 0) {
-        const firstCollection = this.collections[0];
-        requestsSelect.value = firstCollection.id;
-        this.updateRequestsList(firstCollection.id);
-        
-        // Emit selection event
-        this.emitCoreEvent('collection-auto-selected', { 
-            collectionId: firstCollection.id,
-            collectionName: firstCollection.name 
-        });
-        
-        console.log(`Auto-selected collection: ${firstCollection.name}`);
+    const select = document.getElementById('requestsCollectionSelect');
+    if (select && !select.value) {
+        select.value = this.collections[0].id;
+        this.loadCollectionRequests();
+        console.log('✅ Auto-selected first collection:', this.collections[0].name);
     }
 }
 
@@ -2836,36 +2895,47 @@ handleImportedCollections(importedCollections) {
     
     return results;
 }
-// Update collection dropdown for requests sidebar
-// Add this method to support import functionality
 updateCollectionDropdown() {
-    const select = document.getElementById('requestsCollectionSelect');
-    if (!select) return;
+    const dropdownIds = ['requestsCollectionSelect', 'targetCollection', 'collectionSelect'];
     
-    const collections = this.collections || [];
-    
-    // Store current selection
-    const currentValue = select.value;
-    
-    select.innerHTML = '';
-    
-    collections.forEach(collection => {
-        const option = document.createElement('option');
-        option.value = collection.id;
-        option.textContent = `${collection.name} (${this.getTotalRequestCount(collection)})`;
-        select.appendChild(option);
+    dropdownIds.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+        
+        // Save current value
+        const currentValue = select.value;
+        
+        // Clear dropdown
+        select.innerHTML = '<option value="">Select Collection</option>';
+        
+        // CRITICAL: Ensure collections is an array
+        if (!Array.isArray(this.collections)) {
+            console.warn(`⚠️ Collections is not an array in updateCollectionDropdown for ${selectId}`);
+            this.collections = [];
+            return;
+        }
+        
+        // Populate dropdown
+        this.collections.forEach(collection => {
+            const option = document.createElement('option');
+            option.value = collection.id;
+            const totalRequests = this.getTotalRequestCount(collection);
+            option.textContent = `${collection.name} (${totalRequests})`;
+            
+            if (collection.id === currentValue) {
+                option.selected = true;
+            }
+            
+            select.appendChild(option);
+        });
+        
+        // Restore selection if valid
+        if (currentValue && this.collections.find(c => c.id === currentValue)) {
+            select.value = currentValue;
+        }
     });
     
-    // Restore selection if it still exists
-    if (currentValue && collections.find(c => c.id === currentValue)) {
-        select.value = currentValue;
-    } else if (collections.length > 0) {
-        // Auto-select first collection if no valid selection
-        select.value = collections[0].id;
-        this.updateRequestsList(collections[0].id);
-    }
-    
-    console.log(`📁 Updated collection dropdown with ${collections.length} collections`);
+    console.log('📋 Collection dropdowns updated');
 }
 
 // Add validation for imported collections
@@ -3341,17 +3411,39 @@ handleGenericEditRequest(event) {
     this.showNotification('Request Updated', 'Request details updated');
 }
     // Utility methods
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+escapeHtml(text) {
+    if (!text) return '';
+    
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-    formatDate(dateString) {
+formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
         const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            return 'Today';
+        } else if (diffDays === 1) {
+            return 'Yesterday';
+        } else if (diffDays < 7) {
+            return `${diffDays} days ago`;
+        } else if (diffDays < 30) {
+            const weeks = Math.floor(diffDays / 7);
+            return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+        } else {
+            return date.toLocaleDateString();
+        }
+    } catch (error) {
+        return 'N/A';
     }
+}
 
     deepClone(obj) {
         try {

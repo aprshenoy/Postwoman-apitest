@@ -17,41 +17,89 @@ class AuthService {
     /**
      * Initialize authentication service
      */
-    async initialize() {
+async initialize() {
+    try {
+        console.log('🔐 AuthService: Starting initialization...');
+        
+        // Try to wait for Supabase client
         try {
-            // Wait for Supabase client to be ready
             await this.waitForSupabase();
-            
-            this.supabase = window.SupabaseClient.getClient();
-            
-            if (!this.supabase) {
-                console.error('❌ Supabase client not available');
-                return;
-            }
-
-            // Load existing session
-            await this.loadSession();
-            
-            this.initialized = true;
-            console.log('✅ AuthService initialized');
-
         } catch (error) {
-            console.error('❌ Error initializing AuthService:', error);
+            console.warn('⚠️ Supabase not available:', error.message);
+            console.log('ℹ️ AuthService will work in offline mode (guest only)');
+            this.isInitialized = true;
+            
+            // Emit initialization event even if Supabase not available
+            if (window.Core && typeof window.Core.emit === 'function') {
+                window.Core.emit('authService:initialized', this);
+            }
+            
+            return false;
         }
+        
+        // Setup auth state listener
+        this.setupAuthListener();
+        
+        // Get current session
+        await this.getCurrentSession();
+        
+        this.isInitialized = true;
+        console.log('✅ AuthService initialized successfully');
+        
+        // Emit initialized event
+        if (window.Core && typeof window.Core.emit === 'function') {
+            window.Core.emit('authService:initialized', this);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Error initializing AuthService:', error);
+        this.isInitialized = true; // Mark as initialized anyway to prevent blocking
+        
+        // Emit initialization event even on error
+        if (window.Core && typeof window.Core.emit === 'function') {
+            window.Core.emit('authService:initialized', this);
+        }
+        
+        return false;
     }
+}
+
+isAuthenticated() {
+    return !!(this.currentUser && this.currentSession);
+}
+
+
+
+getAccessToken() {
+    return this.currentSession?.access_token || null;
+}
+
 
     /**
      * Wait for Supabase client to be ready
      */
-    async waitForSupabase(maxAttempts = 10) {
-        for (let i = 0; i < maxAttempts; i++) {
-            if (window.SupabaseClient && window.SupabaseClient.isInitialized()) {
-                return true;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
+async waitForSupabase() {
+    this.initializationAttempts++;
+    
+    console.log(`🔐 Waiting for Supabase... (attempt ${this.initializationAttempts}/${this.maxInitializationAttempts})`);
+    
+    if (this.initializationAttempts > this.maxInitializationAttempts) {
+        console.warn('⚠️ Supabase client not initialized after max attempts');
         throw new Error('Supabase client not initialized');
     }
+    
+    // Check if Supabase client is available
+    if (window.supabaseClient && window.supabaseClient.supabase) {
+        this.supabase = window.supabaseClient.supabase;
+        console.log('✅ Supabase client connected');
+        return true;
+    }
+    
+    // Wait and retry
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return this.waitForSupabase();
+}
 
     /**
      * Load existing session
@@ -190,76 +238,228 @@ class AuthService {
     /**
      * Sign in with Google OAuth
      */
-    async signInWithGoogle() {
-        try {
-            if (!this.supabase) {
-                throw new Error('Supabase client not initialized');
+async signInWithGoogle() {
+    if (!this.supabase) {
+        const error = new Error('Supabase client not available');
+        console.error('❌', error.message);
+        throw error;
+    }
+
+    try {
+        const { data, error } = await this.supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin
             }
+        });
 
-            console.log('🔑 Signing in with Google...');
-
-            const { data, error } = await this.supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: window.location.origin,
-                    queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent',
-                    }
-                }
-            });
-
-            if (error) throw error;
-
-            console.log('✅ Google sign in initiated');
-
-            return {
-                success: true,
-                message: 'Redirecting to Google...'
-            };
-
-        } catch (error) {
+        if (error) {
             console.error('❌ Google sign in error:', error);
-            return {
-                success: false,
-                error: error.message || 'Google sign in failed'
-            };
+            throw error;
         }
+
+        console.log('✅ Google sign in initiated');
+        
+        return { success: true, data };
+    } catch (error) {
+        console.error('❌ Google sign in failed:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async signOut() {
+    if (!this.supabase) {
+        console.warn('⚠️ Supabase not available for sign out');
+        
+        // Still clear local state
+        this.currentSession = null;
+        this.currentUser = null;
+        
+        // Emit sign out event
+        if (window.Core && typeof window.Core.emit === 'function') {
+            window.Core.emit('auth:signedOut');
+        }
+        
+        return { success: true };
     }
 
-    /**
-     * Sign out current user
-     */
-    async signOut() {
-        try {
-            if (!this.supabase) {
-                throw new Error('Supabase client not initialized');
-            }
+    try {
+        const { error } = await this.supabase.auth.signOut();
 
-            console.log('👋 Signing out user...');
-
-            const { error } = await this.supabase.auth.signOut();
-
-            if (error) throw error;
-
-            this.currentUser = null;
-            this.currentSession = null;
-
-            console.log('✅ User signed out successfully');
-
-            return {
-                success: true,
-                message: 'Signed out successfully!'
-            };
-
-        } catch (error) {
+        if (error) {
             console.error('❌ Sign out error:', error);
-            return {
-                success: false,
-                error: error.message || 'Sign out failed'
-            };
+            throw error;
         }
+
+        console.log('✅ Signed out successfully');
+        
+        this.currentSession = null;
+        this.currentUser = null;
+        
+        // Update UI
+        this.updateAuthUI();
+        
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Sign out failed:', error);
+        
+        // Still clear local state even if server sign out fails
+        this.currentSession = null;
+        this.currentUser = null;
+        
+        return { success: false, error: error.message };
     }
+}
+
+healthCheck() {
+    return {
+        initialized: this.isInitialized,
+        hasSupabase: !!this.supabase,
+        isAuthenticated: this.isAuthenticated(),
+        hasSession: !!this.currentSession,
+        userEmail: this.currentUser?.email || 'none',
+        attempts: this.initializationAttempts
+    };
+}
+
+    setupAuthListener() {
+    if (!this.supabase) {
+        console.warn('⚠️ Cannot setup auth listener: Supabase not available');
+        return;
+    }
+
+    try {
+        const { data: authListener } = this.supabase.auth.onAuthStateChange((event, session) => {
+            console.log('🔐 Auth state changed:', event);
+            
+            this.currentSession = session;
+            this.currentUser = session?.user || null;
+            
+            // Emit events through Core
+            if (window.Core && typeof window.Core.emit === 'function') {
+                window.Core.emit('auth:stateChanged', this.currentUser);
+                
+                if (event === 'SIGNED_IN') {
+                    window.Core.emit('auth:signedIn', this.currentUser);
+                    console.log('✅ User signed in:', this.currentUser.email);
+                } else if (event === 'SIGNED_OUT') {
+                    window.Core.emit('auth:signedOut');
+                    console.log('👋 User signed out');
+                } else if (event === 'TOKEN_REFRESHED') {
+                    window.Core.emit('auth:tokenRefreshed', session);
+                    console.log('🔄 Token refreshed');
+                } else if (event === 'USER_UPDATED') {
+                    window.Core.emit('auth:userUpdated', this.currentUser);
+                    console.log('📝 User updated');
+                }
+            }
+            
+            // Update auth UI
+            this.updateAuthUI();
+        });
+        
+        // Store listener reference for cleanup
+        this.authListener = authListener;
+        
+        console.log('✅ Auth state listener setup complete');
+    } catch (error) {
+        console.error('❌ Error setting up auth listener:', error);
+    }
+}
+
+updateAuthUI() {
+    const isAuthenticated = this.isAuthenticated();
+    
+    console.log('🔄 Updating auth UI, authenticated:', isAuthenticated);
+
+    // Update auth buttons
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const userProfileBtn = document.getElementById('userProfileBtn');
+    const googleSignInBtn = document.getElementById('googleSignInBtn');
+    const githubSignInBtn = document.getElementById('githubSignInBtn');
+
+    if (signInBtn) {
+        signInBtn.style.display = isAuthenticated ? 'none' : 'block';
+    }
+
+    if (signOutBtn) {
+        signOutBtn.style.display = isAuthenticated ? 'block' : 'none';
+    }
+
+    if (userProfileBtn) {
+        userProfileBtn.style.display = isAuthenticated ? 'block' : 'none';
+    }
+
+    if (googleSignInBtn) {
+        googleSignInBtn.style.display = isAuthenticated ? 'none' : 'inline-block';
+    }
+
+    if (githubSignInBtn) {
+        githubSignInBtn.style.display = isAuthenticated ? 'none' : 'inline-block';
+    }
+
+    // Update user display elements
+    const authUserName = document.getElementById('authUserName');
+    const authUserEmail = document.getElementById('authUserEmail');
+
+    if (authUserName) {
+        authUserName.textContent = this.currentUser?.user_metadata?.name || 
+                                  this.currentUser?.user_metadata?.full_name || 
+                                  this.currentUser?.email || 
+                                  'Guest';
+    }
+
+    if (authUserEmail) {
+        authUserEmail.textContent = this.currentUser?.email || '';
+    }
+
+    // Show/hide authenticated sections
+    const authSections = document.querySelectorAll('.auth-required');
+    authSections.forEach(section => {
+        section.style.display = isAuthenticated ? 'block' : 'none';
+    });
+
+    const guestSections = document.querySelectorAll('.guest-only');
+    guestSections.forEach(section => {
+        section.style.display = isAuthenticated ? 'none' : 'block';
+    });
+    
+    console.log('✅ Auth UI updated');
+}
+
+
+async getCurrentSession() {
+    if (!this.supabase) {
+        console.warn('⚠️ Supabase not available for getCurrentSession');
+        return null;
+    }
+
+    try {
+        const { data: { session }, error } = await this.supabase.auth.getSession();
+        
+        if (error) {
+            console.error('❌ Error getting session:', error);
+            return null;
+        }
+        
+        this.currentSession = session;
+        this.currentUser = session?.user || null;
+        
+        if (this.currentUser) {
+            console.log('✅ Current user session found:', this.currentUser.email);
+        } else {
+            console.log('ℹ️ No active session');
+        }
+        
+        return session;
+    } catch (error) {
+        console.error('❌ Error getting current session:', error);
+        return null;
+    }
+}
+
+
 
     /**
      * Reset password
